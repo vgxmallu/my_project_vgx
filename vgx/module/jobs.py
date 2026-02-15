@@ -1,6 +1,6 @@
 import datetime
-from client import app, scheduler
-from database import db
+from vgx import app, scheduler
+from vgx.database.db import db
 from bson.objectid import ObjectId
 
 async def send_scheduled_message(job_id):
