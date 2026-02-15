@@ -1,6 +1,12 @@
 pyrogram
 tgcrypto
 motor
-apscheduler
 python-dateutil
+apscheduler==3.10.4
+pykeyboard
+aiohttp==3.9.2 
+asyncio
 
+Flask
+gunicorn==20.1.0
+datetime
