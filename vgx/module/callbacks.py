@@ -1,11 +1,11 @@
 import datetime
 from pyrogram import Client
 from pyrogram.types import CallbackQuery
-from client import scheduler
-from database import db
+from vgx import scheduler
+from vgx.database.db import db
 from utils import get_settings_keyboard
-from plugins.commands import user_sessions
-from plugins.jobs import send_scheduled_message
+from vgx.module.commands import user_sessions
+from vgx.module.jobs import send_scheduled_message
 
 @Client.on_callback_query()
 async def callback_handler(client, query: CallbackQuery):
