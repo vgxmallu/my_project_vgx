@@ -1,8 +1,8 @@
 import asyncio
 import datetime
-from client import app, scheduler
-from database import db
-from plugins.jobs import send_scheduled_message
+from vgx import app, scheduler
+from vgx.database.db import db
+from vgx.module.jobs import send_scheduled_message
 
 async def restore_jobs():
     print("♻️  Restoring schedules...")
