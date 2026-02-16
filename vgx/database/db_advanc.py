@@ -12,15 +12,26 @@ class Database:
         return await self.jobs.insert_one(data)
 
     async def get_job(self, job_id):
-        return await self.jobs.find_one({"_id": ObjectId(job_id)})
+        try:
+            return await self.jobs.find_one({"_id": ObjectId(job_id)})
+        except:
+            return None
+
+    async def get_user_jobs(self, user_id):
+        # Returns jobs created by specific user
+        return self.jobs.find({"user_id": user_id})
 
     async def get_all_jobs(self):
         return self.jobs.find({})
 
+    async def update_job(self, job_id, data):
+        await self.jobs.update_one({"_id": ObjectId(job_id)}, {"$set": data})
+
     async def delete_job(self, job_id):
         await self.jobs.delete_one({"_id": ObjectId(job_id)})
 
-    async def update_job(self, job_id, update_data):
-        await self.jobs.update_one({"_id": ObjectId(job_id)}, {"$set": update_data})
+    # Toggles Pause/Resume
+    async def toggle_pause(self, job_id, is_paused):
+        await self.jobs.update_one({"_id": ObjectId(job_id)}, {"$set": {"paused": is_paused}})
 
 db = Database()
