@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
-from database import db
-from utils import get_job_controls
-from client import scheduler
+from vgx.database.db_advanc import db
+from utils2 import get_job_controls
+from vgx import scheduler
 
 @Client.on_callback_query(filters.regex(r"^mngr_"))
 async def manager_callbacks(c, q):
