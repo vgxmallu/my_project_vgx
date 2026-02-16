@@ -8,5 +8,5 @@ aiohttp==3.9.2
 asyncio
 
 Flask
-gunicorn==20.1.0
+gunicorn>=21.2.0
 datetime
