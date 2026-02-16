@@ -98,6 +98,10 @@ async def input_handler(c, m):
             s['data']['media_type'] = 'video'
             s['data']['file_id'] = m.video.file_id
             s['data']['text'] = m.caption or ""
+        elif m.sticker:
+            s['data']['media_type'] = 'sticker'
+            s['data']['file_id'] = m.sticker.file_id
+            s['data']['text'] = "" # Stickers don't have captions
         elif m.text:
             s['data']['media_type'] = 'text'
             s['data']['text'] = m.text
