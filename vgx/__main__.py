@@ -3,7 +3,7 @@ import datetime
 from vgx import app, scheduler
 from vgx.database.db import db
 from vgx.module.jobs import send_scheduled_message
-
+"""
 async def restore_jobs():
     print("♻️  Restoring schedules...")
     async for job in db.get_active_jobs():
@@ -15,6 +15,24 @@ async def restore_jobs():
                 args=[str(job["_id"])],
                 id=str(job["_id"])
             )
+"""
+
+async def restore_jobs():
+    print("♻️  Restoring schedules...")
+    # 1. Await the coroutine to get the cursor object
+    cursor = await db.get_active_jobs() 
+    # 2. Use 'async for' to iterate over that cursor
+    async for job in cursor:
+        if job["next_run"] > datetime.datetime.now():
+            scheduler.add_job(
+                send_scheduled_message, 
+                "date", 
+                run_date=job["next_run"], 
+                args=[str(job["_id"])],
+                id=str(job["_id"])
+            )
+
+
 
 if __name__ == "__main__":
     scheduler.start()
