@@ -1,10 +1,10 @@
 import datetime
 from pyrogram import Client, filters
-from . import sessions
+from vgx.module import sessions
 from vgx.database.db_advanc import db
-from client import scheduler
+from vgx import scheduler
 from utils2 import get_wizard_kb
-from plugins.engine import run_job
+from vgx.module.adv_engine import run_job
 
 # --- STARTER ---
 @Client.on_message(filters.command("schedule"))
