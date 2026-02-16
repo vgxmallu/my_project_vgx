@@ -1,6 +1,11 @@
 from pyrogram import Client
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from config import Config
+import logging
+
+
+# Setup Logging
+logging.basicConfig(level=logging.INFO)
 
 # Initialize Scheduler
 scheduler = AsyncIOScheduler()
