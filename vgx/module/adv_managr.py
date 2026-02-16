@@ -1,0 +1,47 @@
+from pyrogram import Client, filters
+from database import db
+from utils import get_job_controls
+from client import scheduler
+
+@Client.on_callback_query(filters.regex(r"^mngr_"))
+async def manager_callbacks(c, q):
+    action, job_id = q.data.split("_")[1], q.data.split("_")[2]
+    
+    # 1. VIEW JOB
+    if action == "view":
+        job = await db.get_job(job_id)
+        if not job: return await q.answer("Job not found", show_alert=True)
+        
+        txt = (
+            f"🆔 `{job_id}`\n"
+            f"🎯 Target: `{job['target_chat']}`\n"
+            f"⏲ Interval: {job.get('interval')}m\n"
+            f"📌 Pin: {job.get('pin')}\n"
+            f"📂 Type: {job.get('media_type')}"
+        )
+        await q.message.edit_text(txt, reply_markup=get_job_controls(job_id, job.get('paused')))
+
+    # 2. PAUSE / RESUME
+    elif action in ["pause", "resume"]:
+        is_paused = (action == "pause")
+        await db.toggle_pause(job_id, is_paused)
+        
+        # Update UI
+        job = await db.get_job(job_id)
+        await q.message.edit_reply_markup(get_job_controls(job_id, job.get('paused')))
+        await q.answer(f"Job {action}d!")
+
+    # 3. DELETE
+    elif action == "delete":
+        await db.delete_job(job_id)
+        try: scheduler.remove_job(job_id)
+        except: pass
+        await q.message.edit_text("🗑 **Job Deleted.**")
+
+@Client.on_callback_query(filters.regex("^myjobs_refresh$"))
+async def refresh_list(c, q):
+    # Triggers the /myjobs list again
+    # We can just delete and ask user to run command, or re-run logic.
+    # Simple way:
+    await q.message.delete()
+    await q.message.reply("🔄 Please run /myjobs again to refresh.")
