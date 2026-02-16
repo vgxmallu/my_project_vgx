@@ -27,6 +27,8 @@ async def run_job(job_id):
         
         if job['media_type'] == 'photo':
             sent = await app.send_photo(chat_id, job['file_id'], caption=txt)
+        elif job['media_type'] == 'sticker':
+            sent = await app.send_sticker(chat_id, job['file_id'])
         elif job['media_type'] == 'video':
             sent = await app.send_video(chat_id, job['file_id'], caption=txt)
         else:
