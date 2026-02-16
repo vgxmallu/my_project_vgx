@@ -25,6 +25,8 @@ async def start_wizard(c, m):
     }
     await m.reply("⚙️ **Scheduler Dashboard**", reply_markup=get_wizard_kb(sessions[uid]['data']))
 
+
+"""
 # --- TEXT/MEDIA INPUT LISTENER ---
 @Client.on_message(filters.text | filters.photo | filters.video)
 async def input_handler(c, m):
@@ -57,6 +59,57 @@ async def input_handler(c, m):
         
         s['step'] = "menu"
         await m.reply("✅ Content Updated.", reply_markup=get_wizard_kb(s['data']))
+"""
+
+
+# --- TEXT/MEDIA INPUT LISTENER ---
+# Added filters.private to ensure setup happens safely in DMs
+@Client.on_message(filters.private & (filters.text | filters.photo | filters.video))
+async def input_handler(c, m):
+    # 1. Safety Check: Ignore messages without a sender (Channels/Service msgs)
+    if not m.from_user:
+        return
+
+    uid = m.from_user.id
+    
+    # 2. Safety Check: Ignore if the user isn't currently in a setup session
+    if uid not in sessions:
+        return
+
+    s = sessions[uid]
+    step = s.get('step') # Using .get() is safer to avoid KeyErrors
+    
+    if step == "waiting_target":
+        try:
+            # We strip whitespace in case user copied a space
+            chat_id_str = m.text.strip()
+            s['data']['target_chat'] = int(chat_id_str)
+            s['step'] = "menu"
+            await m.reply("✅ Target Set.", reply_markup=get_wizard_kb(s['data']))
+        except (ValueError, AttributeError):
+            await m.reply("❌ **Invalid ID.** Please send a numeric ID (e.g., `-100123456789`).")
+
+    elif step == "waiting_content":
+        if m.photo:
+            s['data']['media_type'] = 'photo'
+            s['data']['file_id'] = m.photo.file_id
+            s['data']['text'] = m.caption or ""
+        elif m.video:
+            s['data']['media_type'] = 'video'
+            s['data']['file_id'] = m.video.file_id
+            s['data']['text'] = m.caption or ""
+        elif m.text:
+            s['data']['media_type'] = 'text'
+            s['data']['text'] = m.text
+        else:
+            # If they send a sticker or file, ignore it or ask for valid media
+            return await m.reply("⚠️ Please send only Text, Photo, or Video.")
+        
+        s['step'] = "menu"
+        await m.reply("✅ Content Updated.", reply_markup=get_wizard_kb(s['data']))
+
+
+
 
 # --- REGEX CALLBACKS ---
 
