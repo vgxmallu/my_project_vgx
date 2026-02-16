@@ -5,6 +5,20 @@ from utils import get_settings_keyboard
 # In-memory session for the setup process
 user_sessions = {}
 
+
+@Client.on_message(filters.command("gstart"))
+async def start_handler(client, message):
+    await message.reply(
+        "👋 **Welcome to the Group Scheduler Bot!**\n\n"
+        "I can schedule messages, repeat them automatically, pin them, "
+        "and manage your group announcements.\n\n"
+        "🛠 **Commands:**\n"
+        "• /schedule - Create a new scheduled post\n"
+        "• /myjobs - View active schedules\n\n"
+        "ℹ️ *Add me to your group as Admin first!*"
+    )
+    
+
 @Client.on_message(filters.command("start"))
 async def start(client, message):
     await message.reply("👋 **Advanced Scheduler Bot**\n\nUse /create to start building a new scheduled post!")
