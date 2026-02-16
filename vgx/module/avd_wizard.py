@@ -132,7 +132,7 @@ async def wizard_callbacks(c, q):
     # 2. Settings (Cycles)
     elif "set_interval" in data:
         # 0 -> 5 -> 10 -> 30 -> 60 -> 0
-        opts = [0, 5, 10, 30, 60]
+        opts = [0, 5, 10, 30, 40, 50, 60]
         curr = s['data'].get('interval', 0)
         try: idx = (opts.index(curr) + 1) % len(opts)
         except: idx = 0
@@ -140,7 +140,7 @@ async def wizard_callbacks(c, q):
         
     elif "set_autodel" in data:
         # 0 -> 30s -> 5m -> 1h -> 0
-        opts = [0, 30, 300, 3600]
+        opts = [0, 30, 300, 2400, 3000, 3600]
         curr = s['data'].get('auto_del', 0)
         try: idx = (opts.index(curr) + 1) % len(opts)
         except: idx = 0
