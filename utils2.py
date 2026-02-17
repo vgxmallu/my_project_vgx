@@ -52,28 +52,3 @@ def get_job_controls(job_id, paused):
 
 
 
-
-def get_interval_picker_kb(job_id=None, is_wizard=True):
-    """
-    Generates a grid for 5, 10, 30, 40, 50, 60 minutes.
-    """
-    # Determine the callback prefix
-    prefix = "wiz_int_" if is_wizard else f"mngr_int_{job_id}_"
-    
-    # Define the required intervals
-    intervals = [5, 10, 30, 40, 50, 60]
-    
-    buttons = []
-    # Create rows of 3 buttons each
-    row = []
-    for i in intervals:
-        row.append(InlineKeyboardButton(f"{i}m", callback_data=f"{prefix}{i}"))
-        if len(row) == 3:
-            buttons.append(row)
-            row = []
-    
-    # Add 'One-time' and 'Back' buttons
-    buttons.append([InlineKeyboardButton("⏹ One-Time (0m)", callback_data=f"{prefix}0")])
-    buttons.append([InlineKeyboardButton("🔙 Back", callback_data="wiz_back" if is_wizard else f"mngr_view_{job_id}")])
-    
-    return InlineKeyboardMarkup(buttons)
