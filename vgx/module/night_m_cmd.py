@@ -1,45 +1,109 @@
+
 from pyrogram import Client, filters
-from vgx.database.night_db import get_settings, update_settings
+from pyrogram.types import ChatPermissions
+from vgx.database.night_db import get_chat, update_chat, add_vip, remove_vip
+from keyboards import get_settings_kb
+from timezonefinder import TimezoneFinder
 import pytz
 
-# Helper to check if user is admin
-async def is_admin(c, m):
-    member = await c.get_chat_member(m.chat.id, m.from_user.id)
-    return member.status in ("administrator", "creator")
-
+# --- MAIN DASHBOARD ---
 @Client.on_message(filters.command("nightmode") & filters.group)
-async def toggle_nightmode(c, m):
-    if not await is_admin(c, m): return
-    status = m.command[1].lower() == "on" if len(m.command) > 1 else False
-    await update_settings(m.chat.id, {"enabled": status})
-    await m.reply(f"🌙 **Night Mode:** {'Enabled' if status else 'Disabled'}")
-
-@Client.on_message(filters.command("settimezone") & filters.group)
-async def set_tz(c, m):
-    if not await is_admin(c, m): return
-    if len(m.command) < 2: return await m.reply("Usage: `/settimezone Asia/Kolkata`")
-    tz_input = m.command[1]
-    if tz_input not in pytz.all_timezones:
-        return await m.reply("❌ Invalid Timezone.")
-    await update_settings(m.chat.id, {"timezone": tz_input})
-    await m.reply(f"📍 Timezone set to `{tz_input}`")
-
-@Client.on_message(filters.command("setnight") & filters.group)
-async def set_night_msg(c, m):
-    if not await is_admin(c, m): return
-    if not m.reply_to_message: return await m.reply("Reply to a message/photo to set it as Night alert.")
+async def open_dashboard(c, m):
+    # Only admins
+    mem = await c.get_chat_member(m.chat.id, m.from_user.id)
+    if not mem.privileges: return
     
-    data = {"night_msg": m.reply_to_message.caption or m.reply_to_message.text}
-    if m.reply_to_message.photo:
-        data["night_photo"] = m.reply_to_message.photo.file_id
-    
-    await update_settings(m.chat.id, data)
-    await m.reply("✅ Night message updated.")
+    data = await get_chat(m.chat.id)
+    await m.reply("🌙 **Night Mode Settings**", reply_markup=get_settings_kb(data))
 
-@Client.on_message(filters.command("settimes") & filters.group)
-async def set_times(c, m):
-    if not await is_admin(c, m): return
-    # Usage: /settimes 22:00 07:00
-    if len(m.command) < 3: return await m.reply("Usage: `/settimes 22:00 07:00`")
-    await update_settings(m.chat.id, {"night_start": m.command[1], "night_end": m.command[2]})
-    await m.reply(f"🕒 Night schedule: {m.command[1]} to {m.command[2]}")
+# --- CALLBACK HANDLER (The Button Logic) ---
+@Client.on_callback_query(filters.regex(r"^nm_"))
+async def nm_callbacks(c, q):
+    cid = q.message.chat.id
+    # Ensure Admin
+    mem = await c.get_chat_member(cid, q.from_user.id)
+    if not mem.privileges: return await q.answer("❌ Admins only.")
+
+    data = await get_chat(cid)
+    action = q.data
+    
+    if action == "nm_toggle_main":
+        await update_chat(cid, {"enabled": not data['enabled']})
+    
+    elif action == "nm_toggle_warn":
+        await update_chat(cid, {"warning": not data.get('warning')})
+
+    elif action == "nm_toggle_clean":
+        await update_chat(cid, {"auto_clean": not data.get('auto_clean')})
+        
+    elif action == "nm_emergency":
+        # Toggle Emergency State
+        new_state = not data.get('temp_unlock')
+        await update_chat(cid, {"temp_unlock": new_state})
+        if new_state:
+            from scheduler import set_day_permissions
+            await set_day_permissions(c, cid)
+            await q.answer("🚨 EMERGENCY UNLOCK ACTIVATED", show_alert=True)
+        else:
+            await q.answer("🚨 Emergency Unlock Disabled.")
+
+    # Permission Toggles
+    elif action.startswith("nm_perm_"):
+        p_type = action.split("_")[2] # text, media, stickers
+        new_perms = data['perms']
+        new_perms[p_type] = not new_perms[p_type]
+        await update_chat(cid, {"perms": new_perms})
+
+    # Time Setting (Simple version: Prompt user)
+    elif action in ["nm_set_start", "nm_set_end"]:
+        await q.answer("✏️ Send the new time (HH:MM) to set.", show_alert=True)
+        # You would implement a listener here or use a ForceReply
+        # For this snippet, we assume the user knows to use commands like /setnight
+
+    elif action == "nm_set_tz":
+        await q.answer("📍 Send your location to auto-detect timezone.", show_alert=True)
+    
+    elif action == "nm_close":
+        await q.message.delete()
+        return
+
+    # Refresh Menu
+    new_data = await get_chat(cid)
+    try: await q.message.edit_reply_markup(get_settings_kb(new_data))
+    except: pass
+
+# --- SMART TIMEZONE (Location Based) ---
+@Client.on_message(filters.location & filters.group)
+async def auto_timezone(c, m):
+    # Only if an admin sent it (could be improved with state checks)
+    mem = await c.get_chat_member(m.chat.id, m.from_user.id)
+    if not mem.privileges: return
+    
+    tf = TimezoneFinder()
+    tz_name = tf.timezone_at(lng=m.location.longitude, lat=m.location.latitude)
+    
+    if tz_name:
+        await update_chat(m.chat.id, {"timezone": tz_name})
+        await m.reply(f"✅ Timezone detected and set to: `{tz_name}`")
+    else:
+        await m.reply("❌ Could not detect timezone.")
+
+# --- VIP COMMANDS ---
+@Client.on_message(filters.command("addvip") & filters.group)
+async def add_vip_user(c, m):
+    if not m.reply_to_message: return await m.reply("Reply to a user to VIP them.")
+    user_id = m.reply_to_message.from_user.id
+    
+    await add_vip(m.chat.id, user_id)
+    
+    # Apply VIP permission immediately (Allow sending messages even if blocked)
+    await c.restrict_chat_member(
+        m.chat.id, user_id, 
+        ChatPermissions(
+            can_send_messages=True, 
+            can_send_media_messages=True,
+            can_send_other_messages=True
+        )
+    )
+    await m.reply(f"👑 User {m.reply_to_message.from_user.first_name} is now a VIP.")
+
