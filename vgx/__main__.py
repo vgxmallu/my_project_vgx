@@ -6,8 +6,14 @@ from vgx import app, scheduler
 from vgx.database.db_advanc import db
 from vgx.module.adv_engine import run_job
 
+from scheduler import start_scheduler
+
+
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SchedulerBot")
+
+
 
 async def restore_jobs():
     """Reschedules jobs from DB on restart"""
@@ -36,6 +42,9 @@ async def restore_jobs():
 if __name__ == "__main__":
     scheduler.start()
     app.start()
+
+    print("🤖 Night Mode Bot is running...")
+    start_scheduler(app)
     
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
@@ -43,3 +52,5 @@ if __name__ == "__main__":
     print("🚀 Bot Started! Send /schedule")
     idle()
     app.stop()
+
+
