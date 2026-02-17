@@ -6,7 +6,7 @@ from vgx import app, scheduler
 from vgx.database.db_advanc import db
 from vgx.module.adv_engine import run_job
 
-from night_m_scheduler import start_scheduler
+from vgx.module.night_m_scheduler import start_scheduler
 
 
 
