@@ -118,29 +118,6 @@ async def input_handler(c, m):
         await m.reply("✅ Content Updated.", reply_markup=get_wizard_kb(s['data']))
 
 
-@Client.on_callback_query(filters.regex(r"^wiz_int_(?P<val>\d+)$"))
-async def wiz_interval_pick(c, q):
-    uid = q.from_user.id
-    if uid not in sessions: return
-    
-    val = int(q.matches[0].group("val"))
-    sessions[uid]['data']['interval'] = val
-    
-    await q.answer(f"⏱ Interval set to {val}m")
-    # Return to main dashboard
-    await q.message.edit_text(
-        "⚙️ **Scheduler Dashboard**", 
-        reply_markup=get_wizard_kb(sessions[uid]['data'])
-    )
-
-@Client.on_callback_query(filters.regex("^wiz_set_interval$"))
-async def open_wiz_picker(c, q):
-    await q.message.edit_text(
-        "⏱ **Select Interval**\nChoose how often the message should repeat:",
-        reply_markup=get_interval_picker_kb(is_wizard=True)
-    )
-
-
 
 # --- REGEX CALLBACKS ---
 
