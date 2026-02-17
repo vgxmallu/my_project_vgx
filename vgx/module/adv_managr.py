@@ -3,6 +3,25 @@ from vgx.database.db_advanc import db
 from utils2 import get_job_controls
 from vgx import scheduler
 
+
+# In plugins/manager.py
+
+@Client.on_callback_query(filters.regex(r"^mngr_edit_"))
+async def trigger_edit_msg(c, q):
+    job_id = q.data.split("_")[2]
+    uid = q.from_user.id
+    
+    # Store in session that we are editing an EXISTING job
+    sessions[uid] = {
+        "step": "editing_existing_job",
+        "job_id": job_id
+    }
+    
+    await q.answer("📝 Send the NEW text/media for this job.")
+    await q.message.reply("📤 **Please send the new Content (Text/Photo/Video/Sticker).\n\nThis will replace the current message of the scheduled job.")
+    
+
+
 @Client.on_callback_query(filters.regex(r"^mngr_"))
 async def manager_callbacks(c, q):
     action, job_id = q.data.split("_")[1], q.data.split("_")[2]
