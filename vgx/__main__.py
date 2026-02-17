@@ -6,7 +6,7 @@ from vgx import app, scheduler
 from vgx.database.db_advanc import db
 from vgx.module.adv_engine import run_job
 
-from vgx.module.night_m_scheduler import start_scheduler
+from vgx.module.night_schedul import start_scheduler
 
 
 
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     scheduler.start()
     app.start()
 
-    print("🤖 Night Mode Bot is running...")
+    print("💫 Night Mode System Online.")
     start_scheduler(app)
     
     loop = asyncio.get_event_loop()
@@ -52,5 +52,4 @@ if __name__ == "__main__":
     print("🚀 Bot Started! Send /schedule")
     idle()
     app.stop()
-
 
