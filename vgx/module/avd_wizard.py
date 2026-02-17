@@ -5,6 +5,8 @@ from vgx.database.db_advanc import db
 from vgx import scheduler
 from utils2 import get_wizard_kb
 from vgx.module.adv_engine import run_job
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 
 # --- STARTER ---
 @Client.on_message(filters.command("schedule"))
