@@ -4,8 +4,48 @@ from utils2 import get_job_controls
 from vgx import scheduler
 from vgx.module import sessions
 
-# In plugins/manager.py
 
+@Client.on_callback_query(filters.regex(r"^mngr_int_(?P<id>\w+)_(?P<val>\d+)$"))
+async def mngr_interval_pick(c, q):
+    job_id = q.matches[0].group("id")
+    val = int(q.matches[0].group("val"))
+    
+    # 1. Update MongoDB
+    await db.update_job(job_id, {"interval": val})
+    
+    # 2. Reschedule in APScheduler immediately
+    if val > 0:
+        from plugins.engine import run_job
+        import datetime
+        next_run = datetime.datetime.now() + datetime.timedelta(minutes=val)
+        
+        scheduler.add_job(
+            run_job, "date",
+            run_date=next_run,
+            args=[job_id],
+            id=str(job_id),
+            replace_existing=True
+        )
+    
+    await q.answer(f"✅ Updated to {val}m")
+    
+    # 3. Return to job controls
+    job = await db.get_job(job_id)
+    await q.message.edit_text(
+        f"🆔 `{job_id}` Settings Updated.", 
+        reply_markup=get_job_controls(job_id, job.get('paused'))
+    )
+
+@Client.on_callback_query(filters.regex(r"^mngr_interval_(?P<id>\w+)$"))
+async def open_mngr_picker(c, q):
+    job_id = q.matches[0].group("id")
+    await q.message.edit_text(
+        "⏱ **Edit Interval**\nSelect a new repeat time for this active job:",
+        reply_markup=get_interval_picker_kb(job_id=job_id, is_wizard=False)
+    )
+
+
+# In plugins/manager.py
 @Client.on_callback_query(filters.regex(r"^mngr_edit_"))
 async def trigger_edit_msg(c, q):
     job_id = q.data.split("_")[2]
