@@ -41,11 +41,15 @@ def get_job_controls(job_id, paused):
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton(pause_btn, callback_data=pause_data),
-            InlineKeyboardButton("✏️ Edit Msg", callback_data=f"mngr_edit_{job_id}")
+            InlineKeyboardButton("📝 Edit Msg", callback_data=f"mngr_edit_{job_id}")
         ],
         [
-            InlineKeyboardButton("⏱ Intervals", callback_data=f"mngr_interval_{job_id}"),
-            InlineKeyboardButton("🗑 DELETE", callback_data=f"mngr_delete_{job_id}")
+            InlineKeyboardButton("🕒 Custom Mins", callback_data="wiz_set_custom_int"),
+            InlineKeyboardButton("🗑 Delete or Clear", callback_data=f"mngr_delete_{job_id}")
         ],
         [InlineKeyboardButton("🔙 Back to List", callback_data="myjobs_refresh")]
     ])
+
+
+
+
