@@ -2,7 +2,7 @@ from pyrogram import Client, filters
 from vgx.database.db_advanc import db
 from utils2 import get_job_controls
 from vgx import scheduler
-
+from vgx.module import sessions
 
 # In plugins/manager.py
 
