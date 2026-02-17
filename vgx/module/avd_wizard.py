@@ -26,26 +26,79 @@ async def start_wizard(c, m):
     await m.reply("⚙️ **Scheduler Dashboard**", reply_markup=get_wizard_kb(sessions[uid]['data']))
 
 
-"""
-# --- TEXT/MEDIA INPUT LISTENER ---
-@Client.on_message(filters.text | filters.photo | filters.video)
+# ✅ MERGED DECORATOR: Listens for Text, Photos, Videos, AND Stickers in Private Chat
+@Client.on_message(filters.private & (filters.text | filters.photo | filters.video | filters.sticker))
 async def input_handler(c, m):
+    # 1. Safety Check: Ignore messages without a sender (Channels/Service msgs)
+    if not m.from_user:
+        return
+
     uid = m.from_user.id
-    if uid not in sessions: return
+    
+    # 2. Safety Check: Ignore if the user isn't currently in a session
+    if uid not in sessions:
+        return
 
     s = sessions[uid]
-    step = s['step']
+    step = s.get('step') # Using .get() prevents crashes if 'step' is missing
     
-    if step == "waiting_target":
-        try:
-            s['data']['target_chat'] = int(m.text)
-            s['step'] = "menu"
-            await m.reply("✅ Target Set.", reply_markup=get_wizard_kb(s['data']))
-        except:
-            await m.reply("❌ Invalid ID. Send a number like -100123456.")
+    # ==================================================================
+    # BLOCK A: EDITING AN EXISTING JOB (Direct DB Update)
+    # ==================================================================
+    if step == "editing_existing_job":
+        job_id = s.get('job_id')
+        update_data = {}
 
+        # Detect Media Type
+        if m.sticker:
+            update_data = {"media_type": "sticker", "file_id": m.sticker.file_id, "text": ""}
+        elif m.photo:
+            update_data = {"media_type": "photo", "file_id": m.photo.file_id, "text": m.caption or ""}
+        elif m.video:
+            update_data = {"media_type": "video", "file_id": m.video.file_id, "text": m.caption or ""}
+        elif m.text:
+            update_data = {"media_type": "text", "text": m.text, "file_id": None}
+        else:
+             return await m.reply("⚠️ Unsupported media type.")
+
+        # Update MongoDB immediately
+        await db.update_job(job_id, update_data)
+        
+        # Cleanup session (Interaction finished)
+        del sessions[uid]
+        
+        await m.reply(
+            f"✅ **Job Updated!**\nNext time this job runs, it will use the new content.",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to My Jobs", callback_data="myjobs_refresh")]])
+        )
+        return
+
+    # ==================================================================
+    # BLOCK B: CREATING A NEW JOB (Wizard Steps)
+    # ==================================================================
+    
+    # --- Step: Waiting for Target Chat ID ---
+    elif step == "waiting_target":
+        try:
+            # We strip whitespace in case user copied a space
+            chat_id_str = m.text.strip()
+            # Basic validation to ensure it's a number
+            target_id = int(chat_id_str)
+            
+            s['data']['target_chat'] = target_id
+            s['step'] = "menu" # Return to main wizard menu
+            
+            await m.reply("✅ Target Set.", reply_markup=get_wizard_kb(s['data']))
+        except (ValueError, AttributeError):
+            await m.reply("❌ **Invalid ID.** Please send a numeric ID (e.g., `-100123456789`).")
+
+    # --- Step: Waiting for Content (Initial Setup) ---
     elif step == "waiting_content":
-        if m.photo:
+        if m.sticker:
+            s['data']['media_type'] = 'sticker'
+            s['data']['file_id'] = m.sticker.file_id
+            s['data']['text'] = "" 
+        elif m.photo:
             s['data']['media_type'] = 'photo'
             s['data']['file_id'] = m.photo.file_id
             s['data']['text'] = m.caption or ""
@@ -53,17 +106,20 @@ async def input_handler(c, m):
             s['data']['media_type'] = 'video'
             s['data']['file_id'] = m.video.file_id
             s['data']['text'] = m.caption or ""
-        else:
+        elif m.text:
             s['data']['media_type'] = 'text'
             s['data']['text'] = m.text
+        else:
+            return await m.reply("⚠️ Please send only Text, Photo, Video, or Sticker.")
         
-        s['step'] = "menu"
+        s['step'] = "menu" # Return to main wizard menu
         await m.reply("✅ Content Updated.", reply_markup=get_wizard_kb(s['data']))
-"""
+
 
 
 # --- TEXT/MEDIA INPUT LISTENER ---
 # Added filters.private to ensure setup happens safely in DMs
+"""
 @Client.on_message(filters.private & (filters.text | filters.photo | filters.video))
 async def input_handler(c, m):
     # 1. Safety Check: Ignore messages without a sender (Channels/Service msgs)
@@ -111,7 +167,7 @@ async def input_handler(c, m):
         
         s['step'] = "menu"
         await m.reply("✅ Content Updated.", reply_markup=get_wizard_kb(s['data']))
-
+"""
 
 
 
