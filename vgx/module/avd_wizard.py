@@ -118,58 +118,27 @@ async def input_handler(c, m):
         await m.reply("✅ Content Updated.", reply_markup=get_wizard_kb(s['data']))
 
 
-
-# --- TEXT/MEDIA INPUT LISTENER ---
-# Added filters.private to ensure setup happens safely in DMs
-"""
-@Client.on_message(filters.private & (filters.text | filters.photo | filters.video))
-async def input_handler(c, m):
-    # 1. Safety Check: Ignore messages without a sender (Channels/Service msgs)
-    if not m.from_user:
-        return
-
-    uid = m.from_user.id
+@Client.on_callback_query(filters.regex(r"^wiz_int_(?P<val>\d+)$"))
+async def wiz_interval_pick(c, q):
+    uid = q.from_user.id
+    if uid not in sessions: return
     
-    # 2. Safety Check: Ignore if the user isn't currently in a setup session
-    if uid not in sessions:
-        return
-
-    s = sessions[uid]
-    step = s.get('step') # Using .get() is safer to avoid KeyErrors
+    val = int(q.matches[0].group("val"))
+    sessions[uid]['data']['interval'] = val
     
-    if step == "waiting_target":
-        try:
-            # We strip whitespace in case user copied a space
-            chat_id_str = m.text.strip()
-            s['data']['target_chat'] = int(chat_id_str)
-            s['step'] = "menu"
-            await m.reply("✅ Target Set.", reply_markup=get_wizard_kb(s['data']))
-        except (ValueError, AttributeError):
-            await m.reply("❌ **Invalid ID.** Please send a numeric ID (e.g., `-100123456789`).")
+    await q.answer(f"⏱ Interval set to {val}m")
+    # Return to main dashboard
+    await q.message.edit_text(
+        "⚙️ **Scheduler Dashboard**", 
+        reply_markup=get_wizard_kb(sessions[uid]['data'])
+    )
 
-    elif step == "waiting_content":
-        if m.photo:
-            s['data']['media_type'] = 'photo'
-            s['data']['file_id'] = m.photo.file_id
-            s['data']['text'] = m.caption or ""
-        elif m.video:
-            s['data']['media_type'] = 'video'
-            s['data']['file_id'] = m.video.file_id
-            s['data']['text'] = m.caption or ""
-        elif m.sticker:
-            s['data']['media_type'] = 'sticker'
-            s['data']['file_id'] = m.sticker.file_id
-            s['data']['text'] = "" # Stickers don't have captions
-        elif m.text:
-            s['data']['media_type'] = 'text'
-            s['data']['text'] = m.text
-        else:
-            # If they send a sticker or file, ignore it or ask for valid media
-            return await m.reply("⚠️ Please send only Text, Photo, or Video.")
-        
-        s['step'] = "menu"
-        await m.reply("✅ Content Updated.", reply_markup=get_wizard_kb(s['data']))
-"""
+@Client.on_callback_query(filters.regex("^wiz_set_interval$"))
+async def open_wiz_picker(c, q):
+    await q.message.edit_text(
+        "⏱ **Select Interval**\nChoose how often the message should repeat:",
+        reply_markup=get_interval_picker_kb(is_wizard=True)
+    )
 
 
 
