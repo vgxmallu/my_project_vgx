@@ -12,4 +12,4 @@ class Config:
     
     DB_NAME = "GroupSchedulerBot" # Database name 
     ADMIN_ID = 784589736 # Your Telegram ID (to prevent abuse)
-    DEFAULT_INTERVAL = 10800 # Default interval in seconds (3 hours =
+    DEFAULT_INTERVAL = 3600 # Default interval in seconds (3 hours =
