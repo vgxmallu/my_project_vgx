@@ -10,5 +10,6 @@ class Config:
     # MongoDB Connection URL (Get from MongoDB Atlas)
     MONGO_URL = os.environ.get("MONGO_URL", "mongodb+srv://...") 
     
-    DB_NAME = "GroupSchedulerBot"
+    DB_NAME = "GroupSchedulerBot" # Database name 
     ADMIN_ID = 784589736 # Your Telegram ID (to prevent abuse)
+    DEFAULT_INTERVAL = 10800 # Default interval in seconds (3 hours =
