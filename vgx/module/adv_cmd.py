@@ -2,7 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from vgx.database.db_advanc import db
 
-@Client.on_message(filters.command("start"))
+@Client.on_message(filters.private & filters.command("start"))
 async def start(c, m):
     await m.reply(
         "🤖 **Advanced Scheduler Bot**\n\n"
@@ -12,18 +12,11 @@ async def start(c, m):
         "✅ Delete Previous Message\n"
         "✅ Supports Photo/Video/Text\n\n"
         "Commands:\n"
-        "/create - New Schedule\n"
+        "/schedule - New Schedule\n"
         "/myjobs - Manage Schedules"
     )
 
-@Client.on_message(filters.command("create"))
-async def create_job(c, m):
-    # Initialize session in wizard.py via this command
-    # We trigger it by simulating a message or just calling the wizard starter manually
-    # For simplicity, let's alias it to the wizard starter logic.
-    await m.reply("⚠️ Use /schedule to start the wizard.")
-
-@Client.on_message(filters.command("myjobs"))
+@Client.on_message(filters.private & filters.command("myjobs"))
 async def list_jobs(c, m):
     jobs = await db.get_user_jobs(m.from_user.id)
     btn_list = []
