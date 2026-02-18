@@ -9,6 +9,10 @@ import pytz
 # --- MAIN DASHBOARD ---
 @Client.on_message(filters.command("nightmode") & filters.group)
 async def open_dashboard(c, m):
+    # Only admins
+    mem = await c.get_chat_member(m.chat.id, m.from_user.id)
+    await m.reply("Only admin can use this.")
+    if not mem.privileges: return
     
     data = await get_chat(m.chat.id)
     await m.reply("🌙 **Night Mode Settings**", reply_markup=get_settings_kb(data))
