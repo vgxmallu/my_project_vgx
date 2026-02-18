@@ -1,7 +1,9 @@
 import time
 from pyrogram.types import InputMediaPhoto, InputMediaVideo
-from vgx.database.dfeed_db import get_chat_settings, get_next_item, update_settings, queue
+from vgx.database.dfeed_db import db, get_chat_settings, get_next_item, update_settings, queue
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+
 
 async def drip_engine(app):
     # Find all active chats
