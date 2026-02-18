@@ -100,7 +100,7 @@ async def set_day_permissions(app, chat_id):
     )
     await app.set_chat_permissions(chat_id, perms)
 
-def start_scheduler(app):
+def start_nm_scheduler(app):
     scheduler = AsyncIOScheduler()
     scheduler.add_job(check_schedules, "interval", minutes=1, args=[app])
     scheduler.start()
