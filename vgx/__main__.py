@@ -6,8 +6,8 @@ from vgx import app, scheduler
 from vgx.database.db_advanc import db
 from vgx.module.adv_engine import run_job
 
-from vgx.module.night_schedul import start_scheduler
-
+from vgx.module.night_schedul import start_nm_scheduler
+from vgx.module.dfeed_scheduler import start_df_scheduler
 
 
 logging.basicConfig(level=logging.INFO)
@@ -44,7 +44,10 @@ if __name__ == "__main__":
     app.start()
 
     print("💫 Night Mode System Online.")
-    start_scheduler(app)
+    start_nm_scheduler(app)
+
+    print("🤖 Drip-Feed System Online...")
+    start_df_scheduler(app)
     
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
