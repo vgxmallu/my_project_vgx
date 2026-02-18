@@ -9,7 +9,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 # --- STARTER ---
-@Client.on_message(filters.command("schedule"))
+@Client.on_message(filters.private & filters.command("schedule"))
 async def start_wizard(c, m):
     uid = m.from_user.id
     sessions[uid] = {
