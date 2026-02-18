@@ -42,7 +42,7 @@ async def drip_engine(app):
             except Exception as e:
                 print(f"Drip Error in {chat_id}: {e}")
 
-def start_scheduler(app):
+def start_df_scheduler(app):
     scheduler = AsyncIOScheduler()
     # Check every minute
     scheduler.add_job(drip_engine, "interval", minutes=1, args=[app])
