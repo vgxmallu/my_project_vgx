@@ -2,7 +2,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions
 from vgx.database.night_db import get_chat, update_chat, add_vip, remove_vip
-from keyboards import get_settings_kb
+from vgx.module.night_m_keybord import get_settings_kb
 from timezonefinder import TimezoneFinder
 import pytz
 
