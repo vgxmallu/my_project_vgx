@@ -73,7 +73,7 @@ async def celebrate_all(client):
         if event["date"] == today:
             await client.send_message(event["chat_id"], event["message"])
 
-def start_scheduler(client):
+def start_bday_scheduler(client):
     scheduler.add_job(celebrate_all, "interval", minutes=30, args=[client], id="celebrate")
     scheduler.start()
     print("🎉 Scheduler started - checking every 30 minutes")
