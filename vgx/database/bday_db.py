@@ -1,8 +1,8 @@
 from pymongo import MongoClient
-from config import MONGO_URL
+from config import Config
 import datetime
 
-client = MongoClient(config.MONGO_URL)
+client = MongoClient(Config.MONGO_URL)
 db = client["birthday_bot"]
 
 # Collections
