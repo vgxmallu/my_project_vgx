@@ -13,3 +13,6 @@ class Config:
     DB_NAME = "GroupSchedulerBot" # Database name 
     ADMIN_ID = 784589736 # Your Telegram ID (to prevent abuse)
     DEFAULT_INTERVAL = 3600 # Default interval in seconds (3 hours =
+    # Viral threshold: 1.5 = 50% higher than average
+    VIRAL_THRESHOLD = 1.5 
+
