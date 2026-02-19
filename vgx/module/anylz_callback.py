@@ -60,7 +60,7 @@ async def leaderboard_callback_handler(c, q):
             InlineKeyboardButton("📅 Today", callback_data="lb_today"),
             InlineKeyboardButton("🗓 Week", callback_data="lb_week")
         ],
-        [InlineKeyboardButton("😁 My Channel", url="t.me/xbots_x")]
+        [InlineKeyboardButton("🌍 Global Ranking", callback_data="lb_global")]
     ])
 
     # 4. Edit the message (Avoid editing if the content is identical to prevent errors)
