@@ -38,3 +38,19 @@ async def get_hourly_avg(chat_id, hour):
     # (Simplified: using raw count for now, but ideal is count / days)
     # Here we return raw count to compare against "average" baseline logic
     return doc.get("count", 0)
+
+
+# Updated database.py track_message
+async def track_message(chat_id, user_id, name):
+    await profiles.update_one(
+        {"chat_id": chat_id, "user_id": user_id},
+        {
+            "$inc": {"messages": 1},
+            "$set": {
+                "name": name, 
+                "last_active": time.time() # This is critical for filtering!
+            }
+        },
+        upsert=True
+    )
+    
