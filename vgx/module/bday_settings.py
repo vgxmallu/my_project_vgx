@@ -1,7 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from vgx.database.bday_db import *
-from utils import is_admin
+from utils3 import is_admin
 
 @Client.on_message(filters.command("birthdaymessage") & filters.group)
 async def set_birthday_message(client: Client, message: Message):
