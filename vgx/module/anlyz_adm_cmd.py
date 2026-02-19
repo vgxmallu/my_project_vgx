@@ -1,5 +1,5 @@
 from pyrogram import Client, filters
-from scheduler_engine import schedule_golden_msg
+from vgx.module.anylz_schedul import schedule_golden_msg
 from vgx.database.anlys_db import promos
 
 @Client.on_message(filters.command("schedule_best") & filters.group)
