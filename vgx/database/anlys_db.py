@@ -54,3 +54,18 @@ async def track_message(chat_id, user_id, name):
         upsert=True
     )
     
+async def get_global_users(limit=10):
+    pipeline = [
+        {
+            "$group": {
+                "_id": "$user_id", # Group by unique User ID
+                "total_messages": {"$sum": "$messages"}, # Sum their messages
+                "name": {"$first": "$name"} # Keep their latest name
+            }
+        },
+        {"$sort": {"total_messages": -1}}, # Sort by highest total
+        {"$limit": limit}
+    ]
+    cursor = profiles.aggregate(pipeline)
+    return await cursor.to_list(length=limit)
+    
