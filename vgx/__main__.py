@@ -2,7 +2,7 @@ import asyncio
 import logging
 from datetime import datetime
 from pyrogram import idle
-from vgx import app, scheduler
+from vgx import app, scheduler, set_ui_commands
 from vgx.database.db_advanc import db
 from vgx.module.adv_engine import run_job
 
@@ -51,6 +51,9 @@ if __name__ == "__main__":
     
     print("🤖 Golden Hour Analytics Online.")
     start_anlyz_scheduler()
+
+    app.loop.run_until_complete(set_ui_commands(app))
+    print("✅ Bot Command Menu has been updated!")
     
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
