@@ -34,12 +34,12 @@ async def lb_handler(c, m):
     
     # 1-2-1 Button Layout
     kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🏆 Overall", callback_data="lb_all")],
+        [InlineKeyboardButton("🏆 Group Overall", callback_data="lb_all")],
         [
             InlineKeyboardButton("📅 Today", callback_data="lb_today"),
             InlineKeyboardButton("🗓 Week", callback_data="lb_week")
         ],
-        [InlineKeyboardButton("💤My Channel", url="https://t.me/xbots_x")]
+        [InlineKeyboardButton("🌍 Global Ranking", callback_data="lb_global")]
     ])
     
     await m.reply(text, reply_markup=kb)
