@@ -28,6 +28,6 @@ async def send_msg(app, chat_id, text):
     except Exception as e:
         print(f"Failed to send scheduled msg: {e}")
 
-def start_scheduler():
+def start_anlyz_scheduler():
     if not scheduler.running:
         scheduler.start()
