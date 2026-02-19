@@ -1,6 +1,7 @@
 import os
 
-
+DEFAULT_BIRTHDAY_MESSAGE = "🎉 Happy Birthday {mention}! {role} Wishing you an amazing year ahead! 🎂"
+DEFAULT_BIRTHDAY_ROLE = "🎂 Birthday Star"
 
 class Config:
     API_ID = int(os.environ.get("API_ID", "12345")) # Get from my.telegram.org
