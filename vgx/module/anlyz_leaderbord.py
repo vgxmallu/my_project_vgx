@@ -18,7 +18,7 @@ async def lb_handler(c, m):
     
     # Header
     text = f"👤 **Member Leaderboard**\n"
-    text += f"⚡ *This week's messages: {total_week}*\n\n"
+    text += f"⚡ **This week's messages:** `{total_week}`\n\n"
     
     # List Body
     for rank, user in enumerate(top, 1):
@@ -30,7 +30,7 @@ async def lb_handler(c, m):
         # Formatting: Rank. Name — Count ✉️
         text += f"{rank}. **{name}** — `{user['messages']}` ✉️\n"
     
-    text += "\n📈 *Keep chatting to reach the top!*"
+    text += "\n📈 **Keep chatting to reach the top!**"
     
     # 1-2-1 Button Layout
     kb = InlineKeyboardMarkup([
