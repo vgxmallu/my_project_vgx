@@ -4,7 +4,7 @@
 
 # (Conceptual implementation for Main loop)
 from vgx.database.anlys_db import promos
-from analytics import is_viral_moment
+from vgx.module.anylz_Analytics import is_viral_moment
 
 # Global RAM counter: {chat_id: count}
 msg_buffer = {} 
