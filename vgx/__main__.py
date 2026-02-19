@@ -9,6 +9,10 @@ from vgx.module.adv_engine import run_job
 from vgx.module.night_schedul import start_nm_scheduler
 from vgx.module.dfeed_scheduler import start_df_scheduler
 from vgx.module.anylz_schedul import start_anlyz_scheduler
+from vgx.module.bday_scheduler import start_scheduler
+
+
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SchedulerBot")
@@ -54,6 +58,9 @@ if __name__ == "__main__":
 
     app.loop.run_until_complete(set_ui_commands(app))
     print("✅ Bot Command Menu has been updated!")
+
+    print("🚀 Birthday Bot is online!")
+    start_scheduler(app)
     
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
@@ -61,4 +68,3 @@ if __name__ == "__main__":
     print("🚀 Bot Started! Send /schedule")
     idle()
     app.stop()
-
