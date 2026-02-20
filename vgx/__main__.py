@@ -5,11 +5,13 @@ from pyrogram import idle
 from vgx import app, scheduler
 from vgx.database.db_advanc import db
 from vgx.module.adv_engine import run_job
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
 
 from vgx.module.night_schedul import start_nm_scheduler
 from vgx.module.dfeed_scheduler import start_df_scheduler
 from vgx.module.anylz_schedul import start_anlyz_scheduler
-
+from vgx.module.bday_schedul import check_celebrations
 
 
 
@@ -54,6 +56,13 @@ if __name__ == "__main__":
     
     print("🤖 Golden Hour Analytics Online.")
     start_anlyz_scheduler()
+
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(check_celebrations, "interval", hours=1, args=[app])
+    scheduler.start()
+    
+    app.loop.run_until_complete(set_menu(app))
+    print("🎂 Birthday & Event Scheduler is Live!")
     
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
@@ -61,3 +70,5 @@ if __name__ == "__main__":
     print("🚀 Bot Started! Send /schedule")
     idle()
     app.stop()
+
+
