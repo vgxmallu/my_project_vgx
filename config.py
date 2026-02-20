@@ -15,4 +15,6 @@ class Config:
     DEFAULT_INTERVAL = 3600 # Default interval in seconds (3 hours =
     # Viral threshold: 1.5 = 50% higher than average
     VIRAL_THRESHOLD = 1.5 
-
+    # Polling interval in seconds (e.g., check feeds every 5 minutes)
+    UPDATE_INTERVAL = 300 
+  
