@@ -1,6 +1,6 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from database.db import db
+from vgx.database.rss_db import db
 
 @Client.on_message(filters.command("startrss") & filters.private)
 async def start_chsmd(client, message):
