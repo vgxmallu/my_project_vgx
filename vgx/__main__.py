@@ -60,8 +60,6 @@ if __name__ == "__main__":
     scheduler = AsyncIOScheduler()
     scheduler.add_job(check_celebrations, "interval", hours=1, args=[app])
     scheduler.start()
-    
-    app.loop.run_until_complete(set_menu(app))
     print("🎂 Birthday & Event Scheduler is Live!")
     
     loop = asyncio.get_event_loop()
