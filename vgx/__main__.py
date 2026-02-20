@@ -12,7 +12,7 @@ from vgx.module.night_schedul import start_nm_scheduler
 from vgx.module.dfeed_scheduler import start_df_scheduler
 from vgx.module.anylz_schedul import start_anlyz_scheduler
 from vgx.module.bday_schedul import check_celebrations
-
+from vgx.module.rss_worker import check_rss_feeds 
 
 
 logging.basicConfig(level=logging.INFO)
@@ -51,16 +51,20 @@ if __name__ == "__main__":
     print("💫 Night Mode System Online.")
     start_nm_scheduler(app)
 
-    print("🤖 Drip-Feed System Online...")
+    print("🤖 Drip-Feed System Online..")
     start_df_scheduler(app)
     
-    print("🤖 Golden Hour Analytics Online.")
+    print("🤖 Golden Hour Analytics Online...")
     start_anlyz_scheduler()
 
     scheduler = AsyncIOScheduler()
     scheduler.add_job(check_celebrations, "interval", hours=1, args=[app])
     scheduler.start()
-    print("🎂 Birthday & Event Scheduler is Live!")
+    print("🎂 Birthday & Event Scheduler is Live....")
+    
+    # Start the RSS loop as a background task
+    asyncio.create_task(check_rss_feeds(app))
+    print("📣 background RSS worker.....")
     
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
