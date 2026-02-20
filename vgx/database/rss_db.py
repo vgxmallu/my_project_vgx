@@ -3,7 +3,7 @@ from config import Config
 
 class Database:
     def __init__(self):
-        self.client = AsyncIOMotorClient(Config.MONGO_URI)
+        self.client = AsyncIOMotorClient(Config.MONGO_URL)
         self.db = self.client["rss_feed_db"]
         self.feeds = self.db.feeds
 
