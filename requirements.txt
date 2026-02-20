@@ -14,3 +14,5 @@ gunicorn>=21.2.0
 datetime
 pytz
 timezonefinder
+feedparser
+beautifulsoup4
