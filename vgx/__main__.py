@@ -19,6 +19,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SchedulerBot")
 
 
+        
 
 async def restore_jobs():
     """Reschedules jobs from DB on restart"""
@@ -47,6 +48,9 @@ async def restore_jobs():
 if __name__ == "__main__":
     scheduler.start()
     app.start()
+    print("📡 Initializing background RSS worker...")
+    # This works now because we are inside a running loop
+    asyncio.create_task(check_rss_feeds(app))
 
     print("💫 Night Mode System Online.")
     start_nm_scheduler(app)
@@ -62,15 +66,9 @@ if __name__ == "__main__":
     scheduler.start()
     print("🎂 Birthday & Event Scheduler is Live....")
     
-    # Start the RSS loop as a background task
-    asyncio.create_task(check_rss_feeds(app))
-    print("📣 background RSS worker.....")
-    
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
     
     print("🚀 Bot Started! Send /schedule")
     idle()
     app.stop()
-
-
