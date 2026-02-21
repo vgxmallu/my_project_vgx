@@ -49,7 +49,7 @@ if __name__ == "__main__":
     scheduler.start()
     app.start()
     print("📡 Initializing background RSS worker...")
-    check_rss_feeds(app))
+    check_rss_feeds(app)
 
     print("💫 Night Mode System Online.")
     start_nm_scheduler(app)
