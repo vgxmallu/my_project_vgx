@@ -12,9 +12,9 @@ class app(Client):
     def __init__(self):
         super().__init__(
             "rss_bot_session",
-            api_id=int(os.getenv("API_ID")),
-            api_hash=os.getenv("API_HASH"),
-            bot_token=os.getenv("BOT_TOKEN"),
+            api_id=int(os.getenv(Config.API_ID)),
+            api_hash=os.getenv(Config.API_HASH),
+            bot_token=os.getenv(Config.BOT_TOKEN),
             plugins=dict(root="vgx")
         )
         self.db = Database(os.getenv(Config.MONGO_URL), os.getenv("rss_fdb"))
