@@ -23,3 +23,30 @@ async def add_feed_cmd(client, message):
         InlineKeyboardButton("⚙️ Customize Autoposting", callback_data=f"manage_{feed_id}")
     ]])
     await message.reply_text(f"✅ Feed added successfully!", reply_markup=markup)
+
+
+
+@Client.on_message(filters.private & ~filters.command(["addfeedx"]))
+async def handle_user_input(client, message):
+    user_id = message.from_user.id
+    
+    if message.text == "/cancel":
+        if user_id in client.user_states:
+            del client.user_states[user_id]
+        return await message.reply_text("❌ Action cancelled.")
+
+    if user_id in client.user_states:
+        state = client.user_states[user_id]
+        feed_id = state["feed_id"]
+        
+        if state["action"] == "template":
+            await client.db.update_setting(feed_id, "template", message.text.markdown)
+            await message.reply_text("✅ Message Format successfully updated!")
+            
+        elif state["action"] == "url":
+            await client.db.update_setting(feed_id, "feed_url", message.text)
+            await message.reply_text("✅ Feed URL successfully updated!")
+        
+        # Clear the state
+        del client.user_states[user_id]
+ 
