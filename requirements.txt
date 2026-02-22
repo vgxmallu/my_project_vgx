@@ -1,5 +1,5 @@
 #pyrogram
-hydrogram
+git+https://github.com/TelegramPlayground/pyrogram
 tgcrypto
 motor
 python-dateutil
