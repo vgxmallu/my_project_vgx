@@ -12,6 +12,7 @@ from vgx.module.night_schedul import start_nm_scheduler
 from vgx.module.dfeed_scheduler import start_df_scheduler
 from vgx.module.anylz_schedul import start_anlyz_scheduler
 from vgx.module.bday_schedul import check_celebrations
+ 
 
 
 logging.basicConfig(level=logging.INFO)
@@ -46,7 +47,7 @@ async def restore_jobs():
 
 if __name__ == "__main__":
     scheduler.start()
-    self.app.start()
+    app.start()
 
     print("💫 Night Mode System Online.")
     start_nm_scheduler(app)
@@ -67,4 +68,4 @@ if __name__ == "__main__":
     
     print("🚀 Bot Started! Send /schedule")
     idle()
-    self.app.stop()
+    app.stop()
