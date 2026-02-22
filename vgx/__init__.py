@@ -7,6 +7,14 @@ from vgx.database.rss_db import Database
 from vgx.module.rssf_formatter import format_post
 
 from config import Config
+import logging
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+# Setup Logging
+logging.basicConfig(level=logging.INFO)
+# Initialize Scheduler
+scheduler = AsyncIOScheduler()
+
+
 
 class app(Client):
     def __init__(self):
