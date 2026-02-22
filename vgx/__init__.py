@@ -11,11 +11,11 @@ from config import Config
 class app(Client):
     def __init__(self):
         super().__init__(
-            "rss_bot_session",
-            api_id=int(os.getenv(Config.API_ID)),
-            api_hash=os.getenv(Config.API_HASH),
-            bot_token=os.getenv(Config.BOT_TOKEN),
-            plugins=dict(root="vgx")
+            "schedule_bot_session",
+            api_id=Config.API_ID,
+            api_hash=Config.API_HASH,
+            bot_token=Config.BOT_TOKEN,
+            plugins=dict(root="vgx") 
         )
         self.db = Database(os.getenv(Config.MONGO_URL), os.getenv("rss_fdb"))
         self.worker_task = None
