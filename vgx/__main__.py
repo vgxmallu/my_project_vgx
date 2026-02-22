@@ -11,7 +11,6 @@ from vgx.module.night_schedul import start_nm_scheduler
 from vgx.module.dfeed_scheduler import start_df_scheduler
 from vgx.module.anylz_schedul import start_anlyz_scheduler
 from vgx.module.bday_schedul import check_celebrations
-from vgx.module.rss_worker import check_rss_feeds 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SchedulerBot")
@@ -47,10 +46,6 @@ async def start_services():
     # 2. Start the main scheduler
     if not scheduler.running:
         scheduler.start()
-    
-    # 3. Initialize background systems
-    print("📡 Initializing background RSS worker...")
-    asyncio.create_task(check_rss_feeds(app))
 
     print("💫 Night Mode System Online.")
     start_nm_scheduler(app)
