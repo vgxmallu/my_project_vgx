@@ -12,7 +12,6 @@ from vgx.module.night_schedul import start_nm_scheduler
 from vgx.module.dfeed_scheduler import start_df_scheduler
 from vgx.module.anylz_schedul import start_anlyz_scheduler
 from vgx.module.bday_schedul import check_celebrations
-from vgx.module.rss_worker import check_rss_feeds 
 
 
 logging.basicConfig(level=logging.INFO)
@@ -48,9 +47,7 @@ async def restore_jobs():
 if __name__ == "__main__":
     scheduler.start()
     app.start()
-    print("📡 Initializing background RSS worker...")
-    check_rss_feeds(app)
-
+    
     print("💫 Night Mode System Online.")
     start_nm_scheduler(app)
 
