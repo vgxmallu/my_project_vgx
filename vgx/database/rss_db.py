@@ -1,10 +1,11 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson.objectid import ObjectId
+from config import Config
 
 class Database:
-    def __init__(self, uri, db_name):
-        self._client = AsyncIOMotorClient(uri)
-        self.db = self._client[db_name]
+    def __init__(self, uri: str, db_name: str):
+        self._client = AsyncIOMotorClient(Config.MONGO_URL)
+        self.db = self._client["rssfeed_db"]
         self.feeds = self.db.feeds
 
     async def add_source(self, chat_id: int, feed_url: str):
@@ -42,3 +43,6 @@ class Database:
         
     async def clear_cache(self, feed_id: str):
         await self.feeds.update_one({"_id": ObjectId(feed_id)}, {"$set": {"posted_entries": []}})
+
+    async def delete_feed(self, feed_id: str):
+        await self.feeds.delete_one({"_id": ObjectId(feed_id)})
