@@ -1,5 +1,5 @@
 #pyrogram
-git+https://github.com/TelegramPlayground/pyrogram
+git+https://github.com/KurimuzonAkuma/kurigram
 tgcrypto
 motor
 python-dateutil
