@@ -21,7 +21,7 @@ def get_wizard_kb(data):
         ],
         [
             InlineKeyboardButton(f"📌 Pin: {pin}", callback_data="wiz_toggle_pin", style=ButtonStyle.PRIMARY),
-            InlineKeyboardButton(f"♻️ Del Last: {dl}", callback_data="wiz_toggle_dellast")
+            InlineKeyboardButton(f"♻️ Del Last: {dl}", callback_data="wiz_toggle_dellast", style=ButtonStyle.PRIMARY)
         ],
         [
             InlineKeyboardButton(f"⏲ Interval: {int_txt}", callback_data="wiz_set_interval", style=ButtonStyle.PRIMARY),
