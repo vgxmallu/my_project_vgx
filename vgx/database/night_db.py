@@ -12,8 +12,8 @@ async def get_chat(chat_id):
             "chat_id": chat_id,
             "enabled": False,
             "timezone": "UTC",
-            "night_start": "22:00",
-            "night_end": "07:00",
+            "night_start": "23:45",
+            "night_end": "06:00",
             # Permissions Config (True = Allowed during night, False = Blocked)
             "perms": {
                 "text": False,      # Strict mode: No text
