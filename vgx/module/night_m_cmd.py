@@ -5,7 +5,7 @@ from vgx.database.night_db import get_chat, update_chat, add_vip, remove_vip
 from vgx.module.night_m_keybord import get_settings_kb
 from timezonefinder import TimezoneFinder
 import pytz
-
+from vgx.module.night_schedul import set_day_permissions
 # --- MAIN DASHBOARD ---
 @Client.on_message(filters.command("nightmode") & filters.group)
 async def open_dashboard(c, m):
@@ -42,7 +42,6 @@ async def nm_callbacks(c, q):
         new_state = not data.get('temp_unlock')
         await update_chat(cid, {"temp_unlock": new_state})
         if new_state:
-            from scheduler import set_day_permissions
             await set_day_permissions(c, cid)
             await q.answer("🚨 EMERGENCY UNLOCK ACTIVATED", show_alert=True)
         else:
