@@ -1,5 +1,5 @@
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
+from pyrogram.enums import ButtonStyle
 def get_wizard_kb(data):
     """Generates the Creation Dashboard"""
     # Visual Toggles
@@ -16,20 +16,20 @@ def get_wizard_kb(data):
 
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("📝 Content", callback_data="wiz_set_content"),
-            InlineKeyboardButton("🎯 Target", callback_data="wiz_set_target")
+            InlineKeyboardButton("📝 Content", callback_data="wiz_set_content", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton("🎯 Target", callback_data="wiz_set_target", style=ButtonStyle.PRIMARY)
         ],
         [
-            InlineKeyboardButton(f"📌 Pin: {pin}", callback_data="wiz_toggle_pin"),
+            InlineKeyboardButton(f"📌 Pin: {pin}", callback_data="wiz_toggle_pin", style=ButtonStyle.PRIMARY),
             InlineKeyboardButton(f"♻️ Del Last: {dl}", callback_data="wiz_toggle_dellast")
         ],
         [
-            InlineKeyboardButton(f"⏲ Interval: {int_txt}", callback_data="wiz_set_interval"),
-            InlineKeyboardButton(f"⏳ Auto-Del: {ad_txt}", callback_data="wiz_set_autodel")
+            InlineKeyboardButton(f"⏲ Interval: {int_txt}", callback_data="wiz_set_interval", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton(f"⏳ Auto-Del: {ad_txt}", callback_data="wiz_set_autodel", style=ButtonStyle.PRIMARY)
         ],
         [
-            InlineKeyboardButton("✅ SAVE & START", callback_data="wiz_save"),
-            InlineKeyboardButton("❌ Cancel", callback_data="wiz_cancel")
+            InlineKeyboardButton("✅ SAVE & START", callback_data="wiz_save", style=ButtonStyle.SUCCESS),
+            InlineKeyboardButton("❌ Cancel", callback_data="wiz_cancel", style=ButtonStyle.DANGER)
         ]
     ])
 
