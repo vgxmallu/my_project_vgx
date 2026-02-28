@@ -1,9 +1,12 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from vgx.database.tag_db import get_user_settings, update_setting
+from vgx.database.tag_db import get_user_settings, update_setting, register_user
+
+
 
 @Client.on_message(filters.command("sets") & filters.private)
 async def setttagings_menu(c, m):
+    await register_user(m.from_user.id, m.from_user.username)
     s = await get_user_settings(m.from_user.id)
     if not s:
         return await m.reply("Please send /start first to register!")
