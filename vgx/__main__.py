@@ -19,7 +19,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SchedulerBot")
 
 
-        
+scheduler = AsyncIOScheduler()
+
 
 async def restore_jobs():
     """Reschedules jobs from DB on restart"""
@@ -56,17 +57,15 @@ if __name__ == "__main__":
     start_df_scheduler(app)
     
     print("🤖 Golden Hour Analytics Online...")
-    start_anlyz_scheduler()
+    start_anlyz_scheduler(app)
 
-    scheduler = AsyncIOScheduler()
     scheduler.add_job(check_celebrations, "interval", hours=1, args=[app])
     scheduler.start()
     print("🎂 Birthday & Event Scheduler is Live....")
 
-    # Run the send_hourly_quotes function every 1 hour
     scheduler.add_job(send_hourly_quotes, "interval", hours=1, args=[app])
     scheduler.start()
-    print("🚀 Motivation Bot is Online! ⏰ Scheduler started")
+    print("🚀 Motivation Bot is Online ⏰ Scheduler started")
  
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
