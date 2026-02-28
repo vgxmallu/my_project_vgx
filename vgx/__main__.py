@@ -12,7 +12,7 @@ from vgx.module.night_schedul import start_nm_scheduler
 from vgx.module.dfeed_scheduler import start_df_scheduler
 from vgx.module.anylz_schedul import start_anlyz_scheduler
 from vgx.module.bday_schedul import check_celebrations
- 
+from vgx.module.quets_broad import send_hourly_quotes
 
 
 logging.basicConfig(level=logging.INFO)
@@ -62,10 +62,16 @@ if __name__ == "__main__":
     scheduler.add_job(check_celebrations, "interval", hours=1, args=[app])
     scheduler.start()
     print("🎂 Birthday & Event Scheduler is Live....")
-    
+
+    # Run the send_hourly_quotes function every 1 hour
+    scheduler.add_job(send_hourly_quotes, "interval", hours=1, args=[app])
+    scheduler.start()
+    print("🚀 Motivation Bot is Online! ⏰ Scheduler started")
+ 
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
     
     print("🚀 Bot Started! Send /schedule")
     idle()
     app.stop()
+
