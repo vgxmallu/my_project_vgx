@@ -42,4 +42,4 @@ async def set_target(_, message: Message):
     await settings_col.update_one({"chat_id": message.chat.id},
                                   {"$set": {"target_chat": target_id}},
                                   upsert=True)
-    await message.reply_text(f"🎯 Target chat set to `{target_id}`", parse_mode="markdown")
+    await message.reply_text(f"🎯 Target chat set to `{target_id}`")
