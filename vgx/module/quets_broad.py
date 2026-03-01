@@ -3,6 +3,7 @@ import asyncio
 from pyrogram.errors import FloodWait, PeerIdInvalid, UserIsBlocked
 from vgx.database.quets_db import get_all_enabled_chats, disable_quotes
 from quotes_list import POWERFUL_QUOTES
+from vgx.module.quets_broad import send_hourly_quotes
 
 async def send_hourly_quotes(app):
     """This function is called by the APScheduler every hour."""
@@ -25,3 +26,9 @@ async def send_hourly_quotes(app):
             # If the bot was kicked from the group or blocked by the user,
             # disable the module in the database to save future resources.
             await disable_quotes(chat_id)
+
+def start_qet_scheduler(app):
+    scheduler = AsyncIOScheduler()
+    # Check every minute
+    scheduler.add_job(send_hourly_quotes, "interval", hours=1, args=[app])
+    scheduler.start()
