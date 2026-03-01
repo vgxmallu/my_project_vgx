@@ -22,4 +22,4 @@ async def target_chat(c, m):
     target_id = int(m.command[1])
     # Redirect setting logic to this target
     # This can be expanded to show the settings menu for that specific ID
-    await m.reply(f"🎯 Targeting Chat: `{target_id}`. Now use /quotes to manage it.")
+    await m.reply(f"🎯 Targeting Chat: `{target_id}`. Now use /set_quotes to manage it.")
