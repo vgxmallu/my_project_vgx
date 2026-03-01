@@ -2,6 +2,7 @@ import pytz
 from datetime import datetime
 from vgx.database.bday_db import users, chats
 from pyrogram.types import ChatPermissions
+from vgx.module.bday_schedul import check_celebrations
 
 async def check_celebrations(app):
     async for user in users.find():
@@ -26,3 +27,10 @@ async def check_celebrations(app):
             mention = f"[(link to user)](tg://user?id={user['user_id']})" # Simplified mention logic
             msg = settings["bday_msg"].replace("{mention}", mention).replace("{role}", settings["bday_role"])
             await app.send_message(chat_id, msg)
+
+
+def start_bday_scheduler(app):
+    scheduler = AsyncIOScheduler()
+    # Check every minute
+    scheduler.add_job(check_celebrations, "interval", hours=1, args=[app])
+    scheduler.start()
