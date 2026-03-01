@@ -2,8 +2,8 @@ from pyrogram import filters
 from pyrogram.types import CallbackQuery
 
 from vgx.database.quets_db2 import settings_col
-from utils.keyboards import main_menu, interval_menu, autodel_menu
-from scheduler import schedule_job_for_chat, remove_job_for_chat, scheduler
+from vgx.module.quotes_keyboards import main_menu, interval_menu, autodel_menu
+from vgx.module.quotes_schedul import schedule_job_for_chat, remove_job_for_chat, scheduler
 from vgx import app
 
 # Enable / Disable
