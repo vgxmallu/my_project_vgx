@@ -2,7 +2,6 @@ import pytz
 from datetime import datetime
 from vgx.database.bday_db import users, chats
 from pyrogram.types import ChatPermissions
-from vgx.module.bday_schedul import check_celebrations
 
 async def check_celebrations(app):
     async for user in users.find():
