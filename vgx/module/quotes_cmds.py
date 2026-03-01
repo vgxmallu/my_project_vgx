@@ -1,8 +1,8 @@
 from pyrogram import filters
 from pyrogram.types import Message
 
-from utils.keyboards import main_menu
-from database import settings_col
+from vgx.module.quotes_keyboards import main_menu
+from vgx.database.quets_db2 import settings_col
 from vgx import app  # app created in bot.py
 
 @app.on_message(filters.command("quotes") & (filters.private | filters.group))
