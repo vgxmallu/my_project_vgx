@@ -59,10 +59,10 @@ if __name__ == "__main__":
     start_anlyz_scheduler()
 
     print("🚀 Motivation Bot is Online ⏰ Scheduler started")
-    start_qet_scheduler()
+    start_qet_scheduler(app)
     
     print("🎂 Birthday & Event Scheduler is Live....")
-    start_bday_scheduler()
+    start_bday_scheduler(app)
     
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
