@@ -1,8 +1,8 @@
-from pyrogram import Client, filters
+xfrom pyrogram import Client, filters
 from vgx.database.quets_db2 import get_chat_data, update_chat
 
 @Client.on_callback_query(filters.regex("del_last"))
-async def delete_last_handler(c, q):
+async def delete_blast_handler(c, q):
     s = await get_chat_data(q.message.chat.id)
     if s.get("last_msg_id"):
         try:
@@ -15,7 +15,7 @@ async def delete_last_handler(c, q):
 
 # Target Feature: Use /target [chat_id] to manage a group from Private Chat
 @Client.on_message(filters.command("target_g") & filters.private)
-async def target_chat(c, m):
+async def targetbb_chat(c, m):
     if len(m.command) < 2:
         return await m.reply("Usage: `/target_g -100xxxxxxxx` (Get ID from group)")
     
