@@ -3,7 +3,6 @@ import asyncio
 from pyrogram.errors import FloodWait, PeerIdInvalid, UserIsBlocked
 from vgx.database.quets_db import get_all_enabled_chats, disable_quotes
 from quotes_list import POWERFUL_QUOTES
-from vgx.module.quets_broad import send_hourly_quotes
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 async def send_hourly_quotes(app):
