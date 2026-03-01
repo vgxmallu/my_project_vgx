@@ -56,13 +56,13 @@ if __name__ == "__main__":
     start_df_scheduler(app)
     
     print("🤖 Golden Hour Analytics Online...")
-    start_anlyz_scheduler(app)
+    start_anlyz_scheduler()
 
     print("🚀 Motivation Bot is Online ⏰ Scheduler started")
-    start_qet_scheduler(app)
+    start_qet_scheduler()
     
     print("🎂 Birthday & Event Scheduler is Live....")
-    start_bday_scheduler(app)
+    start_bday_scheduler()
     
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
