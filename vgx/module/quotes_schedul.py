@@ -2,7 +2,7 @@ import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from vgx.database.quets_db2 import settings_col
-from utils.job_utils import get_random_quote
+from vgx.utils.job_utils import get_random_quote
 
 scheduler = AsyncIOScheduler()
 
