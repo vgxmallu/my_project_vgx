@@ -2,6 +2,8 @@ import pytz
 from datetime import datetime
 from vgx.database.bday_db import users, chats
 from pyrogram.types import ChatPermissions
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
 
 async def check_celebrations(app):
     async for user in users.find():
