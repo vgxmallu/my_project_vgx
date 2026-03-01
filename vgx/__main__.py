@@ -12,7 +12,10 @@ from vgx.module.night_schedul import start_nm_scheduler
 from vgx.module.dfeed_scheduler import start_df_scheduler
 from vgx.module.anylz_schedul import start_anlyz_scheduler
 from vgx.module.bday_schedul import start_bday_scheduler
-from vgx.module.quets_broad import start_qet_scheduler
+#from vgx.module.quets_broad import start_qet_scheduler
+from vgx.module.quotes_schedul import run_quote_scheduler
+
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SchedulerBot")
@@ -59,7 +62,9 @@ if __name__ == "__main__":
     start_anlyz_scheduler()
 
     print("🚀 Motivation Bot is Online ⏰ Scheduler started")
-    start_qet_scheduler(app)
+    #start_qet_scheduler(app)
+    asyncio.create_task(run_quote_scheduler(app))
+    
     
     print("🎂 Birthday & Event Scheduler is Live....")
     start_bday_scheduler(app)
@@ -70,4 +75,3 @@ if __name__ == "__main__":
     print("🚀 Bot Started! Send /schedule")
     idle()
     app.stop()
-
