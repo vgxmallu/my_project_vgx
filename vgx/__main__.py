@@ -57,14 +57,12 @@ if __name__ == "__main__":
     start_df_scheduler(app)
     
     print("🤖 Golden Hour Analytics Online...")
-    start_anlyz_scheduler(app)
+    start_anlyz_scheduler()
 
     scheduler.add_job(check_celebrations, "interval", hours=1, args=[app])
-    scheduler.start()
-    print("🎂 Birthday & Event Scheduler is Live....")
-
     scheduler.add_job(send_hourly_quotes, "interval", hours=1, args=[app])
     scheduler.start()
+    print("🎂 Birthday & Event Scheduler is Live....")
     print("🚀 Motivation Bot is Online ⏰ Scheduler started")
  
     loop = asyncio.get_event_loop()
