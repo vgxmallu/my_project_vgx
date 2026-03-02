@@ -2,7 +2,7 @@ import asyncio
 import logging
 from datetime import datetime
 # Switch to Kurigram as requested previously
-from kurigram import idle 
+from pyrogram import idle 
 from vgx import app, scheduler
 from vgx.database.db_advanc import db
 from vgx.module.adv_engine import run_job
