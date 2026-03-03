@@ -58,7 +58,7 @@ async def _auto_delete_task(app, chat_id: int, msg_id: int, delay: int):
     except Exception:
         pass
 
-def schedule_job_for_chat(chat_id: int, interval_seconds: int):
+def schedule_job_for_chat(app, chat_id: int, interval_seconds: int):
     job_id = f"quotes::{chat_id}"
     # replace existing
     scheduler.add_job(send_quote, "interval", seconds=interval_seconds, args=[app, chat_id], id=job_id, replace_existing=True)
