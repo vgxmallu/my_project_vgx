@@ -3,6 +3,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from vgx.database.quets_db2 import settings_col
 from vgx.utils.job_utils import get_random_quote
+from vgx import app
 
 scheduler = AsyncIOScheduler()
 
@@ -60,8 +61,7 @@ async def _auto_delete_task(app, chat_id: int, msg_id: int, delay: int):
 def schedule_job_for_chat(chat_id: int, interval_seconds: int):
     job_id = f"quotes::{chat_id}"
     # replace existing
-    scheduler.add_job(send_quote, "interval", seconds=interval_seconds,
-                      args=[app, chat_id], id=job_id, replace_existing=True)
+    scheduler.add_job(send_quote, "interval", seconds=interval_seconds, args=[app, chat_id], id=job_id, replace_existing=True)
 
 def remove_job_for_chat(chat_id: int):
     job_id = f"quotes::{chat_id}"
