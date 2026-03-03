@@ -70,18 +70,11 @@ async def main():
     start_bday_scheduler(app)
 
     # Restore DB jobs in background
+    loop = asyncio.get_event_loop()
     asyncio.create_task(restore_jobs())
 
     print("🚀 Bot Started! Ready for /schedule")
-    
     # Keeps the bot running
     await idle()
-    
     # Graceful shutdown
     await app.stop()
-
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        logger.info("👋 Bot stopped manually.")
