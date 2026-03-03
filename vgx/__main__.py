@@ -48,7 +48,7 @@ async def restore_jobs():
         count += 1
     logger.info(f"✅ Restored {count} active jobs.")
 
-if name == "main":
+if __name__ == "__main__":
     scheduler.start()
     app.start()
     
