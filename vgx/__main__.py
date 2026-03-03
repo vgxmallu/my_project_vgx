@@ -14,7 +14,7 @@ from vgx.module.anylz_schedul import start_anlyz_scheduler
 from vgx.module.bday_schedul import start_bday_scheduler
 #from vgx.module.quets_broad import start_qet_scheduler
 #from vgx.module.quotes_schedul import run_quote_scheduler
-from vgx.module.quotes_schedul import load_jobs_on_start
+from vgx.module.quotes_schedul import run_quote_scheduler
 
 
 logging.basicConfig(level=logging.INFO)
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     print("🚀 Motivation Bot is Online ⏰ Scheduler started")
     #start_qet_scheduler(app)
-    load_jobs_on_start(app)
+    run_quote_scheduler(app)
     
     
     print("🎂 Birthday & Event Scheduler is Live....")
@@ -75,3 +75,4 @@ if __name__ == "__main__":
     print("🚀 Bot Started! Send /schedule")
     idle()
     app.stop()
+
