@@ -65,7 +65,7 @@ if __name__ == "__main__":
     print("🚀 Motivation Bot is Online ⏰ Scheduler started")
     #start_qet_scheduler(app)
     loop1 = asyncio.get_event_loop()
-    loop1.create_task(quote_worker())
+    loop1.create_task(quote_worker(app))
     
     
     print("🎂 Birthday & Event Scheduler is Live....")
