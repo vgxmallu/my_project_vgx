@@ -1,58 +1,54 @@
-
-from pyrogram import Client
-from pyrogram.errors import MessageNotModified, RPCError
-from vgx.database.quets_db2 import get_all_active_chats, update_chat
+import asyncio
+import random
+import time
+from pyrogram.errors import FloodWait
+from vgx.database.quets_db2 import get_due_chats, update_chat
 from quotes_list import POWERFUL_QUOTES
 
-
-async def delete_later(app: Client, chat_id: int, message_id: int, delay: int):
-    """Background task to delete a message after a delay."""
+async def auto_delete_task(app, chat_id: int, msg_id: int, delay: int):
+    """Waits securely in the background, then deletes the specific message."""
     await asyncio.sleep(delay)
     try:
-        await app.delete_messages(chat_id, message_id)
-    except RPCError:
-        pass
+        await app.delete_messages(chat_id, msg_id)
+    except Exception:
+        pass # Message might already be deleted or bot lost admin rights
 
-async def run_scheduler(app: Client):
-    """Main loop checking for due messages."""
+async def quote_worker(app):
+    """The central loop handling the timed logic."""
     while True:
         try:
-            active_chats = await get_all_active_chats()
-            current_time = time.time()
-
-            for chat in active_chats:
-                chat_id = chat["chat_id"]
-                last_sent = chat.get("last_sent_time", 0)
-                interval = chat.get("interval", 3600)
-
-                if (current_time - last_sent) >= interval:
-                    quote = random.choice(QUOTES)
-                    try:
-                        # Send Quote
-                        msg = await app.send_message(chat_id, f"✨ {quote}")
-                        
-                        # Update Database
-                        await update_chat(
-                            chat_id, 
-                            last_msg_id=msg.id, 
-                            last_sent_time=time.time()
-                        )
-
-                        # Handle Pinning
-                        if chat.get("pin"):
-                            await msg.pin(disable_notification=True)
-
-                        # Handle Auto-Delete
-                        auto_delete_time = chat.get("auto_delete", 0)
-                        if auto_delete_time > 0:
-                            asyncio.create_task(delete_later(app, chat_id, msg.id, auto_delete_time))
-
-                    except RPCError as e:
-                        # If bot was kicked or lacks permissions, optionally disable the chat in DB
-                        print(f"Failed to send to {chat_id}: {e}")
-
-        except Exception as e:
-            print(f"Scheduler Error: {e}")
+            due_chats = await get_due_chats()
+            now = int(time.time())
             
-        await asyncio.sleep(10) # Check every 10 seconds to prevent CPU strain
+            for chat in due_chats:
+                chat_id = chat["chat_id"]
+                quote = random.choice(QUOTES)
+                
+                try:
+                    # 1. Dispatch the Quote
+                    msg = await app.send_message(chat_id, quote)
+                    
+                    # 2. Log metadata to DB
+                    await update_chat(chat_id, last_sent=now, last_msg_id=msg.id)
 
+                    # 3. Handle Auto-Pinning
+                    if chat.get("pin"):
+                        await msg.pin(both_sides=True)
+
+                    # 4. Handle Auto-Deletion Task Spawning
+                    del_time = chat.get("delete_after", 0)
+                    if del_time > 0:
+                        asyncio.create_task(auto_delete_task(app, chat_id, msg.id, del_time))
+                        
+                except FloodWait as e:
+                    await asyncio.sleep(e.value) # Essential for bot survival 
+                except Exception as e:
+                    print(f"Skipping group {chat_id}: {e}")
+                    
+            # Poll every 20 seconds to guarantee exact 1-minute interval triggers
+            await asyncio.sleep(20) 
+            
+        except Exception as e:
+            print(f"Scheduler Engine Error: {e}")
+            await asyncio.sleep(10)
+            
