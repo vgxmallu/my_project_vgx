@@ -18,7 +18,3 @@ class Config:
     # Polling interval in seconds (e.g., check feeds every 5 minutes
     UPDATE_INTERVAL = 300 
     
-    # Intervals in seconds
-    INTERVALS = {"1m": 60, "5m": 300, "20m": 1200, "30m": 1800, "1h": 3600}
-    # Auto-delete in seconds (0 = disabled)
-    DELETE_TIMES = {"Off": 0, "30s": 30, "300s": 300, "400s": 400, "2400s": 2400}
