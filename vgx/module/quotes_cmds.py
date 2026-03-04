@@ -6,7 +6,7 @@ from vgx.database.quets_db2 import get_chat, update_chat
 
 
     
-
+    
 
 # --- UI Keyboard Generators ---
 def build_main_menu(chat_id: int, s: dict):
@@ -123,6 +123,25 @@ async def handle_navigation(client, query):
     elif menu == "del":
         await query.edit_message_text(f"🎯 **Target:** `{chat_id}`\n🗑 **Select Auto-Delete Time:**", reply_markup=build_delete_menu(chat_id))
 
+
+@Client.on_callback_query(filters.regex(r"^tgl_(?P<setting>mod|pin)_(?P<chat_id>-?\d+)$"))
+async def handle_toggles(client, query):
+    setting = query.matches[0].group("setting")
+    chat_id = int(query.matches[0].group("chat_id"))
+    s = await get_chat(chat_id)
+    
+    # ✅ SAFELY get the current values before flipping them
+    if setting == "mod":
+        current_status = s.get("enabled", False)
+        await update_chat(chat_id, enabled=not current_status)
+        
+    elif setting == "pin":
+        current_pin = s.get("pin", False)
+        await update_chat(chat_id, pin=not current_pin)
+        
+    await refresh_main_ui(query, chat_id)
+    await query.answer("Toggled successfully!")
+"""
 # --- 3. Toggle Regex Callbacks ---
 @Client.on_callback_query(filters.regex(r"^tgl_(?P<setting>mod|pin)_(?P<chat_id>-?\d+)$"))
 async def handle_toggles(client, query):
@@ -137,7 +156,7 @@ async def handle_toggles(client, query):
         
     await refresh_main_ui(query, chat_id)
     await query.answer("Toggled successfully!")
-
+"""
 # --- 4. Setter Regex Callbacks ---
 @Client.on_callback_query(filters.regex(r"^set_(?P<type>int|del)_(?P<val>\d+)_(?P<chat_id>-?\d+)$"))
 async def handle_setters(client, query):
