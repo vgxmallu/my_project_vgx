@@ -20,25 +20,25 @@ def build_main_menu(chat_id: int, s: dict):
     btn_pin = "📌 Pin: ON" if s.get("pin", False) else "📌 Pin: OFF"
     
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(btn_mod, callback_data=f"tgl1_mod_{chat_id}"),
+        [InlineKeyboardButton(btn_mod, callback_data=f"tgl1_mod1_{chat_id}"),
          InlineKeyboardButton(btn_pin, callback_data=f"tgl1_pin_{chat_id}")],
-        [InlineKeyboardButton("⏱ Set Interval", callback_data=f"nav1_int_{chat_id}"),
-         InlineKeyboardButton("🗑 Auto-Delete", callback_data=f"nav1_del_{chat_id}")],
-        [InlineKeyboardButton("🗑 Delete Last Sent Anime", callback_data=f"cmd1_del_last_{chat_id}")]
+        [InlineKeyboardButton("⏱ Set Interval", callback_data=f"nav1_int1_{chat_id}"),
+         InlineKeyboardButton("🗑 Auto-Delete", callback_data=f"nav1_del1_{chat_id}")],
+        [InlineKeyboardButton("🗑 Delete Last Sent Anime", callback_data=f"cmd1_del1_last_{chat_id}")]
     ])
 
 def build_sub_menu(chat_id: int, menu_type: str):
     if menu_type == "int":
         return InlineKeyboardMarkup([
-            [InlineKeyboardButton("1m", callback_data=f"set1_int_1_{chat_id}"), InlineKeyboardButton("5m", callback_data=f"set1_int_5_{chat_id}")],
-            [InlineKeyboardButton("20m", callback_data=f"set1_int_20_{chat_id}"), InlineKeyboardButton("30m", callback_data=f"set1_int_30_{chat_id}")],
-            [InlineKeyboardButton("1h", callback_data=f"set1_int_60_{chat_id}"), InlineKeyboardButton("🔙 Back", callback_data=f"nav1_main_{chat_id}")]
+            [InlineKeyboardButton("1m", callback_data=f"set1_int1_1_{chat_id}"), InlineKeyboardButton("5m", callback_data=f"set1_int1_5_{chat_id}")],
+            [InlineKeyboardButton("20m", callback_data=f"set1_int1_20_{chat_id}"), InlineKeyboardButton("30m", callback_data=f"set1_int1_30_{chat_id}")],
+            [InlineKeyboardButton("1h", callback_data=f"set1_int_60_{chat_id}"), InlineKeyboardButton("🔙 Back", callback_data=f"nav1_main1_{chat_id}")]
         ])
     elif menu_type == "del":
         return InlineKeyboardMarkup([
-            [InlineKeyboardButton("30s", callback_data=f"set1_del_30_{chat_id}"), InlineKeyboardButton("300s", callback_data=f"set1_del_300_{chat_id}")],
-            [InlineKeyboardButton("400s", callback_data=f"set1_del_400_{chat_id}"), InlineKeyboardButton("2400s", callback_data=f"set1_del_2400_{chat_id}")],
-            [InlineKeyboardButton("❌ Off", callback_data=f"set1_del_0_{chat_id}"), InlineKeyboardButton("🔙 Back", callback_data=f"nav1_main_{chat_id}")]
+            [InlineKeyboardButton("30s", callback_data=f"set1_del1_30_{chat_id}"), InlineKeyboardButton("300s", callback_data=f"set1_del1_300_{chat_id}")],
+            [InlineKeyboardButton("400s", callback_data=f"set1_del1_400_{chat_id}"), InlineKeyboardButton("2400s", callback_data=f"set1_del1_2400_{chat_id}")],
+            [InlineKeyboardButton("❌ Off", callback_data=f"set1_del1_0_{chat_id}"), InlineKeyboardButton("🔙 Back", callback_data=f"nav1_main1_{chat_id}")]
         ])
 
 async def refresh_ui(query, chat_id: int):
@@ -96,18 +96,18 @@ async def core_callback_router(client, query):
 
     # Route based on action prefix
     if action == "tgl1":
-        if param == "mod": await update_chat(chat_id, enabled=not s.get("enabled", False))
+        if param == "mod1": await update_chat(chat_id, enabled=not s.get("enabled", False))
         elif param == "pin": await update_chat(chat_id, pin=not s.get("pin", False))
         await refresh_ui(query, chat_id)
         
     elif action == "nav1":
-        if param == "main": await refresh_ui(query, chat_id)
+        if param == "main1": await refresh_ui(query, chat_id)
         else: await query.edit_message_text(f"🎯 Target: `{chat_id}`\n⚙️ Select Option:", reply_markup=build_sub_menu(chat_id, param))
         
     elif action == "set1":
         val = int(val_raw)
-        if param == "int": await update_chat(chat_id, interval=val)
-        elif param == "del": await update_chat(chat_id, delete_after=val)
+        if param == "int1": await update_chat(chat_id, interval=val)
+        elif param == "del1": await update_chat(chat_id, delete_after=val)
         await query.answer("Settings Saved!")
         await refresh_ui(query, chat_id)
         
