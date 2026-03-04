@@ -15,6 +15,10 @@ class Config:
     DEFAULT_INTERVAL = 3600 # Default interval in seconds (3 hours =
     # Viral threshold: 1.5 = 50% higher than average
     VIRAL_THRESHOLD = 1.5 
-    # Polling interval in seconds (e.g., check feeds every 5 minutes)
+    # Polling interval in seconds (e.g., check feeds every 5 minutes
     UPDATE_INTERVAL = 300 
-  
+    
+    # Intervals in seconds
+    INTERVALS = {"1m": 60, "5m": 300, "20m": 1200, "30m": 1800, "1h": 3600}
+    # Auto-delete in seconds (0 = disabled)
+    DELETE_TIMES = {"Off": 0, "30s": 30, "300s": 300, "400s": 400, "2400s": 2400}
