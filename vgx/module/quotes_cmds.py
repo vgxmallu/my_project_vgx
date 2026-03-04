@@ -5,7 +5,33 @@ from pyrogram.errors import MessageNotModified
 from vgx.database.quets_db2 import get_chat, update_chat
 from vgx.utils.admins import is_user_admin
 
-    
+
+
+
+"""
+
+🌟 **Welcome to the Golden Quotes Bot!** 🌟
+
+I am your dedicated motivation assistant, designed to keep your groups positive, active, and inspired by sending beautifully scheduled quotes! ✨
+
+**💡 What can I do?**
+• ⏱ **Custom Schedules:** I can send fresh quotes every 1m, 5m, 20m, 30m, or 1h.
+• 🗑 **Auto-Cleanup:** I keep your chat tidy by auto-deleting old quotes (from 30s up to 2400s).
+• 📌 **Auto-Pinning:** I can automatically pin the newest quote.
+• 🎯 **Remote Control:** Manage your group's settings privately from my DMs!
+
+**🛠 Available Commands:**
+🔹 `/setquote` — Open the interactive control panel.
+🔹 `/setquote <chat_id>` — Manage your group remotely.
+🔹 `/help` — Show this information menu.
+
+**🚀 How to get started:**
+1️⃣ Add me to your group.
+2️⃣ Promote me to **Admin** (I need permission to send, pin, and delete messages).
+3️⃣ Type `/setquote` in the group to turn on the module!
+
+⚠️ *Note: Only Group Admins and Owners can access the control panel.*
+"""
 
 # --- UI Keyboard Generators ---
 def build_main_menu(chat_id: int, s: dict):
