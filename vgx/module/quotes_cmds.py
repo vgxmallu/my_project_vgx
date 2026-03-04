@@ -25,7 +25,7 @@ async def open_settings(c, m):
         "✨ **Golden Quotes Configuration**\n\n"
         f"**Target:** `{m.chat.title or 'Private'}`\n"
         f"**Frequency:** Every {s['interval']}m\n"
-        f"**Auto-Delete:** {f'{s['delete_after']}s' if s['delete_after'] > 0 else 'Off'}"
+        f"**Auto-Delete:** {f'{s['del_str']}s' if s['del_str'] > 0 else 'Off'}"
     )
     await m.reply(text, reply_markup=generate_menu(s))
 
