@@ -1,5 +1,6 @@
+
+
 POWERFUL_QUOTES = [
-    # --- Original Set ---
     "🌟 **Believe in yourself!**\nYou are braver than you think, more talented than you know, and capable of more than you imagine.",
     "🔥 **Push your limits!**\nGreat things never come from comfort zones. Keep pushing forward!",
     "💪 **Stay Strong!**\nDifficult roads often lead to beautiful destinations. Don't give up!",
@@ -7,8 +8,6 @@ POWERFUL_QUOTES = [
     "💎 **You are valuable!**\nYour potential is endless. Trust the process and keep grinding.",
     "🌅 **New Day, New Strength!**\nEvery morning is a blank canvas. Paint it with positivity and purpose.",
     "🦅 **Rise Above!**\nDon't let the noise of others' opinions drown out your own inner voice.",
-
-    # --- Discipline & Growth ---
     "📈 **Daily Progress!**\nSuccess is the sum of small efforts, repeated day in and day out.",
     "🧱 **Build Your Legacy!**\nDon't wait for opportunity. Create it with your own hands.",
     "⏳ **Time is Wealth!**\nStop wasting time on things that don't help you grow. Focus on your goals.",
@@ -19,8 +18,6 @@ POWERFUL_QUOTES = [
     "🌊 **Be Relentless!**\nBe like water—persistent enough to wear down even the hardest rock.",
     "🛠️ **Hard Work Wins!**\nSkill is developed by hours and hours of beating on your craft.",
     "🌓 **Overcome Shadows!**\nEven the darkest night will end and the sun will rise. Keep going.",
-
-    # --- Resilience & Strength ---
     "🛡️ **Unstoppable!**\nYour current situation is not your final destination. The best is yet to come.",
     "🌋 **Inner Fire!**\nA heart on fire for a dream can melt any obstacle in its path.",
     "⛓️ **Break Free!**\nYou are only confined by the walls you build yourself. Break them down.",
@@ -31,8 +28,6 @@ POWERFUL_QUOTES = [
     "🕯️ **Be the Light!**\nBetter to light a candle than to curse the darkness. Be the change.",
     "🌱 **Growth Hurts!**\nChange is hard at first, messy in the middle, and gorgeous at the end.",
     "💎 **Pressure Makes Diamonds!**\nDon't fear the pressure. It is preparing you for a brilliant future.",
-
-    # --- Success & Vision ---
     "👑 **Own Your Day!**\nDon't count the days, make the days count.",
     "🏆 **Winning Habits!**\nSuccess isn't always about greatness. It's about consistency.",
     "🌍 **Change the World!**\nThe people who are crazy enough to think they can change the world are the ones who do.",
@@ -43,8 +38,6 @@ POWERFUL_QUOTES = [
     "🎭 **Be Authentic!**\nBe yourself; everyone else is already taken.",
     "🌻 **Stay Positive!**\nKeep your face always toward the sunshine—and shadows will fall behind you.",
     "🏁 **Finish Strong!**\nIt doesn't matter how you start. It matters how you finish.",
-
-    # --- Wisdom & Peace ---
     "⚖️ **Find Balance!**\nYou cannot pour from an empty cup. Take care of yourself first.",
     "🤐 **Silence is Power!**\nWork hard in silence, let your success be your noise.",
     "🙏 **Gratitude!**\nGratitude turns what we have into enough. Be thankful for today.",
@@ -55,8 +48,6 @@ POWERFUL_QUOTES = [
     "🕰️ **Now or Never!**\nYesterday is history, tomorrow is a mystery, today is a gift of God.",
     "🌈 **Hope!**\nEvery cloud has a silver lining. Look for the rainbow after the rain.",
     "🐘 **Patience!**\nPatience is not the ability to wait, but the ability to keep a good attitude while waiting.",
-
-    # --- Short & Punchy ---
     "🔥 **Stay Hungry!**",
     "🚀 **Sky is Not the Limit!**",
     "💎 **Rare and Valuable!**",
@@ -67,8 +58,6 @@ POWERFUL_QUOTES = [
     "💪 **Stronger Every Day!**",
     "🌟 **Shine Bright!**",
     "🌍 **Make an Impact!**",
-
-    # --- More Deep Motivation ---
     "🧗 **The Climb!**\nThe view from the top is worth every drop of sweat it took to get there.",
     "🔋 **Recharge!**\nRest if you must, but never quit.",
     "🛸 **Think Outside!**\nYou can't solve problems with the same thinking that created them.",
@@ -79,8 +68,6 @@ POWERFUL_QUOTES = [
     "🧭 **Find Your Way!**\nDon't follow where the path may lead. Go where there is no path and leave a trail.",
     "🦅 **Fly High!**\nAn eagle earns its wings in the wind, not in the nest.",
     "⚓ **Be the Anchor!**\nBe steady in your purpose, even when the world is chaotic.",
-
-    # --- Ambition & Hustle ---
     "💸 **Invest in Yourself!**\nThe best investment you can make is in your own mind and skills.",
     "📈 **Compounding Effort!**\nSmall habits lead to massive results over time. Keep stacking wins.",
     "🔨 **Forge Your Path!**\nLife isn't about finding yourself. Life is about creating yourself.",
@@ -91,8 +78,6 @@ POWERFUL_QUOTES = [
     "🌪️ **Be the Storm!**\nWhen they say you can't survive the storm, whisper: 'I am the storm.'",
     "🏔️ **Peak Performance!**\nExcellence is not an act, but a habit.",
     "🏛️ **Build Stability!**\nFoundation first, empire second. Build your roots deep.",
-
-    # --- Positivity & Joy ---
     "🎈 **Lift Others!**\nWe rise by lifting others.",
     "✨ **Sparkle!**\nNever let anyone dull your sparkle.",
     "🍀 **Luck is Earned!**\nLuck is what happens when preparation meets opportunity.",
@@ -103,8 +88,6 @@ POWERFUL_QUOTES = [
     "🚪 **Open Doors!**\nIf the door doesn't open, it's not your door. Move to the next one.",
     "🕯️ **Inner Glow!**\nNo beauty shines brighter than that of a good heart.",
     "🗺️ **Explore!**\nNot all those who wander are lost. Find your adventure.",
-
-    # --- Final Empowering Push ---
     "💯 **Give Your All!**\nDo your best until you know better. Then when you know better, do better.",
     "🌊 **Flow State!**\nLet go of the struggle and find your rhythm.",
     "🌋 **Erupt with Passion!**\nPassion is energy. Feel the power that comes from focusing on what excites you.",
