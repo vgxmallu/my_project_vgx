@@ -48,6 +48,38 @@ async def refresh_main_ui(query, chat_id: int):
     except MessageNotModified:
         pass
 
+
+
+@Client.on_message(filters.command("setquote"))
+async def open_pabssnnel(client, message):
+    target_id = message.chat.id
+    
+    # Target feature: /setquote -100123456789
+    if len(message.command) > 1:
+        try:
+            target_id = int(message.command[1])
+        except ValueError:
+            return await message.reply("❌ Invalid Chat ID. Provide a valid number.")
+
+    s = await get_chat(target_id)
+    
+    # ✅ SAFELY fetch values with .get() to prevent KeyError on old database entries
+    interval_val = s.get('interval', 60) 
+    delete_val = s.get('delete_after', 0)
+    
+    del_str = f"{delete_val}s" if delete_val > 0 else "Off"
+    
+    text = (
+        "⚙️ **Quotes Control Panel**\n"
+        f"🎯 **Target:** `{target_id}`\n\n"
+        f"**Frequency:** Every {interval_val}m\n"
+        f"**Auto-Delete:** {del_str}"
+    )
+    
+    await message.reply(text, reply_markup=build_main_menu(target_id, s))
+
+
+"""
 # --- 1. Main Command ---
 @Client.on_message(filters.command("setquote"))
 async def open_pabssnnel(client, message):
@@ -69,7 +101,7 @@ async def open_pabssnnel(client, message):
         f"**Auto-Delete:** {del_str}"
     )
     await message.reply(text, reply_markup=build_main_menu(target_id, s))
-
+"""
 # --- 2. Navigation Regex Callbacks ---
 @Client.on_callback_query(filters.regex(r"^nav_(?P<menu>main|int|del)_(?P<chat_id>-?\d+)$"))
 async def handle_navigation(client, query):
