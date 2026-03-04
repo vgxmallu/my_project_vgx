@@ -3,7 +3,9 @@ import time
 from pyrogram.errors import FloodWait
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from vgx.database.anilist_db import get_due_chats, update_chat
-from vgx.utlis.anilist import fetch_random_anime
+
+
+from vgx.utils.anilist import fetch_random_anime
 
 async def auto_delete_task(app, chat_id: int, msg_id: int, delay: int):
     await asyncio.sleep(delay)
