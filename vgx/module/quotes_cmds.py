@@ -4,10 +4,18 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import MessageNotModified
 from vgx.database.quets_db2 import get_chat, update_chat
 
+
+    
+
+
 # --- UI Keyboard Generators ---
 def build_main_menu(chat_id: int, s: dict):
-    state_btn = "🟢 Status: ON" if s["enabled"] else "🔴 Status: OFF"
-    pin_btn = "📌 Pin: ON" if s["pin"] else "📌 Pin: OFF"
+    # ✅ SAFELY fetch the boolean values, defaulting to False if missing
+    is_enabled = s.get("enabled", False)
+    is_pinned = s.get("pin", False)
+    
+    state_btn = "🟢 Status: ON" if is_enabled else "🔴 Status: OFF"
+    pin_btn = "📌 Pin: ON" if is_pinned else "📌 Pin: OFF"
     
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(state_btn, callback_data=f"tgl_mod_{chat_id}"),
