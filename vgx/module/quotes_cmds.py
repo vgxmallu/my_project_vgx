@@ -90,28 +90,25 @@ async def open_pabssnnel(client, message):
     
     await message.reply(text, reply_markup=build_main_menu(target_id, s))
 
+
 @Client.on_callback_query(filters.regex(r"^tgl_(?P<setting>mod|pin)_(?P<chat_id>-?\d+)$"))
 async def handle_toggles(client, query):
-    
-    chat_id = int(query.matches[0].group("chat_id"))
-    
-    # 🔒 SECURITY CHECK FOR BUTTONS
-    if not await is_user_admin(client, chat_id, query.from_user.id):
-        return await query.answer("❌ You must be an admin to use these buttons!", show_alert=True)
-        
-    # --- Rest of your toggle logic ---
     setting = query.matches[0].group("setting")
+    chat_id = int(query.matches[0].group("chat_id"))
     s = await get_chat(chat_id)
-    # ...
-
+    
+    if setting == "mod":
+        await update_chat(chat_id, enabled=not s["enabled"])
+    elif setting == "pin":
+        await update_chat(chat_id, pin=not s["pin"])
+        
+    await refresh_main_ui(query, chat_id)
+    await query.answer("Toggled successfully!")
 
 # --- 2. Navigation Regex Callbacks ---
 @Client.on_callback_query(filters.regex(r"^nav_(?P<menu>main|int|del)_(?P<chat_id>-?\d+)$"))
 async def handle_navigation(client, query):
-    # 🔒 SECURITY CHECK FOR BUTTONS
-    if not await is_user_admin(client, chat_id, query.from_user.id):
-        return await query.answer("❌ You must be an admin to use these buttons!", show_alert=True)
-        
+    
     menu = query.matches[0].group("menu")
     chat_id = int(query.matches[0].group("chat_id"))
     
@@ -125,10 +122,7 @@ async def handle_navigation(client, query):
 
 @Client.on_callback_query(filters.regex(r"^tgl_(?P<setting>mod|pin)_(?P<chat_id>-?\d+)$"))
 async def handle_toggles(client, query):
-    # 🔒 SECURITY CHECK FOR BUTTONS
-    if not await is_user_admin(client, chat_id, query.from_user.id):
-        return await query.answer("❌ You must be an admin to use these buttons!", show_alert=True)
-        
+
     setting = query.matches[0].group("setting")
     chat_id = int(query.matches[0].group("chat_id"))
     s = await get_chat(chat_id)
@@ -149,10 +143,7 @@ async def handle_toggles(client, query):
 # --- 4. Setter Regex Callbacks ---
 @Client.on_callback_query(filters.regex(r"^set_(?P<type>int|del)_(?P<val>\d+)_(?P<chat_id>-?\d+)$"))
 async def handle_setters(client, query):
-    # 🔒 SECURITY CHECK FOR BUTTONS
-    if not await is_user_admin(client, chat_id, query.from_user.id):
-        return await query.answer("❌ You must be an admin to use these buttons!", show_alert=True)
-        
+    
     setting_type = query.matches[0].group("type")
     val = int(query.matches[0].group("val"))
     chat_id = int(query.matches[0].group("chat_id"))
@@ -169,9 +160,7 @@ async def handle_setters(client, query):
 # --- 5. Action Regex Callbacks ---
 @Client.on_callback_query(filters.regex(r"^cmd_del_last_(?P<chat_id>-?\d+)$"))
 async def handle_delete_last(client, query):
-    # 🔒 SECURITY CHECK FOR BUTTONS
-    if not await is_user_admin(client, chat_id, query.from_user.id):
-        return await query.answer("❌ You must be an admin to use these buttons!", show_alert=True)
+    
     chat_id = int(query.matches[0].group("chat_id"))
     s = await get_chat(chat_id)
     
