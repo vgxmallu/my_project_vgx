@@ -11,7 +11,7 @@ async def get_chat_config(chat_id):
         "chat_id": chat_id,
         "enabled": False,
         "interval": 60,      # In minutes (default 1h)
-        "delete_after": 0,   # In seconds (0 = off)
+        "del_str": 0,   # In seconds (0 = off)
         "pin": False,        # Auto-pin state
         "last_msg_id": None, # For the "Delete Last Sent" button
         "last_sent": 0       # Unix timestamp for schedule calculation
