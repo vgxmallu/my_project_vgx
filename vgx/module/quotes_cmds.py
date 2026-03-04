@@ -3,9 +3,8 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import MessageNotModified
 from vgx.database.quets_db2 import get_chat, update_chat
+from vgx.utils.admins import is_user_admin
 
-
-    
     
 
 # --- UI Keyboard Generators ---
@@ -57,7 +56,6 @@ async def refresh_main_ui(query, chat_id: int):
         pass
 
 
-
 @Client.on_message(filters.command("setquote"))
 async def open_pabssnnel(client, message):
     target_id = message.chat.id
@@ -69,8 +67,14 @@ async def open_pabssnnel(client, message):
         except ValueError:
             return await message.reply("❌ Invalid Chat ID. Provide a valid number.")
 
+    # 🔒 SECURITY CHECK: Are they an admin of the target group?
+    # We only check if the target is a group/supergroup, private PMs are fine.
+    if str(target_id).startswith("-100") or str(target_id).startswith("-"):
+        if not await is_user_admin(client, target_id, message.from_user.id):
+            return await message.reply("❌ **Access Denied:** Only group admins can configure quotes.")
+
+
     s = await get_chat(target_id)
-    
     # ✅ SAFELY fetch values with .get() to prevent KeyError on old database entries
     interval_val = s.get('interval', 60) 
     delete_val = s.get('delete_after', 0)
@@ -86,33 +90,28 @@ async def open_pabssnnel(client, message):
     
     await message.reply(text, reply_markup=build_main_menu(target_id, s))
 
-
-"""
-# --- 1. Main Command ---
-@Client.on_message(filters.command("setquote"))
-async def open_pabssnnel(client, message):
-    target_id = message.chat.id
+@Client.on_callback_query(filters.regex(r"^tgl_(?P<setting>mod|pin)_(?P<chat_id>-?\d+)$"))
+async def handle_toggles(client, query):
     
-    # Target feature: /quotes -100123456789
-    if len(message.command) > 1:
-        try:
-            target_id = int(message.command[1])
-        except ValueError:
-            return await message.reply("❌ Invalid Chat ID. Provide a valid number.")
+    chat_id = int(query.matches[0].group("chat_id"))
+    
+    # 🔒 SECURITY CHECK FOR BUTTONS
+    if not await is_user_admin(client, chat_id, query.from_user.id):
+        return await query.answer("❌ You must be an admin to use these buttons!", show_alert=True)
+        
+    # --- Rest of your toggle logic ---
+    setting = query.matches[0].group("setting")
+    s = await get_chat(chat_id)
+    # ...
 
-    s = await get_chat(target_id)
-    del_str = f"{s['delete_after']}s" if s['delete_after'] > 0 else "Off"
-    text = (
-        "⚙️ **Quotes Control Panel**\n"
-        f"🎯 **Target:** `{target_id}`\n\n"
-        f"**Frequency:** Every {s['interval']}m\n"
-        f"**Auto-Delete:** {del_str}"
-    )
-    await message.reply(text, reply_markup=build_main_menu(target_id, s))
-"""
+
 # --- 2. Navigation Regex Callbacks ---
 @Client.on_callback_query(filters.regex(r"^nav_(?P<menu>main|int|del)_(?P<chat_id>-?\d+)$"))
 async def handle_navigation(client, query):
+    # 🔒 SECURITY CHECK FOR BUTTONS
+    if not await is_user_admin(client, chat_id, query.from_user.id):
+        return await query.answer("❌ You must be an admin to use these buttons!", show_alert=True)
+        
     menu = query.matches[0].group("menu")
     chat_id = int(query.matches[0].group("chat_id"))
     
@@ -126,6 +125,10 @@ async def handle_navigation(client, query):
 
 @Client.on_callback_query(filters.regex(r"^tgl_(?P<setting>mod|pin)_(?P<chat_id>-?\d+)$"))
 async def handle_toggles(client, query):
+    # 🔒 SECURITY CHECK FOR BUTTONS
+    if not await is_user_admin(client, chat_id, query.from_user.id):
+        return await query.answer("❌ You must be an admin to use these buttons!", show_alert=True)
+        
     setting = query.matches[0].group("setting")
     chat_id = int(query.matches[0].group("chat_id"))
     s = await get_chat(chat_id)
@@ -141,25 +144,15 @@ async def handle_toggles(client, query):
         
     await refresh_main_ui(query, chat_id)
     await query.answer("Toggled successfully!")
-"""
-# --- 3. Toggle Regex Callbacks ---
-@Client.on_callback_query(filters.regex(r"^tgl_(?P<setting>mod|pin)_(?P<chat_id>-?\d+)$"))
-async def handle_toggles(client, query):
-    setting = query.matches[0].group("setting")
-    chat_id = int(query.matches[0].group("chat_id"))
-    s = await get_chat(chat_id)
-    
-    if setting == "mod":
-        await update_chat(chat_id, enabled=not s["enabled"])
-    elif setting == "pin":
-        await update_chat(chat_id, pin=not s["pin"])
-        
-    await refresh_main_ui(query, chat_id)
-    await query.answer("Toggled successfully!")
-"""
+
+
 # --- 4. Setter Regex Callbacks ---
 @Client.on_callback_query(filters.regex(r"^set_(?P<type>int|del)_(?P<val>\d+)_(?P<chat_id>-?\d+)$"))
 async def handle_setters(client, query):
+    # 🔒 SECURITY CHECK FOR BUTTONS
+    if not await is_user_admin(client, chat_id, query.from_user.id):
+        return await query.answer("❌ You must be an admin to use these buttons!", show_alert=True)
+        
     setting_type = query.matches[0].group("type")
     val = int(query.matches[0].group("val"))
     chat_id = int(query.matches[0].group("chat_id"))
@@ -176,6 +169,9 @@ async def handle_setters(client, query):
 # --- 5. Action Regex Callbacks ---
 @Client.on_callback_query(filters.regex(r"^cmd_del_last_(?P<chat_id>-?\d+)$"))
 async def handle_delete_last(client, query):
+    # 🔒 SECURITY CHECK FOR BUTTONS
+    if not await is_user_admin(client, chat_id, query.from_user.id):
+        return await query.answer("❌ You must be an admin to use these buttons!", show_alert=True)
     chat_id = int(query.matches[0].group("chat_id"))
     s = await get_chat(chat_id)
     
