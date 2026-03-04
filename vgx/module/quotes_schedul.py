@@ -3,7 +3,7 @@ import random
 import time
 from pyrogram.errors import FloodWait
 from vgx.database.quets_db2 import get_due_chats, update_chat
-from quotes_list import POWERFUL_QUOTES
+from quotes_list import POWERFUL_QUOTES as QUOTES
 
 async def auto_delete_task(app, chat_id: int, msg_id: int, delay: int):
     """Waits securely in the background, then deletes the specific message."""
