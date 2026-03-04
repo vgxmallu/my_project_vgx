@@ -1,44 +1,58 @@
 
-import asyncio, random, time
-from pyrogram.errors import FloodWait
-from vgx.database.quets_db2 import get_due_chats, update_config
+from pyrogram import Client
+from pyrogram.errors import MessageNotModified, RPCError
+import vgx.database.quets_db2 as db
 from quotes_list import POWERFUL_QUOTES
 
-async def run_quote_scheduler(app):
-    while True:
-        now = int(time.time())
-        due_chats = await get_due_chats(now)
-        
-        for chat in due_chats:
-            chat_id = chat["chat_id"]
-            quote = random.choice(POWERFUL_QUOTES)
-            
-            try:
-                msg = await app.send_message(chat_id, quote)
-                
-                # Update DB to say we sent it, and save the ID for the "Delete Last" button
-                await update_config(chat_id, last_sent=now, last_msg_id=msg.id)
 
-                # Execute Auto-Pin
-                if chat.get("pin"):
-                    await msg.pin(both_sides=True)
-
-                # Execute Auto-Delete
-                if chat.get("delete_after", 0) > 0:
-                    asyncio.create_task(delayed_delete(msg, chat["delete_after"]))
-                    
-                await asyncio.sleep(0.5) # Anti-flood delay between groups
-            except FloodWait as e:
-                await asyncio.sleep(e.value)
-            except Exception:
-                pass # Bot was likely kicked or blocked
-                
-        # Check for due chats every 30 seconds to maintain 1m accuracy
-        await asyncio.sleep(30) 
-
-async def delayed_delete(msg, delay):
+async def delete_later(app: Client, chat_id: int, message_id: int, delay: int):
+    """Background task to delete a message after a delay."""
     await asyncio.sleep(delay)
     try:
-        await msg.delete()
-    except:
+        await app.delete_messages(chat_id, message_id)
+    except RPCError:
         pass
+
+async def run_scheduler(app: Client):
+    """Main loop checking for due messages."""
+    while True:
+        try:
+            active_chats = await db.get_all_active_chats()
+            current_time = time.time()
+
+            for chat in active_chats:
+                chat_id = chat["chat_id"]
+                last_sent = chat.get("last_sent_time", 0)
+                interval = chat.get("interval", 3600)
+
+                if (current_time - last_sent) >= interval:
+                    quote = random.choice(QUOTES)
+                    try:
+                        # Send Quote
+                        msg = await app.send_message(chat_id, f"✨ {quote}")
+                        
+                        # Update Database
+                        await db.update_chat(
+                            chat_id, 
+                            last_msg_id=msg.id, 
+                            last_sent_time=time.time()
+                        )
+
+                        # Handle Pinning
+                        if chat.get("pin"):
+                            await msg.pin(disable_notification=True)
+
+                        # Handle Auto-Delete
+                        auto_delete_time = chat.get("auto_delete", 0)
+                        if auto_delete_time > 0:
+                            asyncio.create_task(delete_later(app, chat_id, msg.id, auto_delete_time))
+
+                    except RPCError as e:
+                        # If bot was kicked or lacks permissions, optionally disable the chat in DB
+                        print(f"Failed to send to {chat_id}: {e}")
+
+        except Exception as e:
+            print(f"Scheduler Error: {e}")
+            
+        await asyncio.sleep(10) # Check every 10 seconds to prevent CPU strain
+
