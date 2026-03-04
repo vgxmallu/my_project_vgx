@@ -15,6 +15,7 @@ from vgx.module.bday_schedul import start_bday_scheduler
 #from vgx.module.quets_broad import start_qet_scheduler
 #from vgx.module.quotes_schedul import run_quote_scheduler
 from vgx.module.quotes_schedul import quote_worker
+from vgx.module.anilist_schedul import anime_worker
 
 
 logging.basicConfig(level=logging.INFO)
@@ -67,6 +68,9 @@ if __name__ == "__main__":
     loop1 = asyncio.get_event_loop()
     loop1.create_task(quote_worker(app))
     
+    print("⛩️ Anime Bot Online! Interface & Commands ready.")
+    loop2 = asyncio.get_event_loop()
+    loop2.create_task(anime_worker(app))
     
     print("🎂 Birthday & Event Scheduler is Live....")
     start_bday_scheduler(app)
