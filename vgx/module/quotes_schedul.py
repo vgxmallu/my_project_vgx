@@ -1,7 +1,7 @@
 
 from pyrogram import Client
 from pyrogram.errors import MessageNotModified, RPCError
-import vgx.database.quets_db2 as db
+from vgx.database.quets_db2 import get_all_active_chats, update_chat
 from quotes_list import POWERFUL_QUOTES
 
 
@@ -17,7 +17,7 @@ async def run_scheduler(app: Client):
     """Main loop checking for due messages."""
     while True:
         try:
-            active_chats = await db.get_all_active_chats()
+            active_chats = await get_all_active_chats()
             current_time = time.time()
 
             for chat in active_chats:
@@ -32,7 +32,7 @@ async def run_scheduler(app: Client):
                         msg = await app.send_message(chat_id, f"✨ {quote}")
                         
                         # Update Database
-                        await db.update_chat(
+                        await update_chat(
                             chat_id, 
                             last_msg_id=msg.id, 
                             last_sent_time=time.time()
