@@ -1,6 +1,6 @@
 import pytz
 from pyrogram import Client, filters
-from database import set_user_bday
+from vgx.database.bday_db import set_user_bday
 
 @Client.on_message(filters.command(["setbirthday", "bdayset"]))
 async def set_bdfirthday(client, message):
