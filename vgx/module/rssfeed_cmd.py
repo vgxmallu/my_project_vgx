@@ -64,10 +64,21 @@ async def handle_hdreplies(client, message):
 
 
 from vgx.database.rssfeed_db import count_feeds # Don't forget to import the new function!
+
+
+from bson.objectid import ObjectId # Make sure this is imported at the top!
+
 @Client.on_message(filters.reply & filters.private)
 async def handle_replies(client, message):
+    # Safety Check: Make sure the message they replied to actually has text
+    if not message.reply_to_message or not message.reply_to_message.text:
+        return
+
     original_text = message.reply_to_message.text
     
+    # ==========================================
+    # BLOCK 1: ADDING NEW FEEDS
+    # ==========================================
     if "Adding Feed for" in original_text:
         chat_id = int(original_text.split()[4])
         
@@ -102,6 +113,19 @@ async def handle_replies(client, message):
             f"🎉 **Successfully added {len(added_urls)} feed(s)!**\n\n{summary}\n\n"
             f"Use `/managerss {chat_id}` to configure their templates."
         )
+    # ==========================================
+    # BLOCK 2: EDITING CUSTOM TEMPLATES
+    # ==========================================
+    elif "Editing Template for" in original_text:
+        # Extract the MongoDB Object ID from the bottom of the message
+        feed_id = original_text.split("\n")[-1].replace("ID: ", "").strip()
+        new_template = message.text
+        
+        # Update the database
+        await update_feed(ObjectId(feed_id), template=new_template)
+        
+        await message.reply("✅ **Custom template saved successfully!**\nNew posts will now use this format.")
+
 
 @Client.on_message(filters.command(["managerss", "manage"]) & filters.private)
 async def cmd_manage(client, message):
