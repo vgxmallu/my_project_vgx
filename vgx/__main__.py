@@ -17,7 +17,7 @@ from vgx.module.bday_schedul import birthday_worker
 #from vgx.module.quotes_schedul import run_quote_scheduler
 from vgx.module.quotes_schedul import quote_worker
 from vgx.module.anilist_schedul import anime_worker
-
+from vgx.module.rssfeed_scheduler import autopost_worker
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SchedulerBot")
@@ -62,7 +62,6 @@ if __name__ == "__main__":
     
     print("🤖 Golden Hour Analytics Online...")
     start_anlyz_scheduler()
-
     
     print("🚀 Motivation Bot is Online ⏰ Scheduler started")
     #start_qet_scheduler(app)
@@ -76,6 +75,10 @@ if __name__ == "__main__":
     print("🎂 Birthday & Event Scheduler is Live....")
     loop3 = asyncio.get_event_loop()
     loop3.create_task(birthday_worker(app))
+
+    print("📡 RSS Autopost Bot Online!")
+    loop4 = asyncio.get_event_loop()
+    loop4.create_task(autopost_worker(app))
     
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
