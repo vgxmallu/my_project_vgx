@@ -4,7 +4,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import MessageNotModified
 from pyrogram.enums import ChatMemberStatus
 from vgx.database.anilist_db import get_chat, update_chat
-
+from pyrogram.enums import ButtonStyle
 # --- 1. Security Check ---
 async def is_user_admin(client, target_id: int, user_id: int) -> bool:
     if target_id == user_id: return True
@@ -20,26 +20,28 @@ def build_main_menu(chat_id: int, s: dict):
     btn_pin = "📌 Pin: ON" if s.get("pin", False) else "📌 Pin: OFF"
     
     return InlineKeyboardMarkup([[
-         InlineKeyboardButton(btn_mod, callback_data=f"tgl1_mod_{chat_id}"),
-         InlineKeyboardButton(btn_pin, callback_data=f"tgl1_pin_{chat_id}")
+         InlineKeyboardButton(btn_mod, callback_data=f"tgl1_mod_{chat_id}", style=ButtonStyle.PRIMARY),
+         InlineKeyboardButton(btn_pin, callback_data=f"tgl1_pin_{chat_id}", style=ButtonStyle.PRIMARY)
        ],[
-         InlineKeyboardButton("⏱ Set Interval", callback_data=f"nav1_int_{chat_id}"),
-         InlineKeyboardButton("🗑 Auto-Delete", callback_data=f"nav1_del_{chat_id}")
+         InlineKeyboardButton("⏱ Set Interval", callback_data=f"nav1_int_{chat_id}", style=ButtonStyle.PRIMARY),
+         InlineKeyboardButton("🗑 Auto-Delete", callback_data=f"nav1_del_{chat_id}", style=ButtonStyle.PRIMARY)
+       ],[
+         InlineKeyboardButton("❌ Cancel", callback_data="wiz_cancel", style=ButtonStyle.DANGER)
        ]]
     )
 
 def build_sub_menu(chat_id: int, menu_type: str):
     if menu_type == "int":
         return InlineKeyboardMarkup([
-            [InlineKeyboardButton("1m", callback_data=f"set1_int_1_{chat_id}"), InlineKeyboardButton("5m", callback_data=f"set1_int_5_{chat_id}")],
-            [InlineKeyboardButton("20m", callback_data=f"set1_int_20_{chat_id}"), InlineKeyboardButton("30m", callback_data=f"set1_int_30_{chat_id}")],
-            [InlineKeyboardButton("1h", callback_data=f"set1_int_60_{chat_id}"), InlineKeyboardButton("🔙 Back", callback_data=f"nav1_maine_{chat_id}")]
+            [InlineKeyboardButton("1m", callback_data=f"set1_int_1_{chat_id}", style=ButtonStyle.PRIMARY), InlineKeyboardButton("5m", callback_data=f"set1_int_5_{chat_id}", style=ButtonStyle.PRIMARY)],
+            [InlineKeyboardButton("20m", callback_data=f"set1_int_20_{chat_id}", style=ButtonStyle.PRIMARY), InlineKeyboardButton("30m", callback_data=f"set1_int_30_{chat_id}", style=ButtonStyle.PRIMARY)],
+            [InlineKeyboardButton("1h", callback_data=f"set1_int_60_{chat_id}", style=ButtonStyle.PRIMARY), InlineKeyboardButton("🔙 Back", callback_data=f"nav1_maine_{chat_id}", style=ButtonStyle.PRIMARY)]
         ])
     elif menu_type == "del":
         return InlineKeyboardMarkup([
             [InlineKeyboardButton("30s", callback_data=f"set1_del_30_{chat_id}"), InlineKeyboardButton("300s", callback_data=f"set1_del_300_{chat_id}")],
             [InlineKeyboardButton("400s", callback_data=f"set1_del_400_{chat_id}"), InlineKeyboardButton("2400s", callback_data=f"set1_del_2400_{chat_id}")],
-            [InlineKeyboardButton("❌ Off", callback_data=f"set1_del_0_{chat_id}"), InlineKeyboardButton("🔙 Back", callback_data=f"nav1_maine_{chat_id}")]
+            [InlineKeyboardButton("❌ Off", callback_data=f"set1_del_0_{chat_id}", style=ButtonStyle.DANGER), InlineKeyboardButton("🔙 Back", callback_data=f"nav1_maine_{chat_id}")]
         ])
 
 async def refresh_ui(query, chat_id: int):
