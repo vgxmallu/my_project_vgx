@@ -27,7 +27,7 @@ async def start_wizard(c, m):
     }
     await m.reply("⚙️ **Scheduler Dashboard**", reply_markup=get_wizard_kb(sessions[uid]['data']))
 
-
+"""
 # ✅ MERGED DECORATOR: Listens for Text, Photos, Videos, AND Stickers in Private Chat
 @Client.on_message(filters.private & (filters.text | filters.photo | filters.video | filters.sticker))
 async def input_handler(c, m):
@@ -116,8 +116,115 @@ async def input_handler(c, m):
         
         s['step'] = "menu" # Return to main wizard menu
         await m.reply("✅ Content Updated.", reply_markup=get_wizard_kb(s['data']))
+"""
 
 
+# ==================================================================
+# 1. COMMAND: /setcontent or /settext (Must reply to media/text)
+# ==================================================================
+@Client.on_message(filters.command(["settext", "setcontent"]) & filters.private)
+async def set_content_command(c, m):
+    if not m.from_user:
+        return
+
+    uid = m.from_user.id
+    
+    # Safety Check: Ignore if the user isn't currently in a session
+    if uid not in sessions:
+        return await m.reply("⚠️ You don't have an active setup session right now.")
+
+    # REQUIREMENT: They must reply to the message they want to save
+    if not m.reply_to_message:
+        return await m.reply("❌ **Error:** You must **reply** to a text, photo, video, or sticker with this command!")
+
+    s = sessions[uid]
+    step = s.get('step')
+    target_msg = m.reply_to_message
+
+    # --- Detect Media Type from the Replied Message ---
+    media_type = None
+    file_id = None
+    text_content = ""
+
+    if target_msg.sticker:
+        media_type = "sticker"
+        file_id = target_msg.sticker.file_id
+    elif target_msg.photo:
+        media_type = "photo"
+        file_id = target_msg.photo.file_id
+        text_content = target_msg.caption or ""
+    elif target_msg.video:
+        media_type = "video"
+        file_id = target_msg.video.file_id
+        text_content = target_msg.caption or ""
+    elif target_msg.text:
+        media_type = "text"
+        text_content = target_msg.text
+    else:
+        return await m.reply("⚠️ Unsupported media type. Please reply to Text, Photo, Video, or Sticker.")
+
+    # --- BLOCK A: EDITING AN EXISTING JOB ---
+    if step == "editing_existing_job":
+        job_id = s.get('job_id')
+        update_data = {
+            "media_type": media_type,
+            "file_id": file_id,
+            "text": text_content
+        }
+
+        # Update MongoDB immediately
+        await db.update_job(job_id, update_data)
+        
+        # Cleanup session (Interaction finished)
+        del sessions[uid]
+        
+        await m.reply(
+            f"✅ **Job Updated!**\nNext time this job runs, it will use the new content.",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to My Jobs", callback_data="myjobs_refresh")]])
+        )
+
+    # --- BLOCK B: CREATING A NEW JOB (Wizard Steps) ---
+    elif step == "waiting_content":
+        s['data']['media_type'] = media_type
+        s['data']['file_id'] = file_id
+        s['data']['text'] = text_content
+        
+        s['step'] = "menu" # Return to main wizard menu
+        await m.reply("✅ Content Updated.", reply_markup=get_wizard_kb(s['data']))
+        
+    else:
+        await m.reply("⚠️ Please click the 'Set Content' button in the menu first before using this command.")
+
+
+# ==================================================================
+# 2. COMMAND: /settarget (To set the Chat ID)
+# ==================================================================
+@Client.on_message(filters.command("settarget") & filters.private)
+async def set_target_command(c, m):
+    if not m.from_user:
+        return
+
+    uid = m.from_user.id
+    if uid not in sessions:
+        return
+
+    s = sessions[uid]
+    step = s.get('step')
+
+    if step == "waiting_target":
+        if len(m.command) < 2:
+            return await m.reply("❌ **Usage:** `/settarget -100123456789`")
+
+        try:
+            chat_id_str = m.command[1].strip()
+            target_id = int(chat_id_str)
+            
+            s['data']['target_chat'] = target_id
+            s['step'] = "menu" # Return to main wizard menu
+            
+            await m.reply("✅ Target Set.", reply_markup=get_wizard_kb(s['data']))
+        except ValueError:
+            await m.reply("❌ **Invalid ID.** Please send a numeric ID (e.g., `/settarget -100123456789`).")
 
 # --- REGEX CALLBACKS ---
 
