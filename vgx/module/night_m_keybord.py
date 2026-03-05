@@ -19,7 +19,7 @@ def get_settings_kb(data):
             InlineKeyboardButton(f"🕒 Start: {data['night_start']}", callback_data="nm_set_start", style=ButtonStyle.PRIMARY),
             InlineKeyboardButton(f"☀️ End: {data['night_end']}", callback_data="nm_set_end", style=ButtonStyle.PRIMARY)
         ],
-        [InlineKeyboardButton(f"🌍 Timezone: {data['timezone']}", callback_data="nm_set_tz")],
+        [InlineKeyboardButton(f"🌍 Timezone: {data['timezone']}", callback_data="nm_set_tz", style=ButtonStyle.PRIMARY)],
         [InlineKeyboardButton("--- 🛡 RESTRICTIONS ---", callback_data="ignore", style=ButtonStyle.SUCCESS)],
         [
             InlineKeyboardButton(f"📝Text {txt}", callback_data="nm_perm_text", style=ButtonStyle.PRIMARY),
@@ -32,5 +32,5 @@ def get_settings_kb(data):
             InlineKeyboardButton(f"🧹 Auto-Clean: {clean}", callback_data="nm_toggle_clean"),
             InlineKeyboardButton("🚨 Emergency Unlock", callback_data="nm_emergency"),
         ],
-        [InlineKeyboardButton("❌ Close Menu", callback_data="nm_close", style=ButtonStyle.DANGER)]
+        [InlineKeyboardButton("❌ Close Menu", callback_data="close", style=ButtonStyle.DANGER)]
     ])
