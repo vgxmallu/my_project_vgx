@@ -24,13 +24,13 @@ def build_feed_menu(feed: dict):
     ])
 
 # --- 1. Main Command ---
-@Client.on_message(filters.command("rss") & filters.private)
-async def rss_start(client, message):
+@Client.on_message(filters.command("rss"))
+async def rss_sthsart(client, message):
     await message.reply("⚙️ **RSS Manager**\nUse `/addfeed <chat_id>` to connect a new RSS source to a group or channel.")
 
 # --- 2. Add Feed via Command ---
 @Client.on_message(filters.command("addfeed")) #& filters.private
-async def cmd_addfeed(client, message):
+async def cmd_addfedhed(client, message):
     if len(message.command) == 1:
         return await message.reply("❌ Usage: `/addfeed -100123456789`")
     
@@ -43,7 +43,7 @@ async def cmd_addfeed(client, message):
 
 # --- 3. Handle Forced Replies (New URL or New Template) ---
 @Client.on_message(filters.reply & filters.private)
-async def handle_replies(client, message):
+async def handle_hdreplies(client, message):
     original_text = message.reply_to_message.text
     
     if "Adding Feed for" in original_text:
@@ -60,7 +60,7 @@ async def handle_replies(client, message):
 
 # --- 4. Manage Command ---
 @Client.on_message(filters.command("manage") & filters.private)
-async def cmd_manage(client, message):
+async def cmd_mandhage(client, message):
     if len(message.command) == 1: return await message.reply("❌ Usage: `/manage <chat_id>`")
     
     chat_id = int(message.command[1])
@@ -73,7 +73,7 @@ async def cmd_manage(client, message):
 
 # --- 5. Regex Callbacks ---
 @Client.on_callback_query(filters.regex(r"^rss_(?P<action>tgl|req|cmd)_(?P<param>[a-z_]+)_(?P<fid>[0-9a-fA-F]{24})$"))
-async def rss_callbacks(client, query):
+async def rss_cdallbacks(client, query):
     action = query.matches[0].group("action")
     param = query.matches[0].group("param")
     fid_str = query.matches[0].group("fid")
