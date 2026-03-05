@@ -28,9 +28,11 @@ def get_settings_kb(data):
         ],
         [InlineKeyboardButton("--- ⚙️ EXTRAS ---", callback_data="ignore", style=ButtonStyle.SUCCESS)],
         [
-            InlineKeyboardButton(f"⚠️ Warning: {warn}", callback_data="nm_toggle_warn"),
-            InlineKeyboardButton(f"🧹 Auto-Clean: {clean}", callback_data="nm_toggle_clean"),
-            InlineKeyboardButton("🚨 Emergency Unlock", callback_data="nm_emergency"),
+            InlineKeyboardButton(f"⚠️ Warning: {warn}", callback_data="nm_toggle_warn", style=ButtonStyle.PRIMARY)
+        ],[
+            InlineKeyboardButton(f"🧹 Auto-Clean: {clean}", callback_data="nm_toggle_clean", style=ButtonStyle.PRIMARY)
+        ],[
+            InlineKeyboardButton("🚨 Emergency Unlock", callback_data="nm_emergency", style=ButtonStyle.PRIMARY)
         ],
         [InlineKeyboardButton("❌ Close Menu", callback_data="close", style=ButtonStyle.DANGER)]
     ])
