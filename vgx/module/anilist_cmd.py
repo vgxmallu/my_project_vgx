@@ -26,7 +26,7 @@ def build_main_menu(chat_id: int, s: dict):
          InlineKeyboardButton("⏱ Set Interval", callback_data=f"nav1_int_{chat_id}", style=ButtonStyle.PRIMARY),
          InlineKeyboardButton("🗑 Auto-Delete", callback_data=f"nav1_del_{chat_id}", style=ButtonStyle.PRIMARY)
        ],[
-         InlineKeyboardButton("❌ Cancel", callback_data="wiz_cancel", style=ButtonStyle.DANGER)
+         InlineKeyboardButton("❌ Cancel", callback_data="close", style=ButtonStyle.DANGER)
        ]]
     )
 
