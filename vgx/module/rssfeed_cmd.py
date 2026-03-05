@@ -2,6 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 from vgx.database.rssfeed_db import db, get_feeds, add_feed, update_feed, clear_cache
 from bson.objectid import ObjectId
+from pyrogram.enums import ButtonStyle
 
 # --- UI Helpers ---
 def build_feed_menu(feed: dict):
@@ -13,14 +14,15 @@ def build_feed_menu(feed: dict):
     btn_notif = "🔕 Notify: OFF" if feed.get("silent_notification") else "🔔 Notify: ON"
     
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(btn_state, callback_data=f"rss_tgl_enabled_{fid}"),
-         InlineKeyboardButton(btn_fmt, callback_data=f"rss_tgl_format_{fid}")],
-        [InlineKeyboardButton(btn_img, callback_data=f"rss_tgl_img_{fid}"),
-         InlineKeyboardButton(btn_prev, callback_data=f"rss_tgl_prev_{fid}")],
-        [InlineKeyboardButton(btn_notif, callback_data=f"rss_tgl_notif_{fid}")],
-        [InlineKeyboardButton("✏️ Edit Template", callback_data=f"rss_req_template_{fid}"),
-         InlineKeyboardButton("🔄 Clear Cache", callback_data=f"rss_cmd_clear_{fid}")],
-        [InlineKeyboardButton("🗑 Delete Source", callback_data=f"rss_cmd_delete_{fid}")]
+        [InlineKeyboardButton(btn_state, callback_data=f"rss_tgl_enabled_{fid}", style=ButtonStyle.PRIMARY),
+         InlineKeyboardButton(btn_fmt, callback_data=f"rss_tgl_format_{fid}", style=ButtonStyle.PRIMARY)],
+        [InlineKeyboardButton(btn_img, callback_data=f"rss_tgl_img_{fid}", style=ButtonStyle.PRIMARY),
+         InlineKeyboardButton(btn_prev, callback_data=f"rss_tgl_prev_{fid}", style=ButtonStyle.PRIMARY)],
+        [InlineKeyboardButton(btn_notif, callback_data=f"rss_tgl_notif_{fid}", style=ButtonStyle.PRIMARY)],
+        [InlineKeyboardButton("✏️ Edit Template", callback_data=f"rss_req_template_{fid}", style=ButtonStyle.PRIMARY),
+         InlineKeyboardButton("🔄 Clear Cache", callback_data=f"rss_cmd_clear_{fid}", style=ButtonStyle.PRIMARY)],
+        [InlineKeyboardButton("🗑 Delete Source", callback_data=f"rss_cmd_delete_{fid}", style=ButtonStyle.DANGER)],
+        [InlineKeyboardButton("❌ Cancel", callback_data="cancel", style=ButtonStyle.DANGER)]
     ])
 
 # --- 1. Main Command ---
