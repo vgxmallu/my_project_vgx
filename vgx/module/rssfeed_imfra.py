@@ -42,7 +42,7 @@ async def cmd_addfedhed(client, message):
     )
 
 # --- 3. Handle Forced Replies (New URL or New Template) ---
-@Client.on_message(filters.reply & filters.private)
+@Client.on_message(filters.reply)
 async def handle_hdreplies(client, message):
     original_text = message.reply_to_message.text
     
