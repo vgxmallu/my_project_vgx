@@ -26,10 +26,10 @@ def build_feed_menu(feed: dict):
 # --- 1. Main Command ---
 @Client.on_message(filters.command("rss"))
 async def rss_sthsart(client, message):
-    await message.reply("⚙️ **RSS Manager**\nUse `/addfeed <chat_id>` to connect a new RSS source to a group or channel.")
+    await message.reply("⚙️ **RSS Manager**\nUse `/addfeed <chat_id>` to connect a new RSS source to a group or channel.\n⚠️ Hey Im only working with PM!")
 
 # --- 2. Add Feed via Command ---
-@Client.on_message(filters.command("addfeed")) #& filters.private
+@Client.on_message(filters.command("addfeed") & filters.private) #& filters.private
 async def cmd_addfedhed(client, message):
     if len(message.command) == 1:
         return await message.reply("❌ Usage: `/addfeed -100123456789`")
@@ -42,7 +42,7 @@ async def cmd_addfedhed(client, message):
     )
 
 # --- 3. Handle Forced Replies (New URL or New Template) ---
-@Client.on_message(filters.reply)
+@Client.on_message(filters.reply & filters.private)
 async def handle_hdreplies(client, message):
     original_text = message.reply_to_message.text
     
@@ -59,7 +59,7 @@ async def handle_hdreplies(client, message):
         await message.reply("✅ Custom template saved successfully!")
 
 # --- 4. Manage Command ---
-@Client.on_message(filters.command("managerss"))
+@Client.on_message(filters.command("managerss") & filters.private)
 async def cmd_mandhage(client, message):
     if len(message.command) == 1: return await message.reply("❌ Usage: `/manage <chat_id>`")
     
