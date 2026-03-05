@@ -19,22 +19,23 @@ def build_main_menu(chat_id: int, s: dict):
     btn_mod = "🟢 Status: ON" if s.get("enabled", False) else "🔴 Status: OFF"
     btn_pin = "📌 Pin: ON" if s.get("pin", False) else "📌 Pin: OFF"
     
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton(btn_mod, callback_data=f"tgl1_mod1_{chat_id}"),
-         InlineKeyboardButton(btn_pin, callback_data=f"tgl1_pin_{chat_id}")],
-        [InlineKeyboardButton("⏱ Set Interval", callback_data=f"nav1_int1_{chat_id}"),
-         InlineKeyboardButton("🗑 Auto-Delete", callback_data=f"nav1_del1_{chat_id}")],
-        [InlineKeyboardButton("🗑 Delete Last Sent Anime", callback_data=f"cmd1_del1_last_{chat_id}")]
-    ])
+    return InlineKeyboardMarkup([[
+         InlineKeyboardButton(btn_mod, callback_data=f"tgl1_mod1_{chat_id}"),
+         InlineKeyboardButton(btn_pin, callback_data=f"tgl1_pin_{chat_id}")
+       ],[
+         InlineKeyboardButton("⏱ Set Interval", callback_data=f"nav1_int1_{chat_id}"),
+         InlineKeyboardButton("🗑 Auto-Delete", callback_data=f"nav1_del1_{chat_id}")
+       ]]
+    )
 
 def build_sub_menu(chat_id: int, menu_type: str):
-    if menu_type == "int":
+    if menu_type == "int1":
         return InlineKeyboardMarkup([
             [InlineKeyboardButton("1m", callback_data=f"set1_int1_1_{chat_id}"), InlineKeyboardButton("5m", callback_data=f"set1_int1_5_{chat_id}")],
             [InlineKeyboardButton("20m", callback_data=f"set1_int1_20_{chat_id}"), InlineKeyboardButton("30m", callback_data=f"set1_int1_30_{chat_id}")],
             [InlineKeyboardButton("1h", callback_data=f"set1_int_60_{chat_id}"), InlineKeyboardButton("🔙 Back", callback_data=f"nav1_main1_{chat_id}")]
         ])
-    elif menu_type == "del":
+    elif menu_type == "del1":
         return InlineKeyboardMarkup([
             [InlineKeyboardButton("30s", callback_data=f"set1_del1_30_{chat_id}"), InlineKeyboardButton("300s", callback_data=f"set1_del1_300_{chat_id}")],
             [InlineKeyboardButton("400s", callback_data=f"set1_del1_400_{chat_id}"), InlineKeyboardButton("2400s", callback_data=f"set1_del1_2400_{chat_id}")],
