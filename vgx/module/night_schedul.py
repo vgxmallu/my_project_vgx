@@ -23,7 +23,7 @@ async def check_schedules(app):
                 warn_time = (now.replace(hour=h, minute=m, second=0) - timedelta(minutes=5)).strftime("%H:%M")
                 
                 if current_time == warn_time:
-                    await app.send_message(cid, "⚠️ **Notice:** Night Mode will activate in 5 minutes!")
+                    await app.send_message(cid, "⚠️ **Notice:**\n\n Night Mode will activate in 5 minutes!")
 
             # --- 2. NIGHT MODE LOGIC ---
             # Determine if we are in the "Night Window"
@@ -47,7 +47,7 @@ async def check_schedules(app):
             if is_night_now and not prev_state:
                 # -> LOCK GROUP
                 await set_night_permissions(app, chat)
-                msg = await app.send_message(cid, "🌙 **Night Mode Active.** Chat is restricted.")
+                msg = await app.send_message(cid, "🌙 **Night Mode Active. 🌌**\nChat is Closed/restricted. Wait for morning to Message again 😴😪🌝.")
                 
                 # Pin logic could go here
                 
@@ -62,7 +62,7 @@ async def check_schedules(app):
                     try: await app.delete_messages(cid, chat['last_alert_id'])
                     except: pass
                 
-                msg = await app.send_message(cid, "☀️ **Good Morning!** Chat is open.")
+                msg = await app.send_message(cid, "☀️ **Good Morning Members! 🍃**\nGroup Chat is opened! Now everyone can message here🙂‍↕️🤭.")
                 
                 # Schedule deletion of the Morning message (1 hour later)
                 # (Simple version: just leave it or use a separate job. We'll skip complex job scheduling for now)
