@@ -4,7 +4,9 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ForceRepl
 from pyrogram.enums import ChatMemberStatus
 from vgx.database.welcm_db import get_group_greetings, update_group_greetings
 
-# --- Security Check ---
+
+
+# --- Security Check & UI Builders remain the same ---
 async def is_admin(client, chat_id: int, user_id: int) -> bool:
     try:
         member = await client.get_chat_member(chat_id, user_id)
@@ -12,7 +14,6 @@ async def is_admin(client, chat_id: int, user_id: int) -> bool:
     except:
         return False
 
-# --- UI Builder ---
 def build_greetings_menu(chat_id: int, s: dict):
     welc_btn = "🟢 Welcome: ON" if s.get("welcome_enabled") else "🔴 Welcome: OFF"
     leave_btn = "🟢 Leave: ON" if s.get("leave_enabled") else "🔴 Leave: OFF"
@@ -27,8 +28,6 @@ def build_greetings_menu(chat_id: int, s: dict):
 async def refresh_menu(query, chat_id: int):
     s = await get_group_greetings(chat_id)
     inv_stamp = f" \u200b" * int(time.time() % 3)
-    
-    # ✅ Safely fetch the texts, providing a fallback if they are missing
     welc_msg = s.get("welcome_text", "Hey {{first_name}}❤️, welcome to {{group}} 🥳")
     leave_msg = s.get("leave_text", "Goodbye {{first_name}}, we will miss you! 😢")
     
@@ -43,7 +42,6 @@ async def refresh_menu(query, chat_id: int):
     except Exception:
         pass
 
-
 @Client.on_message(filters.command("greetings") & filters.group)
 async def greetings_cmd(client, message):
     chat_id = message.chat.id
@@ -51,8 +49,6 @@ async def greetings_cmd(client, message):
         return await message.reply("❌ Only admins can configure greetings.")
         
     s = await get_group_greetings(chat_id)
-    
-    # ✅ Safely fetch the texts here too!
     welc_msg = s.get("welcome_text", "Hey {{first_name}}❤️, welcome to {{group}} 🥳")
     leave_msg = s.get("leave_text", "Goodbye {{first_name}}, we will miss you! 😢")
     
@@ -63,8 +59,7 @@ async def greetings_cmd(client, message):
         f"**Leave Msg:**\n`{leave_msg}`"
     )
     await message.reply(text, reply_markup=build_greetings_menu(chat_id, s))
-    
-# --- Callbacks ---
+
 @Client.on_callback_query(filters.regex(r"^grt_(?P<action>tgl|set)_(?P<type>welc|leave)_(?P<chat_id>-?\d+)$"))
 async def greetings_callbacks(client, query):
     action = query.matches[0].group("action")
@@ -77,38 +72,55 @@ async def greetings_callbacks(client, query):
     s = await get_group_greetings(chat_id)
     
     if action == "tgl":
-        if msg_type == "welc":
-            await update_group_greetings(chat_id, welcome_enabled=not s.get("welcome_enabled"))
-        elif msg_type == "leave":
-            await update_group_greetings(chat_id, leave_enabled=not s.get("leave_enabled"))
+        if msg_type == "welc": await update_group_greetings(chat_id, welcome_enabled=not s.get("welcome_enabled"))
+        elif msg_type == "leave": await update_group_greetings(chat_id, leave_enabled=not s.get("leave_enabled"))
         await refresh_menu(query, chat_id)
         
     elif action == "set":
         msg_name = "Welcome" if msg_type == "welc" else "Leave"
         await query.message.reply(
             f"✏️ **Editing {msg_name} Message for {chat_id}**\n\n"
-            "Send me the new message now! You can use Markdown and these placeholders:\n"
-            "`{{first_name}}`, `{{last_name}}`, `{{name}}`, `{{group}}`, `{{count}}`",
+            "Send me your new message (Text, Photo, GIF, or Video).\n"
+            "**Placeholders:** `{{first_name}}`, `{{last_name}}`, `{{name}}`, `{{group}}`, `{{count}}`\n"
+            "**Buttons:** `[Button Name | https://link.com]`",
             reply_markup=ForceReply(selective=True)
         )
         await query.answer()
 
-# --- Handle Forced Replies (Saving Custom Texts) ---
+# ✅ THE UPGRADED MEDIA HANDLER
 @Client.on_message(filters.reply & filters.group)
 async def handle_custom_text(client, message):
-    if not message.reply_to_message or not message.reply_to_message.text:
-        return
-        
+    if not message.reply_to_message or not message.reply_to_message.text: return
     original_text = message.reply_to_message.text
     
-    if "Editing Welcome Message for" in original_text:
-        if not await is_admin(client, message.chat.id, message.from_user.id): return
+    if "Editing Welcome Message for" in original_text or "Editing Leave Message for" in original_text:
         chat_id = int(original_text.split("for ")[1].split("\n")[0])
-        await update_group_greetings(chat_id, welcome_text=message.text.markdown)
-        await message.reply("✅ **Custom Welcome Message saved successfully!**")
+        if not await is_admin(client, chat_id, message.from_user.id): return
         
-    elif "Editing Leave Message for" in original_text:
-        if not await is_admin(client, message.chat.id, message.from_user.id): return
-        chat_id = int(original_text.split("for ")[1].split("\n")[0])
-        await update_group_greetings(chat_id, leave_text=message.text.markdown)
-        await message.reply("✅ **Custom Leave Message saved successfully!**")
+        # 1. Detect Media and Text Content safely
+        media_id = None
+        media_type = None
+        text_content = ""
+
+        if message.animation:
+            media_id = message.animation.file_id
+            media_type = "animation"
+            text_content = message.caption.markdown if message.caption else ""
+        elif message.video:
+            media_id = message.video.file_id
+            media_type = "video"
+            text_content = message.caption.markdown if message.caption else ""
+        elif message.photo:
+            media_id = message.photo.file_id
+            media_type = "photo"
+            text_content = message.caption.markdown if message.caption else ""
+        elif message.text:
+            text_content = message.text.markdown
+
+        # 2. Save to Database based on which message we are editing
+        if "Welcome" in original_text:
+            await update_group_greetings(chat_id, welcome_text=text_content, welcome_media_id=media_id, welcome_media_type=media_type)
+            await message.reply("✅ **Media & Custom Welcome Message saved!**")
+        else:
+            await update_group_greetings(chat_id, leave_text=text_content, leave_media_id=media_id, leave_media_type=media_type)
+            await message.reply("✅ **Media & Custom Leave Message saved!**")
