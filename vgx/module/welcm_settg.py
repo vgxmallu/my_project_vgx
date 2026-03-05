@@ -3,7 +3,7 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
 from pyrogram.enums import ChatMemberStatus
 from vgx.database.welcm_db import get_group_greetings, update_group_greetings
-
+from pyrogram.enums import ButtonStyle
 """
 👋 **Greetings & Welcome Module Guide**
 
@@ -52,10 +52,10 @@ def build_greetings_menu(chat_id: int, s: dict):
     leave_btn = "🟢 Leave: ON" if s.get("leave_enabled") else "🔴 Leave: OFF"
     
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(welc_btn, callback_data=f"grt_tgl_welc_{chat_id}"),
-         InlineKeyboardButton(leave_btn, callback_data=f"grt_tgl_leave_{chat_id}")],
-        [InlineKeyboardButton("📝 Set Welcome Msg", callback_data=f"grt_set_welc_{chat_id}")],
-        [InlineKeyboardButton("📝 Set Leave Msg", callback_data=f"grt_set_leave_{chat_id}")]
+        [InlineKeyboardButton(welc_btn, callback_data=f"grt_tgl_welc_{chat_id}", style=ButtonStyle.PRIMARY),
+         InlineKeyboardButton(leave_btn, callback_data=f"grt_tgl_leave_{chat_id}", style=ButtonStyle.PRIMARY)],
+        [InlineKeyboardButton("📝 Set Welcome Msg", callback_data=f"grt_set_welc_{chat_id}", style=ButtonStyle.PRIMARY)],
+        [InlineKeyboardButton("📝 Set Leave Msg", callback_data=f"grt_set_leave_{chat_id}", style=ButtonStyle.PRIMARY)]
     ])
 
 async def refresh_menu(query, chat_id: int):
