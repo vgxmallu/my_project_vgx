@@ -23,10 +23,10 @@ async def anime_worker(app):
                 
                 caption = (
                     f"📺 **{anime['title']}**\n\n"
-                    f"**⭐ Score:** {anime['score']}/100\n"
+                    f"**⭐ Score:** `{anime['score']}/100`\n"
                     f"**🎬 Episodes:** __{anime['episodes']}__\n"
                     f"**🎭 Genres:** __{anime['genres']}__\n\n"
-                    f"📝 <blockquote>__{anime['description']}</blockquote>__"
+                    f"<blockquote>📝 __{anime['description']}</blockquote>__"
                     f"\n\n©️By: @XBOTS_X"
                 )
                 
