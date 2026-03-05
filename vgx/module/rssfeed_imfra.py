@@ -29,7 +29,7 @@ async def rss_start(client, message):
     await message.reply("⚙️ **RSS Manager**\nUse `/addfeed <chat_id>` to connect a new RSS source to a group or channel.")
 
 # --- 2. Add Feed via Command ---
-@Client.on_message(filters.command("addfeed") & filters.private)
+@Client.on_message(filters.command("addfeed")) #& filters.private
 async def cmd_addfeed(client, message):
     if len(message.command) == 1:
         return await message.reply("❌ Usage: `/addfeed -100123456789`")
