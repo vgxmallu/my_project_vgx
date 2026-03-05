@@ -3,7 +3,7 @@ import time
 from pyrogram.errors import FloodWait
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from vgx.database.anilist_db import get_due_chats, update_chat
-
+from pyrogram.enums import ButtonStyle
 
 from vgx.utils.anilist import fetch_random_anime
 
@@ -24,12 +24,17 @@ async def anime_worker(app):
                 caption = (
                     f"📺 **{anime['title']}**\n\n"
                     f"**⭐ Score:** {anime['score']}/100\n"
-                    f"**🎬 Episodes:** {anime['episodes']}\n"
-                    f"**🎭 Genres:** {anime['genres']}\n\n"
-                    f"📝 *{anime['description']}*"
+                    f"**🎬 Episodes:** __{anime['episodes']}__\n"
+                    f"**🎭 Genres:** __{anime['genres']}__\n\n"
+                    f"📝 <blockquote>__{anime['description']}</blockquote>__"
+                    f"\n\n©️By: @XBOTS_X"
                 )
                 
-                buttons = InlineKeyboardMarkup([[InlineKeyboardButton("🔗 View on AniList", url=anime["url"])]])
+                buttons = InlineKeyboardMarkup(
+                    [[
+                        InlineKeyboardButton("🔗 View on AniList", url=anime["url"], style=ButtonStyle.PRIMARY)
+                    ]]
+                )
                 
                 for chat in due_chats:
                     chat_id = chat["chat_id"]
