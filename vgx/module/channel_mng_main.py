@@ -42,7 +42,7 @@ def build_draft_menu(draft_id: int):
         [InlineKeyboardButton("🚀 Publish to Channel", callback_data=f"draft_publish_{draft_id}")]
     ])
 
-@Client.on_message(filters.command("start") & filters.private)
+@Client.on_message(filters.command("hhart") & filters.private)
 async def start_wizard(client, message):
     channels = await get_user_channels(message.from_user.id)
     if not channels:
