@@ -1,31 +1,32 @@
+import pytz
 from pyrogram import Client, filters
-from vgx.database.bday_db import chats
+from database import set_user_bday
 
-@Client.on_message(filters.command("setbirthdaymessage") & filters.group)
-async def set_msg(c, m):
-    if len(m.command) < 2: return await m.reply("Usage: `/setbirthdaymessage 🎂 Happy Bday {mention}!`")
-    new_msg = m.text.split(None, 1)[1]
-    await chats.update_one({"chat_id": m.chat.id}, {"$set": {"bday_msg": new_msg}})
-    await m.reply("✅ Birthday message template updated!")
+@Client.on_message(filters.command(["setbirthday", "bdayset"]))
+async def set_bdfirthday(client, message):
+    # Expected: /birthday set DD/MM Timezone
+    args = message.command
+    if len(args) < 4:
+        return await message.reply(
+            "📝 **Set your Birthday!**\n\n"
+            "**Usage:** `/bday set DD/MM Timezone`\n"
+            "**Example:** `/bday set 25/12 Europe/London`\n"
+            "*(If you don't know your timezone, use 'UTC')*"
+        )
+    
+    try:
+        date_parts = args[2].split("/")
+        day, month = int(date_parts[0]), int(date_parts[1])
+        timezone = args[3]
+        
+        # Validation
+        if timezone != "UTC" and timezone not in pytz.all_timezones:
+            return await message.reply("❌ Invalid Timezone. Please use a valid IANA timezone (e.g., America/New_York).")
+        if not (1 <= month <= 12 and 1 <= day <= 31):
+            raise ValueError
+            
+    except Exception:
+        return await message.reply("❌ Invalid date format. Please use DD/MM.")
 
-@Client.on_message(filters.command("birthdayrole") & filters.group)
-async def set_role(c, m):
-    role_name = m.text.split(None, 1)[1]
-    await chats.update_one({"chat_id": m.chat.id}, {"$set": {"bday_role": role_name}})
-    await m.reply(f"✅ Birthday 'Role' title set to: **{role_name}**")
-
-@Client.on_message(filters.command("addtrusted") & filters.group)
-async def add_trusted(c, m):
-    if not m.reply_to_message: return await m.reply("Reply to a user to trust them.")
-    target_id = m.reply_to_message.from_user.id
-    await chats.update_one({"chat_id": m.chat.id}, {"$addToSet": {"trusted_users": target_id}})
-    await m.reply(f"✅ User added to Trusted List. Only they will get birthday celebrations!")
-
-@Client.on_message(filters.command("addevent") & filters.group)
-async def add_event(c, m):
-    # Format: /addevent Name MM-DD Message
-    args = m.command
-    if len(args) < 4: return await m.reply("Usage: `/addevent NewYear 01-01 Happy New Year!`")
-    event_data = {"name": args[1], "date": args[2], "msg": " ".join(args[3:])}
-    await chats.update_one({"chat_id": m.chat.id}, {"$push": {"events": event_data}})
-    await m.reply(f"✅ Event '{args[1]}' scheduled for {args[2]}!")
+    await set_user_bday(message.from_user.id, month, day, timezone)
+    await message.reply(f"✅ **Saved!** Your birthday is set to **{day:02d}/{month:02d}** ({timezone}). We'll remember it!")
