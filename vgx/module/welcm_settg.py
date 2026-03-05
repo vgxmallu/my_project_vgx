@@ -4,7 +4,40 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ForceRepl
 from pyrogram.enums import ChatMemberStatus
 from vgx.database.welcm_db import get_group_greetings, update_group_greetings
 
+"""
+👋 **Greetings & Welcome Module Guide**
 
+Make your group feel like home! I can greet new members and say goodbye to leaving members using fully customizable messages, media, and inline buttons.
+
+🛠 **How to Setup:**
+1. Add me to your group and promote me to **Admin**.
+2. Type `/greetings` in the group to open the Control Panel.
+3. Click **"Set Welcome Msg"** or **"Set Leave Msg"**.
+4. Reply to my prompt with your custom message!
+
+🖼 **Adding Media:**
+Want to send a Photo, GIF, or Video? Simply upload the media and type your welcome text into the **Caption** before sending!
+
+✨ **Dynamic Placeholders:**
+Use these tags in your text, and I will automatically replace them with the real info:
+• `{{first_name}}` - The user's first name
+• `{{last_name}}` - The user's last name
+• `{{name}}` - The user's full name
+• `{{group}}` - The name of your group
+• `{{count}}` - The total number of members
+
+🔗 **Adding Inline Buttons:**
+You can add beautiful clickable buttons to the bottom of your message! Just type them anywhere in your text using this exact format:
+`[Button Text | https://your-link.com]`
+
+**Example Message:**
+Hey {{first_name}}! Welcome to {{group}} 🥳
+You are our {{count}}th member! Please read the rules below.
+[Read Rules | https://t.me/your_rules_link]
+
+⚠️ *Note: Only Group Admins can use the `/greetings` command.*
+
+"""
 
 # --- Security Check & UI Builders remain the same ---
 async def is_admin(client, chat_id: int, user_id: int) -> bool:
