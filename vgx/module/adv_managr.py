@@ -6,7 +6,11 @@ from vgx.module import sessions
 
 
 
-
+@Client.on_callback_query(filters.regex("^close$"))
+async def col_callback(client, query):
+    await query.answer("❌ Closed ❌")
+    await asyncio.sleep(1)
+    await query.message.delete()
 # In plugins/manager.py
 @Client.on_callback_query(filters.regex(r"^mngr_edit_"))
 async def trigger_edit_msg(c, q):
