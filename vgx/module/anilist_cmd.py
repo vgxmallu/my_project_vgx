@@ -29,13 +29,13 @@ def build_main_menu(chat_id: int, s: dict):
     )
 
 def build_sub_menu(chat_id: int, menu_type: str):
-    if menu_type == "int1":
+    if menu_type == "int":
         return InlineKeyboardMarkup([
             [InlineKeyboardButton("1m", callback_data=f"set1_int_1_{chat_id}"), InlineKeyboardButton("5m", callback_data=f"set1_int_5_{chat_id}")],
             [InlineKeyboardButton("20m", callback_data=f"set1_int_20_{chat_id}"), InlineKeyboardButton("30m", callback_data=f"set1_int_30_{chat_id}")],
             [InlineKeyboardButton("1h", callback_data=f"set1_int_60_{chat_id}"), InlineKeyboardButton("🔙 Back", callback_data=f"nav1_maine_{chat_id}")]
         ])
-    elif menu_type == "del1":
+    elif menu_type == "del":
         return InlineKeyboardMarkup([
             [InlineKeyboardButton("30s", callback_data=f"set1_del_30_{chat_id}"), InlineKeyboardButton("300s", callback_data=f"set1_del_300_{chat_id}")],
             [InlineKeyboardButton("400s", callback_data=f"set1_del_400_{chat_id}"), InlineKeyboardButton("2400s", callback_data=f"set1_del_2400_{chat_id}")],
