@@ -264,11 +264,11 @@ async def wizard_callbacks(c, q):
     # 3. Input Triggers
     elif "set_target" in data:
         s['step'] = "waiting_target"
-        return await q.message.reply("🆔 **Send Target Chat ID:**\n(Make sure I am admin there)")
+        return await q.message.reply("🆔 **Send Target Chat ID like this:** /settarget [-100183710241]\n(Make sure I am admin there)")
         
     elif "set_content" in data:
         s['step'] = "waiting_content"
-        return await q.message.reply("📝 **Send Text, Photo or Video:**")
+        return await q.message.reply("📝**Reply to message this command /settext reply to sticker, Text, Photo or Video:**")
 
     # 4. Save / Cancel
     elif "wiz_cancel" in data:
