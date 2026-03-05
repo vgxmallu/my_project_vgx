@@ -1,40 +1,52 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from config import Config
+from bson.objectid import ObjectId
 
 db_client = AsyncIOMotorClient(Config.MONGO_URL)
 db = db_client["ChannelManagerDB"]
-users_col = db["users"]
+
 channels_col = db["channels"]
-posts_col = db["posts"]
+posts_col = db["live_posts"]
 
-# --- User Data ---
-async def get_user(user_id: int) -> dict:
-    user = await users_col.find_one({"user_id": user_id})
-    return user or {"user_id": user_id, "timezone": "UTC", "is_plus": False}
+# --- Channel Management ---
+async def save_channel(chat_id: int, title: str, owner_id: int):
+    await channels_col.update_one(
+        {"chat_id": chat_id},
+        {"$set": {"title": title, "owner_id": owner_id, "default_reactions": ["👍", "❤️", "😂"]}},
+        upsert=True
+    )
 
-async def update_user(user_id: int, **kwargs):
-    await users_col.update_one({"user_id": user_id}, {"$set": kwargs}, upsert=True)
+async def get_user_channels(user_id: int):
+    return await channels_col.find({"owner_id": user_id}).to_list(length=None)
 
-# --- Channel Data ---
-async def get_channel(chat_id: int) -> dict:
-    channel = await channels_col.find_one({"chat_id": chat_id})
-    return channel or {
+# --- Live Post Reactions ---
+async def create_live_post(chat_id: int, message_id: int, reactions: list) -> str:
+    """Creates a database entry to track who clicks which emoji."""
+    reaction_dict = {emoji: [] for emoji in reactions} # Example: {"👍": [], "❤️": []}
+    post = await posts_col.insert_one({
         "chat_id": chat_id,
-        "signature": "",
-        "default_reactions": ["👍", "👎"],
-        "auto_complete_text": "",
-        "del_service_msgs": False,
-        "leave_ban_time": 0, # 0 = no ban
-        "group_ban": False,
-        "forward_targets": [] # Requires PLUS
-    }
+        "message_id": message_id,
+        "reactions": reaction_dict
+    })
+    return str(post.inserted_id)
 
-async def update_channel(chat_id: int, **kwargs):
-    await channels_col.update_one({"chat_id": chat_id}, {"$set": kwargs}, upsert=True)
+async def get_live_post(post_id: str):
+    return await posts_col.find_one({"_id": ObjectId(post_id)})
+
+async def update_reaction(post_id: str, emoji: str, user_id: int):
+    post = await get_live_post(post_id)
+    if not post: return None
     
-async def get_user_channels(user_id: int, client) -> list:
-    """Helper to find which channels a user is admin of (requires bot to be in them)"""
-    # In a real bot, you'd save channels to the DB when the bot is added as admin.
-    # For now, we query the DB for any channel linked to this user.
-    cursor = channels_col.find({"owner_id": user_id})
-    return await cursor.to_list(length=None)
+    current_users = post["reactions"].get(emoji, [])
+    
+    # Toggle logic: If user already clicked it, remove them. If not, add them.
+    if user_id in current_users:
+        current_users.remove(user_id)
+    else:
+        current_users.append(user_id)
+        
+    await posts_col.update_one(
+        {"_id": ObjectId(post_id)},
+        {"$set": {f"reactions.{emoji}": current_users}}
+    )
+    return await get_live_post(post_id) # Return updated post
