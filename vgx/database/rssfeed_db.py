@@ -36,3 +36,8 @@ async def add_to_cache(feed_id, guid: str):
 
 async def clear_cache(feed_id):
     await feeds_col.update_one({"_id": feed_id}, {"$set": {"posted_guids": []}})
+
+async def count_feeds(chat_id: int) -> int:
+    """Counts how many feeds are currently linked to a specific chat."""
+    return await feeds_col.count_documents({"chat_id": chat_id})
+    
