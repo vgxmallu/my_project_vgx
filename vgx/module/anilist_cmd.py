@@ -20,26 +20,26 @@ def build_main_menu(chat_id: int, s: dict):
     btn_pin = "📌 Pin: ON" if s.get("pin", False) else "📌 Pin: OFF"
     
     return InlineKeyboardMarkup([[
-         InlineKeyboardButton(btn_mod, callback_data=f"tgl1_mod1_{chat_id}"),
+         InlineKeyboardButton(btn_mod, callback_data=f"tgl1_mod_{chat_id}"),
          InlineKeyboardButton(btn_pin, callback_data=f"tgl1_pin_{chat_id}")
        ],[
-         InlineKeyboardButton("⏱ Set Interval", callback_data=f"nav1_int1_{chat_id}"),
-         InlineKeyboardButton("🗑 Auto-Delete", callback_data=f"nav1_del1_{chat_id}")
+         InlineKeyboardButton("⏱ Set Interval", callback_data=f"nav1_int_{chat_id}"),
+         InlineKeyboardButton("🗑 Auto-Delete", callback_data=f"nav1_del_{chat_id}")
        ]]
     )
 
 def build_sub_menu(chat_id: int, menu_type: str):
     if menu_type == "int1":
         return InlineKeyboardMarkup([
-            [InlineKeyboardButton("1m", callback_data=f"set1_int1_1_{chat_id}"), InlineKeyboardButton("5m", callback_data=f"set1_int1_5_{chat_id}")],
-            [InlineKeyboardButton("20m", callback_data=f"set1_int1_20_{chat_id}"), InlineKeyboardButton("30m", callback_data=f"set1_int1_30_{chat_id}")],
-            [InlineKeyboardButton("1h", callback_data=f"set1_int_60_{chat_id}"), InlineKeyboardButton("🔙 Back", callback_data=f"nav1_main1_{chat_id}")]
+            [InlineKeyboardButton("1m", callback_data=f"set1_int_1_{chat_id}"), InlineKeyboardButton("5m", callback_data=f"set1_int_5_{chat_id}")],
+            [InlineKeyboardButton("20m", callback_data=f"set1_int_20_{chat_id}"), InlineKeyboardButton("30m", callback_data=f"set1_int_30_{chat_id}")],
+            [InlineKeyboardButton("1h", callback_data=f"set1_int_60_{chat_id}"), InlineKeyboardButton("🔙 Back", callback_data=f"nav1_maine_{chat_id}")]
         ])
     elif menu_type == "del1":
         return InlineKeyboardMarkup([
-            [InlineKeyboardButton("30s", callback_data=f"set1_del1_30_{chat_id}"), InlineKeyboardButton("300s", callback_data=f"set1_del1_300_{chat_id}")],
-            [InlineKeyboardButton("400s", callback_data=f"set1_del1_400_{chat_id}"), InlineKeyboardButton("2400s", callback_data=f"set1_del1_2400_{chat_id}")],
-            [InlineKeyboardButton("❌ Off", callback_data=f"set1_del1_0_{chat_id}"), InlineKeyboardButton("🔙 Back", callback_data=f"nav1_main1_{chat_id}")]
+            [InlineKeyboardButton("30s", callback_data=f"set1_del_30_{chat_id}"), InlineKeyboardButton("300s", callback_data=f"set1_del_300_{chat_id}")],
+            [InlineKeyboardButton("400s", callback_data=f"set1_del_400_{chat_id}"), InlineKeyboardButton("2400s", callback_data=f"set1_del_2400_{chat_id}")],
+            [InlineKeyboardButton("❌ Off", callback_data=f"set1_del_0_{chat_id}"), InlineKeyboardButton("🔙 Back", callback_data=f"nav1_maine_{chat_id}")]
         ])
 
 async def refresh_ui(query, chat_id: int):
@@ -81,6 +81,58 @@ async def open_panel(client, message):
     )
     await message.reply(text, reply_markup=build_main_menu(target_id, s))
 
+
+
+@Client.on_callback_query(filters.regex(r"^(?P<action>tgl1|nav1|set1|cmd1)_(?P<param>[a-z]+)(?:_(?P<val>\d+))?_(?P<chat_id>-?\d+)$"))
+async def module1_callback_router(client, query):
+    action = query.matches[0].group("action")
+    param = query.matches[0].group("param")
+    val_raw = query.matches[0].group("val")
+    chat_id = int(query.matches[0].group("chat_id"))
+    
+    # ✅ THE BULLETPROOF FIX: Safely convert to integer ONLY if val_raw isn't None
+    val = int(val_raw) if val_raw is not None else None
+    
+    # Check Permissions
+    if not await is_user_admin(client, chat_id, query.from_user.id):
+        return await query.answer("❌ Admin strictly required.", show_alert=True)
+        
+    s = await get_chat(chat_id)
+
+    # Route based on the exact action matched
+    if action == "tgl1":
+        if param == "mod": await update_chat(chat_id, enabled=not s.get("enabled", False))
+        elif param == "pin": await update_chat(chat_id, pin=not s.get("pin", False))
+        await refresh_ui(query, chat_id)
+        
+    elif action == "nav1":
+        if param == "maine": 
+            await refresh_ui(query, chat_id)
+        else: 
+            await query.edit_message_text(
+                f"🎯 Target: `{chat_id}`\n⚙️ Select Option:", 
+                reply_markup=build_sub_menu(chat_id, param)
+            )
+        
+    elif action == "set1":
+        # Since 'val' is now safely handled above, we can just use it directly here
+        if param == "int": await update_chat(chat_id, interval=val)
+        elif param == "del": await update_chat(chat_id, delete_after=val)
+        await query.answer("Settings Saved!")
+        await refresh_ui(query, chat_id)
+        
+    elif action == "cmd1" and param == "del":
+        last_id = s.get("last_msg_id")
+        if last_id:
+            try:
+                await client.delete_messages(chat_id, last_id)
+                await query.answer("🗑 Last Message deleted!", show_alert=True)
+            except:
+                await query.answer("❌ Message missing or lack permissions.", show_alert=True)
+        else: 
+            await query.answer("⚠️ No history found.", show_alert=True)
+
+"""
 # --- 4. Callbacks via Strict Regex ---
 @Client.on_callback_query(filters.regex(r"^(?P<action>tgl1|nav1|set1|cmd1)_(?P<param>\w+)_?(?P<val>\d+)?_(?P<chat_id>-?\d+)$"))
 async def core_callback_router(client, query):
@@ -121,3 +173,4 @@ async def core_callback_router(client, query):
             except:
                 await query.answer("❌ Message missing or lack permissions.", show_alert=True)
         else: await query.answer("⚠️ No history found.", show_alert=True)
+"""
