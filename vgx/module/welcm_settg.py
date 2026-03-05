@@ -27,18 +27,23 @@ def build_greetings_menu(chat_id: int, s: dict):
 async def refresh_menu(query, chat_id: int):
     s = await get_group_greetings(chat_id)
     inv_stamp = f" \u200b" * int(time.time() % 3)
+    
+    # ✅ Safely fetch the texts, providing a fallback if they are missing
+    welc_msg = s.get("welcome_text", "Hey {{first_name}}❤️, welcome to {{group}} 🥳")
+    leave_msg = s.get("leave_text", "Goodbye {{first_name}}, we will miss you! 😢")
+    
     text = (
         "⚙️ **Greetings Control Panel**\n"
         f"🎯 **Target:** `{chat_id}`{inv_stamp}\n\n"
-        f"**Welcome Msg:**\n`{s['welcome_text']}`\n\n"
-        f"**Leave Msg:**\n`{s['leave_text']}`"
+        f"**Welcome Msg:**\n`{welc_msg}`\n\n"
+        f"**Leave Msg:**\n`{leave_msg}`"
     )
     try:
         await query.message.edit_text(text, reply_markup=build_greetings_menu(chat_id, s))
     except Exception:
         pass
 
-# --- Command ---
+
 @Client.on_message(filters.command("greetings") & filters.group)
 async def greetings_cmd(client, message):
     chat_id = message.chat.id
@@ -46,14 +51,19 @@ async def greetings_cmd(client, message):
         return await message.reply("❌ Only admins can configure greetings.")
         
     s = await get_group_greetings(chat_id)
+    
+    # ✅ Safely fetch the texts here too!
+    welc_msg = s.get("welcome_text", "Hey {{first_name}}❤️, welcome to {{group}} 🥳")
+    leave_msg = s.get("leave_text", "Goodbye {{first_name}}, we will miss you! 😢")
+    
     text = (
         "⚙️ **Greetings Control Panel**\n"
         f"🎯 **Target:** `{chat_id}`\n\n"
-        f"**Welcome Msg:**\n`{s['welcome_text']}`\n\n"
-        f"**Leave Msg:**\n`{s['leave_text']}`"
+        f"**Welcome Msg:**\n`{welc_msg}`\n\n"
+        f"**Leave Msg:**\n`{leave_msg}`"
     )
     await message.reply(text, reply_markup=build_greetings_menu(chat_id, s))
-
+    
 # --- Callbacks ---
 @Client.on_callback_query(filters.regex(r"^grt_(?P<action>tgl|set)_(?P<type>welc|leave)_(?P<chat_id>-?\d+)$"))
 async def greetings_callbacks(client, query):
