@@ -59,7 +59,7 @@ async def handle_hdreplies(client, message):
         await message.reply("✅ Custom template saved successfully!")
 
 # --- 4. Manage Command ---
-@Client.on_message(filters.command("manage") & filters.private)
+@Client.on_message(filters.command("managerss"))
 async def cmd_mandhage(client, message):
     if len(message.command) == 1: return await message.reply("❌ Usage: `/manage <chat_id>`")
     
