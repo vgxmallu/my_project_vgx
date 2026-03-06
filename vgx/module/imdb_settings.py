@@ -11,9 +11,11 @@ def build_settings_menu(chat_id: int, s: dict):
     # Format intervals & deletes for readability
     int_map = {1: "1m", 5: "5m", 20: "20m", 30: "30m", 60: "1h"}
     del_map = {0: "Off", 30: "30s", 300: "5m", 400: "6.6m", 2400: "40m"}
-    
-    cur_int = int_map.get(s["interval"], f"{s['interval']}m")
-    cur_del = del_map.get(s["auto_delete"], f"{s['auto_delete']}s")
+
+
+    interval_val = s.get("interval", 30)
+    cur_int = int_map.get(interval_val, f"{interval_val}m")
+
     
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(en_txt, callback_data=f"imdb_tgl_en_{chat_id}")],
