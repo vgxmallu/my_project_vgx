@@ -60,11 +60,11 @@ def build_draft_menu(uid: int):
     sig_btn = "🟢 Signature: ON" if draft['use_sig'] else "🔴 Signature: OFF"
     
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔗 Add URL Button", callback_data=f"wiz_btn_{uid}")],
-        [InlineKeyboardButton(reac_btn, callback_data=f"wiz_reac_{uid}")],
-        [InlineKeyboardButton(sig_btn, callback_data=f"wiz_sig_{uid}")],
-        [InlineKeyboardButton("🚀 Publish Now", callback_data=f"wiz_publish_{uid}"),
-         InlineKeyboardButton("🗑 Cancel", callback_data=f"wiz_cancel_{uid}")]
+        [InlineKeyboardButton("🔗 Add URL Button", callback_data=f"wiv_btn_{uid}")],
+        [InlineKeyboardButton(reac_btn, callback_data=f"wiv_reac_{uid}")],
+        [InlineKeyboardButton(sig_btn, callback_data=f"wiv_sig_{uid}")],
+        [InlineKeyboardButton("🚀 Publish Now", callback_data=f"wiv_publish_{uid}"),
+         InlineKeyboardButton("🗑 Cancel", callback_data=f"wiv_cancel_{uid}")]
     ])
 
 @Client.on_callback_query(filters.regex(r"^dash_create$"))
@@ -73,7 +73,7 @@ async def init_draft(client, query):
     if not channels:
         return await query.answer("⚠️ Add me to a channel first!", show_alert=True)
         
-    buttons = [[InlineKeyboardButton(ch["title"], callback_data=f"wiz_start_{ch['chat_id']}")] for ch in channels]
+    buttons = [[InlineKeyboardButton(ch["title"], callback_data=f"wiv_start_{ch['chat_id']}")] for ch in channels]
     await query.message.edit_text("✍️ **Select Target Channel:**", reply_markup=InlineKeyboardMarkup(buttons))
 
 @Client.on_callback_query(filters.regex(r"^wiz_start_(?P<chat_id>-?\d+)$"))
@@ -119,7 +119,7 @@ async def catch_draft_content(client, message):
     draft["text"] = message.caption.html if message.caption else (message.text.html if message.text else "")
     await message.reply("✅ **Content Saved!** Customize your post below:", reply_markup=build_draft_menu(uid))
 
-@Client.on_callback_query(filters.regex(r"^wiz_(?P<action>[a-z_]+)_(?P<uid>\d+)$"))
+@Client.on_callback_query(filters.regex(r"^wiv_(?P<action>[a-z_]+)_(?P<uid>\d+)$"))
 async def draft_actions(client, query):
     action = query.matches[0].group("action")
     uid = int(query.matches[0].group("uid"))
