@@ -221,7 +221,7 @@ async def handle_reaction(client, query):
 
 
 # --- Auto Complete / Signature for Manual Posts ---
-@Client.on_message(filters.channel & ~filters.edited)
+@Client.on_message(filters.channel)
 async def auto_complete_handler(client, message):
     # Ignore messages sent by the bot itself (the wizard handles those)
     if message.from_user and message.from_user.is_self: return
