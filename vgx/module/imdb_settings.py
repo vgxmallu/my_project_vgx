@@ -5,7 +5,8 @@ from vgx.database.imdb_db import get_settings, update_settings
 def build_settings_menu(chat_id: int, s: dict):
     # Dynamic button text
     en_txt = "🟢 Module Enabled" if s["enabled"] else "🔴 Module Disabled"
-    pin_txt = "📌 Pin Post: ON" if s["pin_message"] else "📌 Pin Post: OFF"
+    #pin_txt = "📌 Pin Post: ON" if s["pin_message"] else "📌 Pin Post: OFF"
+    pin_txt = "📌 Pin Post: ON" if s.get("pin_message", False) else "📌 Pin Post: OFF"
     
     # Format intervals & deletes for readability
     int_map = {1: "1m", 5: "5m", 20: "20m", 30: "30m", 60: "1h"}
