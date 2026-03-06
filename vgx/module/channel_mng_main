@@ -249,3 +249,106 @@ async def welcome_approver(client, message):
             await client.send_message(message.from_user.id, f"Welcome to **{message.chat.title}**! 🎉")
         except:
             pass
+
+
+"""
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
+from database import get_user_channels, get_channel, update_channel, update_user
+
+# ==========================================
+# 1. Dashboard Routing
+# ==========================================
+@Client.on_callback_query(filters.regex(r"^dash_(settings|channels)$"))
+async def list_channels_for_settings(client, query):
+    """Fired when user clicks ⚙️ Settings or 📚 My Channels"""
+    channels = await get_user_channels(query.from_user.id)
+    if not channels:
+        return await query.answer("⚠️ Add me to a channel as Admin first!", show_alert=True)
+        
+    buttons = [[InlineKeyboardButton(ch["title"], callback_data=f"set_ch_{ch['chat_id']}")] for ch in channels]
+    buttons.append([InlineKeyboardButton("🔙 Back to Dashboard", callback_data="dash_main")])
+    
+    await query.message.edit_text("⚙️ **Select a channel to manage:**", reply_markup=InlineKeyboardMarkup(buttons))
+
+@Client.on_callback_query(filters.regex(r"^dash_tz$"))
+async def ask_timezone(client, query):
+    """Fired when user clicks 🌎 Timezone"""
+    await query.message.reply(
+        "🌎 **Set Timezone**\nReply to this message with your standard Timezone (e.g., `Europe/London` or `Asia/Kolkata`).",
+        reply_markup=ForceReply(selective=True)
+    )
+    await query.answer()
+
+# ==========================================
+# 2. Individual Channel Settings Menu
+# ==========================================
+@Client.on_callback_query(filters.regex(r"^set_ch_(?P<chat_id>-?\d+)$"))
+async def channel_settings_menu(client, query):
+    chat_id = int(query.matches[0].group("chat_id"))
+    ch = await get_channel(chat_id)
+    
+    sig = ch.get("signature") or "Not set"
+    reacs = " ".join(ch.get("default_reactions", [])) if ch.get("default_reactions") else "None"
+    
+    text = (
+        f"⚙️ **Settings for** `{ch.get('title', chat_id)}`\n\n"
+        f"**✒️ Signature:**\n`{sig}`\n\n"
+        f"**👍 Default Reactions:** {reacs}"
+    )
+    
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("✒️ Edit Signature", callback_data=f"set_sig_{chat_id}"),
+         InlineKeyboardButton("👍 Edit Reactions", callback_data=f"set_reac_{chat_id}")],
+        [InlineKeyboardButton("🔙 Back to Channels", callback_data="dash_settings")]
+    ])
+    await query.message.edit_text(text, reply_markup=kb)
+
+# ==========================================
+# 3. Setting Triggers (Asks for Reply)
+# ==========================================
+@Client.on_callback_query(filters.regex(r"^set_(?P<param>sig|reac)_(?P<chat_id>-?\d+)$"))
+async def trigger_settings_reply(client, query):
+    param = query.matches[0].group("param")
+    chat_id = query.matches[0].group("chat_id")
+    
+    if param == "sig":
+        await query.message.reply(
+            f"✒️ **Editing Signature for {chat_id}**\nReply to this message with your new signature text.",
+            reply_markup=ForceReply(selective=True)
+        )
+    elif param == "reac":
+        await query.message.reply(
+            f"👍 **Editing Default Reactions for {chat_id}**\nReply with emojis separated by spaces (e.g., `👍 ❤️ 😂`).",
+            reply_markup=ForceReply(selective=True)
+        )
+    await query.answer()
+
+# ==========================================
+# 4. Handle Forced Replies (Saves to Database)
+# ==========================================
+@Client.on_message(filters.private & filters.reply)
+async def handle_settings_replies(client, message):
+    if not message.reply_to_message or not message.reply_to_message.text: return
+    original_text = message.reply_to_message.text
+    
+    # -- Save Timezone --
+    if "🌎 Set Timezone" in original_text:
+        new_tz = message.text.strip()
+        await update_user(message.from_user.id, timezone=new_tz)
+        await message.reply(f"✅ Timezone updated to `{new_tz}`!")
+        
+    # -- Save Signature --
+    elif "✒️ Editing Signature for" in original_text:
+        chat_id = int(original_text.split("for ")[1].split("\n")[0])
+        await update_channel(chat_id, signature=message.text.html)
+        await message.reply("✅ Signature saved successfully!")
+        
+    # -- Save Default Reactions --
+    elif "👍 Editing Default Reactions for" in original_text:
+        chat_id = int(original_text.split("for ")[1].split("\n")[0])
+        emojis = message.text.strip().split()[:6] # Limit to 6 emojis max
+        await update_channel(chat_id, default_reactions=emojis)
+        await message.reply(f"✅ Default Reactions updated to: {' '.join(emojis)}")
+
+"""
