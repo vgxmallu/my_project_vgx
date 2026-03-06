@@ -1,7 +1,5 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ForceReply
-
-
 from vgx.database.channel_db import update_reaction, save_channel, get_user_channels, create_live_post, channels_col
 
 @Client.on_chat_member_updated()
@@ -168,7 +166,6 @@ async def handle_reaction(client, query):
         return await query.answer("Post expired or deleted.", show_alert=True)
     
     # 2. Rebuild the Reaction Keyboard Row
-    # We grab the existing keyboard so we don't accidentally delete the URL buttons
     existing_kb = query.message.reply_markup.inline_keyboard
     new_kb = []
     
@@ -182,9 +179,10 @@ async def handle_reaction(client, query):
     for emj, users in updated_post["reactions"].items():
         count = len(users)
         count_str = f" {count}" if count > 0 else " 0"
+        
+        # ✅ THE FIX: Just use InlineKeyboardButton directly!
         reac_row.append(
-            # Using the emoji and the count dynamically
-            client.types.InlineKeyboardButton(f"{emj}{count_str}", callback_data=f"react_{post_id}_{emj}")
+            InlineKeyboardButton(f"{emj}{count_str}", callback_data=f"react_{post_id}_{emj}")
         )
     
     new_kb.append(reac_row)
