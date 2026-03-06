@@ -76,7 +76,7 @@ async def init_draft(client, query):
     buttons = [[InlineKeyboardButton(ch["title"], callback_data=f"wiv_start_{ch['chat_id']}")] for ch in channels]
     await query.message.edit_text("✍️ **Select Target Channel:**", reply_markup=InlineKeyboardMarkup(buttons))
 
-@Client.on_callback_query(filters.regex(r"^wiz_start_(?P<chat_id>-?\d+)$"))
+@Client.on_callback_query(filters.regex(r"^wiv_start_(?P<chat_id>-?\d+)$"))
 async def ask_content(client, query):
     chat_id = int(query.matches[0].group("chat_id"))
     uid = query.from_user.id
