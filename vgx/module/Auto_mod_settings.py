@@ -5,6 +5,44 @@ from vgx.database.automod_db import get_warn_settings, update_warn_settings, rem
 from pyrogram.types import ChatPermissions
 from pyrogram.enums import ChatMemberStatus
 
+"""
+HELP_PAGES = {
+    "home": (
+        "🛡 **Advanced Auto-Mod & Warn System**\n\n"
+        "Welcome to the control center! I am designed to automatically stop spammers, "
+        "manage warnings, and execute punishments fairly.\n\n"
+        "👇 **Select a category below to see how I work:**"
+    ),
+    "setup": (
+        "⚙️ **System Setup & Dashboard**\n\n"
+        "To configure the bot for a specific group, use the target command in my private messages:\n\n"
+        "🔹 `/warntarget <chat_id>` - Opens the visual control panel.\n\n"
+        "**From the dashboard, you can:**\n"
+        "• Turn the Auto-Mod ON or OFF.\n"
+        "• Set the max number of warnings (2 to 6).\n"
+        "• Set the final punishment (`Off`, `Kick`, `Mute`, or `Ban`)."
+    ),
+    "flood": (
+        "🌊 **The Auto-Flood Engine**\n\n"
+        "The bot runs a high-speed RAM cache to catch spammers instantly.\n\n"
+        "• **The Trigger:** If a user sends **7 messages in 10 seconds**, the bot deletes all 7 messages instantly.\n"
+        "• **The Action:** It adds 1 Warning to their database profile.\n"
+        "• **The Punishment:** If they reach the max warnings allowed by the group, the bot automatically executes the chosen punishment (e.g., Mute for 1 hour)."
+    ),
+    "cmds": (
+        "⚖️ **Admin Commands**\n\n"
+        "Admins can manually intervene to forgive users and fix mistakes.\n\n"
+        "🔹 `/unwarn` *(Reply to a message)* - Removes 1 warning from that user.\n"
+        "🔹 `/unwarn <user_id>` - Removes 1 warning using their ID.\n\n"
+        "✨ *Bonus: Using `/unwarn` will also automatically UNMUTE the user and fully restore their chat permissions!*"
+    ),
+    "audit": (
+        "📊 **Weekly Audit Report**\n\n"
+        "You don't need to guess if the bot is working. Every single action is tracked in MongoDB.\n\n"
+        "Every **Sunday at 8:00 PM**, the bot will automatically compile the stats and send a "
+        "beautiful Weekly Report to the group showing exactly how many messages were deleted, users muted, and warns issued."
+"""
+
 def build_warn_keyboard(chat_id: int, s: dict):
     # Determine which checkmarks to show
     p_off = "✖️ Off ✅" if s["punishment"] == "off" else "✖️ Off"
