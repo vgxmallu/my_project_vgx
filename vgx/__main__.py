@@ -18,7 +18,7 @@ from vgx.module.bday_schedul import birthday_worker
 from vgx.module.quotes_schedul import quote_worker
 from vgx.module.anilist_schedul import anime_worker
 from vgx.module.rssfeed_scheduler import autopost_worker
-from vgx.module.imdb_scheduler import imdb_worker
+from vgx.module.imdb_scheduler import imdb_background_loop
 
 
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     print("🎬 IMDb Scheduler Module Online!")
     loop5 = asyncio.get_event_loop()
-    loop5.create_task(imdb_worker(app))
+    loop5.create_task(imdb_background_loop(app))
     
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
