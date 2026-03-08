@@ -1,3 +1,5 @@
+            
+
 import asyncio
 from datetime import datetime
 from vgx.database.imdb_db import get_due_posts, set_next_run, queue_deletion, get_due_deletions, remove_deletion
@@ -16,6 +18,12 @@ async def imdb_background_loop(app):
                 try:
                     # Fetch a completely random popular movie
                     post_data = await get_random_imdb_post(group["template"])
+                    
+                    # ✅ Check if our safety engine caught an error
+                    if post_data.get("error"):
+                        print(f"Skipping {chat_id} due to IMDb error: {post_data['error']}")
+                        await set_next_run(chat_id, group["interval"])
+                        continue # Skip to the next group safely
                     
                     # Send Post
                     if post_data["poster"]:
@@ -36,17 +44,3 @@ async def imdb_background_loop(app):
                     
                 # Schedule the next post regardless of success/failure
                 await set_next_run(chat_id, group["interval"])
-
-            # 2. PROCESS AUTO-DELETIONS
-            due_deletions = await get_due_deletions(now)
-            for d in due_deletions:
-                try:
-                    await app.delete_messages(d["chat_id"], d["message_id"])
-                except:
-                    pass # Message already deleted or bot lacks admin rights
-                await remove_deletion(d["_id"])
-
-        except Exception as e:
-            print(f"Scheduler Loop Error: {e}")
-            
-        await asyncio.sleep(15) # Check for tasks every 15 seconds
