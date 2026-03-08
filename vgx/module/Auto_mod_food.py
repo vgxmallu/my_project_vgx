@@ -7,7 +7,7 @@ from vgx.database.automod_db import get_mod_settings, increment_stat
 # Structure: cache[chat_id][user_id] = deque([(timestamp, msg_id), ...])
 flood_cache = defaultdict(lambda: defaultdict(lambda: deque(maxlen=7)))
 
-FLOOD_LIMIT = 7
+FLOOD_LIMIT = 5
 TIME_WINDOW = 10  # Seconds
 
 @Client.on_message(filters.group & ~filters.bot, group=2)
