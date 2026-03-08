@@ -19,7 +19,7 @@ from vgx.module.quotes_schedul import quote_worker
 from vgx.module.anilist_schedul import anime_worker
 from vgx.module.rssfeed_scheduler import autopost_worker
 from vgx.module.pomodoro_scheduler import pomodoro_loop
-from vgx.module.Sleep_mod_schedul.py import nightwatch_loop
+from vgx.module.Sleep_mod_schedul import nightwatch_loop
 from vgx.module.Auto_mod_scheduler import weekly_audit_loop
 
 logging.basicConfig(level=logging.INFO)
