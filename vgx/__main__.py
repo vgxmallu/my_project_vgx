@@ -19,7 +19,7 @@ from vgx.module.quotes_schedul import quote_worker
 from vgx.module.anilist_schedul import anime_worker
 from vgx.module.rssfeed_scheduler import autopost_worker
 from vgx.module.pomodoro_scheduler import pomodoro_loop
-
+from vgx.module.Sleep_mod_schedul.py import nightwatch_loop
 from vgx.module.Auto_mod_scheduler import weekly_audit_loop
 
 logging.basicConfig(level=logging.INFO)
@@ -90,6 +90,10 @@ if __name__ == "__main__":
     print("🛡 Auto-Mod System Online!")
     loop6 = asyncio.get_event_loop()
     loop6.create_task(weekly_audit_loop(app))
+
+    print("🦉 Nightwatch Engine Online!")
+    loop7 = asyncio.get_event_loop()
+    loop7.create_task(nightwatch_loop(app))
     
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
