@@ -5,25 +5,46 @@ from imdb import Cinemagoer
 ia = Cinemagoer()
 
 def _safe_list(movie, key, limit=3):
-    """Safely extracts a list of objects (like Cast or Directors) to a string."""
     items = movie.get(key, [])
     if not items: return "N/A"
     return ", ".join([str(i) for i in items[:limit]])
 
 def fetch_random_popular(template: str) -> dict:
-    """Blocking function to get a random popular movie/tv show and format it."""
-    # 1. Get Top 100 Popular Movies & TV Shows
-    popular_movies = ia.get_popular100_movies()
-    popular_tv = ia.get_popular100_tv()
+    """Safely fetches a random movie, with fallbacks if IMDb blocks the request."""
     
-    # 2. Pick a random item
-    random_choice = random.choice(popular_movies + popular_tv)
+    # 1. Attempt to get Popular 100
+    try:
+        movies_list = ia.get_popular100_movies() or []
+        tv_list = ia.get_popular100_tv() or []
+    except Exception:
+        movies_list, tv_list = [], []
+
+    # 2. FALLBACK: If Popular fails (empty list), try Top 250 instead
+    if not movies_list and not tv_list:
+        try:
+            movies_list = ia.get_top250_movies() or []
+            tv_list = ia.get_top250_tv() or []
+        except Exception:
+            pass
+
+    # Combine whatever we successfully grabbed
+    combined_list = movies_list + tv_list
+    
+    # 3. FINAL SAFETY CHECK: If it's STILL empty, return a safe error
+    if not combined_list:
+        return {"error": "IMDb servers blocked the request or returned empty data.", "text": "", "poster": ""}
+
+    # 4. Pick a random item safely
+    random_choice = random.choice(combined_list)
     movie_id = random_choice.movieID
     
-    # 3. Fetch Full Details for that specific ID
-    movie = ia.get_movie(movie_id, info=['main', 'plot', 'vote details', 'box office'])
+    # Fetch Full Details
+    try:
+        movie = ia.get_movie(movie_id, info=['main', 'plot', 'vote details', 'box office'])
+    except Exception as e:
+        return {"error": f"Failed to fetch movie details: {e}", "text": "", "poster": ""}
     
-    # 4. Map ALL requested variables
+    # Map variables
     replacements = {
         "{{query}}": "Random Popular",
         "{{title}}": movie.get('title', 'N/A'),
@@ -55,13 +76,11 @@ def fetch_random_popular(template: str) -> dict:
         "{{url}}": f"https://www.imdb.com/title/tt{movie_id}/"
     }
 
-    # 5. Build Final Text
     final_text = template
     for key, val in replacements.items():
         final_text = final_text.replace(key, str(val))
         
-    return {"text": final_text, "poster": replacements["{{poster}}"]}
+    return {"text": final_text, "poster": replacements["{{poster}}"], "error": None}
 
 async def get_random_imdb_post(template: str) -> dict:
-    """Wraps the blocking scrape in an async thread to prevent freezing the bot."""
     return await asyncio.to_thread(fetch_random_popular, template)
