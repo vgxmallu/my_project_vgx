@@ -1,6 +1,6 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from vgx.database.automod_db import get_mod_settings, update_mod_settings
+from vgx.database.automod_db import get_mod_settings, update_mod_settings, mod_stats
 
 def build_mod_menu(chat_id: int, enabled: bool):
     en_txt = "🟢 Auto-Mod: ENABLED" if enabled else "🔴 Auto-Mod: DISABLED"
@@ -37,7 +37,6 @@ async def mod_callbacks(client, query):
         await query.message.edit_reply_markup(reply_markup=build_mod_menu(chat_id, new_state))
         
     elif action == "stats":
-        from database import mod_stats
         st = await mod_stats.find_one({"chat_id": chat_id}) or {}
         text = (
             f"📊 **Live Stats for {chat_id}**\n\n"
