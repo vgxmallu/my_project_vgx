@@ -20,7 +20,7 @@ from vgx.module.anilist_schedul import anime_worker
 from vgx.module.rssfeed_scheduler import autopost_worker
 from vgx.module.pomodoro_scheduler import pomodoro_loop
 
-
+from vgx.module.Auto_mod_scheduler import weekly_audit_loop
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SchedulerBot")
@@ -86,6 +86,10 @@ if __name__ == "__main__":
     print("🍅 Pomodoro Module Online!")
     loop5 = asyncio.get_event_loop()
     loop5.create_task(pomodoro_loop(app))
+
+    print("🛡 Auto-Mod System Online!")
+    loop6 = asyncio.get_event_loop()
+    loop6.create_task(weekly_audit_loop(app))
     
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
