@@ -60,3 +60,13 @@ async def pop_weekly_stats(chat_id: int) -> dict:
 
 async def get_all_enabled_groups():
     return await warn_settings.find({"enabled": True}).to_list(length=None)
+
+async def remove_user_warn(chat_id: int, user_id: int) -> int:
+    """Removes 1 warning and returns the new total warning count."""
+    doc = await user_warns.find_one_and_update(
+        {"chat_id": chat_id, "user_id": user_id, "warns": {"$gt": 0}},
+        {"$inc": {"warns": -1}},
+        return_document=True
+    )
+    # If the document exists, return the new number. Otherwise, they have 0.
+    return doc["warns"] if doc else 0
