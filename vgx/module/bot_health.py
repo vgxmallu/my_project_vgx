@@ -2,6 +2,15 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from vgx.database.bothealth import get_log_channel, update_log_channel
 
+
+import time
+    
+    # We record the exact time the script started to calculate Uptime
+BOT_START_TIME = time.time() 
+
+
+
+
 def build_health_menu(s: dict):
     en_txt = "🟢 Heartbeat: ON" if s["ping_enabled"] else "🔴 Heartbeat: OFF"
     channel_txt = f"🎯 Target: {s['log_channel_id']}" if s['log_channel_id'] else "🎯 Target: NOT SET"
@@ -73,7 +82,7 @@ async def heartbeat_loop(app):
             if settings["ping_enabled"] and settings["log_channel_id"]:
                 
                 # 1. Gather System Metrics
-                uptime_seconds = int(time.time() - Config.BOT_START_TIME)
+                uptime_seconds = int(time.time() - BOT_START_TIME)
                 bot_uptime = get_readable_time(uptime_seconds)
                 
                 cpu_usage = psutil.cpu_percent(interval=1)
