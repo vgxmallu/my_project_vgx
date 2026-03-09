@@ -4,30 +4,23 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from config import Config
 
 db_client = AsyncIOMotorClient(Config.MONGO_URL)
-db = db_client["UltimateEventsDB"]
-
-settings_col = db["group_settings"]
-users_col = db["users"]
+db = db_client["AdvancedEvents"]
 events_col = db["events"]
+users_col = db["users"] # Handles Economy & Strikes
 
-# --- Group Settings ---
-async def get_event_settings(chat_id: int) -> dict:
-    s = await settings_col.find_one({"chat_id": chat_id})
-    return s or {"chat_id": chat_id, "enabled": False}
-
-async def update_event_settings(chat_id: int, enabled: bool):
-    await settings_col.update_one({"chat_id": chat_id}, {"$set": {"enabled": enabled}}, upsert=True)
-
-# --- Users (Economy & Strikes) ---
+# --- User Economy & Strikes ---
 async def get_user(user_id: int) -> dict:
     u = await users_col.find_one({"user_id": user_id})
     if not u:
-        # Default: 1000 coins, 0 strikes, UTC timezone
-        u = {"user_id": user_id, "coins": 1000, "strikes": 0, "tz_offset": 0.0}
+        u = {"user_id": user_id, "coins": 1000, "strikes": 0, "timezone": "UTC"}
         await users_col.insert_one(u)
     return u
 
+async def update_user(user_id: int, **kwargs):
+    await users_col.update_one({"user_id": user_id}, {"$set": kwargs}, upsert=True)
+
 async def alter_coins(user_id: int, amount: int) -> bool:
+    """Returns True if successful, False if insufficient funds."""
     u = await get_user(user_id)
     if u["coins"] + amount < 0:
         return False
@@ -38,7 +31,7 @@ async def add_strike(user_id: int):
     await users_col.update_one({"user_id": user_id}, {"$inc": {"strikes": 1}}, upsert=True)
 
 # --- Event Management ---
-async def create_event(chat_id: int, title: str, start_time: datetime, capacity: int, cost: int, event_type: str, metadata: dict = None) -> str:
+async def create_master_event(chat_id: int, title: str, start_time: datetime, capacity: int, cost: int, event_type: str, metadata: dict = None) -> str:
     event_id = str(uuid.uuid4())[:8]
     doc = {
         "event_id": event_id,
@@ -47,9 +40,10 @@ async def create_event(chat_id: int, title: str, start_time: datetime, capacity:
         "start_time": start_time,
         "capacity": capacity,
         "cost": cost,
-        "event_type": event_type, 
-        "metadata": metadata or {}, 
-        "attendees": {}, # format: {"user_id_str": {"checked_in": False, "username": "..."}}
+        "event_type": event_type, # "standard", "tournament", "watchparty"
+        "metadata": metadata or {}, # Used for AniList image URLs or Bracket data
+        "attendees": {}, # format: {str(user_id): {"checked_in": False}}
+        "waitlist": [],
         "status": "pending" # pending, active, finished
     }
     await events_col.insert_one(doc)
