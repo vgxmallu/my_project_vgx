@@ -60,27 +60,57 @@ async def create_watch_party(client, message):
 
 # --- Tournament Creator ---
 @Client.on_message(filters.command("createtournament") & filters.group)
-async def create_tournament(client, message):
-    # Usage: /createtournament 16 | 500 | Weekend Chess
-    parts = message.text.split(" | ")
-    capacity = int(parts[0].split(" ")[1])
-    cost = int(parts[1])
-    title = parts[2]
-    start_time = datetime.utcnow() # Tournaments start when full for this example
+async def cmd_tournament(client, message):
+    chat_id = message.chat.id
     
-    event_id = await create_master_event(
-        chat_id=message.chat.id, title=f"🏆 {title}",
-        start_time=start_time, capacity=capacity, cost=cost, event_type="tournament"
-    )
-    
-    text = (
-        f"🏆 **NEW TOURNAMENT** 🏆\n━━━━━━━━━━━━━━━━━━━━\n"
-        f"🎮 **Game:** {title}\n💎 **Entry Fee:** {cost} Coins\n"
-        f"👥 **Bracket Size:** {capacity} Players\n\n"
-        f"*(Bracket will generate automatically once full!)*"
-    )
-    await message.reply(text, reply_markup=build_rsvp_keyboard(event_id, 0, capacity, cost))
+    # Optional: Check if the module is enabled first
+    # s = await get_event_settings(chat_id)
+    # if not s["enabled"]: return
 
+    # 1. Safe Check: Did they provide arguments?
+    if len(message.command) < 2 or " | " not in message.text:
+        return await message.reply(
+            "❌ **Invalid Format!**\n\n"
+            "**Usage:** `/createtournament <capacity> | <cost> | <title>`\n"
+            "**Example:** `/createtournament 16 | 500 | Weekend Chess`"
+        )
+
+    # 2. Safe Parsing
+    try:
+        # message.text.split(" ", 1)[1] isolates everything AFTER the command itself
+        args_string = message.text.split(" ", 1)[1] 
+        parts = args_string.split(" | ")
+        
+        capacity = int(parts[0].strip())
+        cost = int(parts[1].strip())
+        title = parts[2].strip()
+        
+    except (IndexError, ValueError):
+        return await message.reply(
+            "❌ **Error parsing numbers!**\n"
+            "Make sure Capacity and Cost are valid numbers, separated by ` | `."
+        )
+
+    # 3. Create the Event in MongoDB
+    event_id = await create_event(
+        chat_id=chat_id, 
+        title=f"🏆 {title}", 
+        start_time=datetime.utcnow(), 
+        capacity=capacity, 
+        cost=cost, 
+        event_type="tournament"
+    )
+    
+    # 4. Send the RSVP UI
+    text = (
+        f"🏆 **NEW TOURNAMENT** 🏆\n"
+        f"🎮 **Game:** {title}\n"
+        f"💎 **Cost:** {cost} Coins\n"
+        f"👥 **Slots:** {capacity}\n\n"
+        f"*(Bracket generates automatically when full!)*"
+    )
+    
+    await message.reply(text, reply_markup=get_rsvp_kb(event_id, 0, capacity, cost))
 
 
 
