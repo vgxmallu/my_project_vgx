@@ -4,7 +4,6 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from vgx.database.rsvp_event_db import create_master_event, get_event, update_event, get_user, alter_coins, events_col, add_strike
 import random 
-from plugins.creator import build_rsvp_keyboard
 import asyncio
 from pyrogram.types import ChatPermissions
 
