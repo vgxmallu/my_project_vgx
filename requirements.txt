@@ -18,3 +18,4 @@ timezonefinder
 feedparser
 beautifulsoup4
 cinemagoer
+psutil
