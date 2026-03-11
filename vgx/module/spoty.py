@@ -1,75 +1,99 @@
 import os
 import time
-import subprocess
+import asyncio
 from config import Config
 
+
 import shutil
+
 from pyrogram import Client, filters
 from pyrogram.types import Message
+from pyrogram.errors import FloodWait
 
-def download_spotify_track(url: str):
+async def download_spotify_media(url: str):
     """
-    Uses spotdl to match the Spotify track to YouTube Music,
-    download the MP3, and apply the Spotify cover art and ID3 tags.
+    Asynchronously downloads a Track, Playlist, Album, or Artist.
+    Returns a list of downloaded .mp3 file paths and the temporary directory.
     """
-    # Create a unique temporary folder for this download
     task_id = str(int(time.time()))
     task_dir = os.path.join(Config.DOWNLOAD_DIR, task_id)
     os.makedirs(task_dir, exist_ok=True)
 
+    # Base spotdl command
+    # We output them sequentially with an autonumber if it's a playlist
+    cmd = [
+        "spotdl", "download", url, 
+        "--output", f"{task_dir}/{{list-position}} - {{title}} - {{artist}}.{{ext}}"
+    ]
+
+    # Advanced: Automatically inject YouTube Music cookies if the file exists
+    if os.path.exists("cookies.txt"):
+        cmd.extend(["--cookie-file", "cookies.txt"])
+
     try:
-        # Run the spotdl command line tool via subprocess
-        # This downloads the song and names it "Title - Artist.mp3"
-        process = subprocess.run(
-            ["spotdl", "download", url, "--output", f"{task_dir}/{{title}} - {{artist}}.{{ext}}"],
+        # Run process asynchronously to prevent bot from freezing
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
             cwd=task_dir,
-            capture_output=True,
-            text=True
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
         )
-
-        # Look for the resulting .mp3 file in our temporary folder
-        for file in os.listdir(task_dir):
+        
+        stdout, stderr = await process.communicate()
+        
+        # Gather all downloaded mp3 files in the task directory
+        downloaded_files = []
+        for file in sorted(os.listdir(task_dir)):
             if file.endswith(".mp3"):
-                return os.path.join(task_dir, file), task_dir
-
-        print(f"SpotDL Error: {process.stderr}")
-        return None, task_dir
+                downloaded_files.append(os.path.join(task_dir, file))
+                
+        return downloaded_files, task_dir
         
     except Exception as e:
-        print(f"Spotify Download Exception: {e}")
-        return None, task_dir
+        print(f"Async SpotDL Error: {e}")
+        return [], task_dir
 
 
 
+# Matches Track, Album, Playlist, and Artist links
+SP_REGEX = r"(https?://open\.spotify\.com/(track|album|playlist|artist)/[a-zA-Z0-9]+)"
 
-
-# Matches ONLY Spotify track links (no playlists/albums to prevent group spam)
-SP_REGEX = r"(https?://open\.spotify\.com/track/[a-zA-Z0-9]+)"
-
-# Listen in both private chats AND groups
 @Client.on_message(filters.regex(SP_REGEX) & (filters.private | filters.group))
 async def handle_spotify_link(client: Client, message: Message):
     url = message.matches[0].group(1)
+    media_type = message.matches[0].group(2).capitalize()
     
-    status_msg = await message.reply_text("🔎 **Searching for track...** (Applying cover art & metadata)")
+    status_msg = await message.reply_text(f"⏳ **Processing {media_type}...**\n*(Playlists and Albums may take a while! You can still use the bot for other things.)*")
     
-    filepath, task_dir = download_spotify_track(url)
+    filepaths, task_dir = await download_spotify_media(url)
     
-    if filepath and os.path.exists(filepath):
-        await status_msg.edit_text("📤 **Uploading to Telegram...**")
+    if filepaths:
+        await status_msg.edit_text(f"📤 **Uploading {len(filepaths)} track(s) to Telegram...**")
         
-        try:
-            # Send the audio file. Pyrogram automatically reads the ID3 tags (cover art/artist)
-            await message.reply_audio(
-                audio=filepath, 
-                caption="Here is your track! 🎵"
-            )
-        except Exception as e:
-            await message.reply_text(f"❌ **Upload Failed:** {str(e)}")
-        finally:
-            # Clean up the unique folder
-            shutil.rmtree(task_dir, ignore_errors=True)
-            await status_msg.delete()
+        success_count = 0
+        for file in filepaths:
+            try:
+                # Upload the audio file
+                await message.reply_audio(audio=file)
+                success_count += 1
+                
+                # Small sleep to prevent Telegram from flagging the bot for spam
+                await asyncio.sleep(1.5) 
+                
+            except FloodWait as e:
+                # If Telegram says "You are uploading too fast", wait the required time and try again
+                print(f"Hit FloodWait! Sleeping for {e.value} seconds...")
+                await asyncio.sleep(e.value + 2)
+                await message.reply_audio(audio=file)
+                success_count += 1
+                
+            except Exception as e:
+                print(f"Failed to upload one track: {e}")
+                
+        await status_msg.edit_text(f"✅ **Successfully uploaded {success_count}/{len(filepaths)} tracks!**")
+        
     else:
-        shutil.rmtree(task_dir, ignore_errors=True)
-        await status_msg.edit_text("❌ **Download Failed.** The track might not be available or the link is invalid.")
+        await status_msg.edit_text("❌ **Download Failed.**\nThe playlist might be private, empty, or age-restricted (if cookies are missing).")
+        
+    # Clean up the folder to save server space
+    shutil.rmtree(task_dir, ignore_errors=True)
