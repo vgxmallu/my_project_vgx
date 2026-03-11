@@ -22,7 +22,7 @@ from vgx.module.pomodoro_scheduler import pomodoro_loop
 from vgx.module.bot_health import heartbeat_loop
 from vgx.module.Auto_mod_scheduler import weekly_audit_loop
 from vgx.module.rsvp_event import event_lifecycle_loop
-
+from vgx.module.spoty import drop_sender_loop, auto_delete_loop
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SchedulerBot")
@@ -100,7 +100,12 @@ if __name__ == "__main__":
     print("🍃 RSVP Event Monitor Online!")
     loop8 = asyncio.get_event_loop()
     loop8.create_task(event_lifecycle_loop(app))
-    
+
+    print("🎧 Spotify Pro System Online!")
+    loop_spot = asyncio.get_event_loop()
+    # Start both background loops concurrently!
+    loop_spot.create_task(drop_sender_loop(app))
+    loop_spot.create_task(auto_delete_loop(app))
 
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
