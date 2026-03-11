@@ -19,3 +19,6 @@ feedparser
 beautifulsoup4
 cinemagoer
 psutil
+
+yt-dlp
+python-dotenv
