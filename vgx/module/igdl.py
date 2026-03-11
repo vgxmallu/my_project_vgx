@@ -18,7 +18,7 @@ def download_ig_media(url: str):
         'quiet': True,
         'no_warnings': True,
         'noplaylist': True,
-        # 'cookiefile': 'cookies.txt', # Un-comment and provide a cookies.txt file for Stories/Private posts
+        'cookiefile': 'cookies.txt', # Un-comment and provide a cookies.txt file for Stories/Private posts
     }
     
     try:
