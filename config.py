@@ -13,9 +13,12 @@ class Config:
     BOT_TOKEN = os.environ.get("BOT_TOKEN", "YOUR_BOT_TOKEN")
     
     # MongoDB Connection URL (Get from MongoDB Atlas)
-    MONGO_URL = os.environ.get("MONGO_URL", "mongodb+srv://...") 
-    
+    MONGO_URL = os.environ.get("MONGO_URL", "mongodb+srv://...")   
     DB_NAME = "GroupSchedulerBot" # Database name 
+
+    SPOTIPY_CLIENT_ID = os.environ.get("SPOTIPY_CLIENT_ID", "your_client_id_here")
+    SPOTIPY_CLIENT_SECRET = os.environ.get("SPOTIPY_CLIENT_SECRET", "your_client_secret_here")
+    
     ADMIN_ID = 784589736 # Your Telegram ID (to prevent abuse)
     DEFAULT_INTERVAL = 3600 # Default interval in seconds (3 hours =
     # Viral threshold: 1.5 = 50% higher than average
