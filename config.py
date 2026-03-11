@@ -1,4 +1,9 @@
 import os
+from dotenv import load_dotenv
+
+# Load variables from .env file
+load_dotenv()
+
 
 
 
@@ -17,4 +22,13 @@ class Config:
     VIRAL_THRESHOLD = 1.5 
     # Polling interval in seconds (e.g., check feeds every 5 minutes
     UPDATE_INTERVAL = 300 
+    # Directory to temporarily store downloads
+    DOWNLOAD_DIR = "downloads"
     
+    # Ensure download directory exists
+    if not os.path.exists(DOWNLOAD_DIR):
+        os.makedirs(DOWNLOAD_DIR)
+
+
+    
+        
