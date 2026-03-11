@@ -22,3 +22,4 @@ psutil
 
 yt-dlp
 python-dotenv
+spotdl
