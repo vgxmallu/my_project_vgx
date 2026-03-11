@@ -7,7 +7,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from datetime import datetime, timedelta
 from config import Config
-from database import get_settings, get_active_groups, update_settings, add_to_delete_queue, get_expired_deletes, remove_from_queue
+from vgx.database.spoty_db import get_settings, get_active_groups, update_settings, add_to_delete_queue, get_expired_deletes, remove_from_queue
 
 
 
