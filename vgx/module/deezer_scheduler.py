@@ -14,8 +14,8 @@ def build_deezer_kb(chat_id: int, s: dict):
         [InlineKeyboardButton(pin_txt, callback_data=f"dz_pin_{chat_id}")]
     ])
 
-@Client.on_message(filters.command("music_target") & filters.private)
-async def target_cmd(client, message):
+@Client.on_message(filters.command("deezertarget") & filters.private)
+async def targedeext_cmd(client, message):
     if len(message.command) < 2:
         return await message.reply("❌ **Usage:** `/music_target -100123456789`")
     try:
