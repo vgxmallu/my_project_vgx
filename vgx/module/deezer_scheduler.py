@@ -62,7 +62,7 @@ import random
 import aiohttp
 from datetime import datetime, timedelta
 
-
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 async def fetch_random_deezer_track():
     """Fetches a highly random track with full metadata from Deezer."""
     wildcards = ['a', 'e', 'i', 'o', 'u']
@@ -99,6 +99,12 @@ async def fetch_random_deezer_track():
     except Exception as e:
         print(f"Deezer Fetch Error: {e}")
         return None
+from pyrogram.enums import ButtonStyle
+add_button = InlineKeyboardMarkup(
+    [[
+        InlineKeyboardButton("⛓️‍💥 Track Link", url=f"{track['url']}", style=ButtonStyle.PRIMARY)
+    ]] 
+)
 
 async def music_scheduler_loop(app):
     while True:
@@ -118,19 +124,19 @@ async def music_scheduler_loop(app):
                     
                     caption = (
                         "🎧 **Music Discovery Drop** 🎧\n"
-                        "━━━━━━━━━━━━━━━━━━━━\n"
+                        "━━━━━━━━━━━━━\n"
                         f"🎵 **Track:** {track['name']}\n"
                         f"🎤 **Artist:** {track['artist']}\n"
                         f"💿 **Album:** {track['album']}\n"
                         f"📈 **Deezer Rank:** {track['popularity']}\n"
-                        "━━━━━━━━━━━━━━━━━━━━\n"
+                        "━━━━━━━━━━━━━\n"
                         f"🔗 [Listen Full Track]({track['url']}){preview_txt}"
                     )
                     
                     try:
                         # 1. Send the Message
                         if track["image"]:
-                            msg = await app.send_photo(chat_id, photo=track["image"], caption=caption)
+                            msg = await app.send_photo(chat_id, photo=track["image"], caption=caption, reply_markup=add_button)
                         else:
                             msg = await app.send_message(chat_id, caption, disable_web_page_preview=False)
                             
