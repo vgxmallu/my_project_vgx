@@ -2,7 +2,7 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from datetime import datetime
-from database import get_settings, get_ready_groups, update_settings
+from vgx.database.deezer_db import get_settings, get_ready_groups, update_settings
 def build_deezer_kb(chat_id: int, s: dict):
     en_txt = "🟢 Module: ON" if s["enabled"] else "🔴 Module: OFF"
     pin_txt = "📌 Auto-Pin: ON" if s["pin"] else "📌 Auto-Pin: OFF"
