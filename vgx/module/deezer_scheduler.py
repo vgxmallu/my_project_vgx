@@ -99,12 +99,9 @@ async def fetch_random_deezer_track():
     except Exception as e:
         print(f"Deezer Fetch Error: {e}")
         return None
+        
 from pyrogram.enums import ButtonStyle
-add_button = InlineKeyboardMarkup(
-    [[
-        InlineKeyboardButton("⛓️‍💥 Track Link", url=f"{track['url']}", style=ButtonStyle.PRIMARY)
-    ]] 
-)
+
 
 async def music_scheduler_loop(app):
     while True:
@@ -121,7 +118,11 @@ async def music_scheduler_loop(app):
                 if track:
                     # Build the "Full Information" layout
                     preview_txt = f"\n🔊 [Play 30s Audio Preview]({track['preview_url']})" if track['preview_url'] else ""
-                    
+                    add_button = InlineKeyboardMarkup(
+                        [[
+                           InlineKeyboardButton("⛓️‍💥 Track Link", url=track['url'], style=ButtonStyle.PRIMARY)
+                        ]] 
+                    )
                     caption = (
                         "🎧 **Music Discovery Drop** 🎧\n"
                         "━━━━━━━━━━━━━\n"
@@ -138,7 +139,7 @@ async def music_scheduler_loop(app):
                         if track["image"]:
                             msg = await app.send_photo(chat_id, photo=track["image"], caption=caption, reply_markup=add_button)
                         else:
-                            msg = await app.send_message(chat_id, caption, disable_web_page_preview=False)
+                            msg = await app.send_message(chat_id, caption, disable_web_page_preview=False, reply_markup=add_button)
                             
                         # 2. Auto-Pin if enabled
                         if group.get("pin"):
