@@ -65,7 +65,7 @@ from datetime import datetime, timedelta
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 async def fetch_random_deezer_track():
     """Fetches a highly random track with full metadata from Deezer."""
-    wildcards = ['a', 'e', 'i', 'o', 'u']
+    wildcards = ['a', 'e', 'phonk', 'funk', 'f', 'i', 'o', 'u']
     query = random.choice(wildcards)
     offset = random.randint(0, 1000) 
     
