@@ -23,6 +23,10 @@ from vgx.module.bot_health import heartbeat_loop
 from vgx.module.Auto_mod_scheduler import weekly_audit_loop
 from vgx.module.weather_schedul import morning_briefing_loop
 from vgx.module.spoty import drop_sender_loop, auto_delete_loop
+from vgx.module.deezer_scheduler import music_scheduler_loop
+
+
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SchedulerBot")
@@ -100,6 +104,10 @@ if __name__ == "__main__":
     print("🌤 Weather Morning Briefing System Online!")
     loop8 = asyncio.get_event_loop()
     loop8.create_task(morning_briefing_loop(app))
+
+    print("🚀 Deezer Music Scheduler Online!")
+    loop9 = asyncio.get_event_loop()
+    loop9.create_task(music_scheduler_loop(app))
     
     print("🎧 Spotify Pro System Online!")
     loop_spot = asyncio.get_event_loop()
