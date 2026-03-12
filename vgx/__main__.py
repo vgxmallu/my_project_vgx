@@ -1,4 +1,4 @@
-import asyncio
+oimport asyncio
 import logging
 from datetime import datetime
 from pyrogram import idle
@@ -21,7 +21,7 @@ from vgx.module.rssfeed_scheduler import autopost_worker
 from vgx.module.pomodoro_scheduler import pomodoro_loop
 from vgx.module.bot_health import heartbeat_loop
 from vgx.module.Auto_mod_scheduler import weekly_audit_loop
-from vgx.module.rsvp_event import event_lifecycle_loop
+from vgx.module.weather_schedul import morning_briefing_loop
 from vgx.module.spoty import drop_sender_loop, auto_delete_loop
 
 logging.basicConfig(level=logging.INFO)
@@ -97,10 +97,10 @@ if __name__ == "__main__":
     loop7 = asyncio.get_event_loop()
     loop7.create_task(heartbeat_loop(app))
 
-    print("🍃 RSVP Event Monitor Online!")
+    print("🌤 Weather Morning Briefing System Online!")
     loop8 = asyncio.get_event_loop()
-    loop8.create_task(event_lifecycle_loop(app))
-
+    loop8.create_task(morning_briefing_loop(app))
+    
     print("🎧 Spotify Pro System Online!")
     loop_spot = asyncio.get_event_loop()
     # Start both background loops concurrently!
