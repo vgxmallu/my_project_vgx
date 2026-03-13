@@ -132,12 +132,12 @@ async def morning_briefing_loop(app):
                 if weather["success"]:
                     caption = (
                         f"🌅 **Good Morning, {city.title()}!**\n"
-                        "━━━━━━━━━━━━━━━━━━━━\n"
+                        "━━━━━━━━━━━━━━\n"
                         f"{weather['emoji']} **Forecast:** {weather['desc']}\n"
                         f"🌡 **Temperature:** {weather['temp']}°C *(Feels like {weather['feels_like']}°C)*\n"
                         f"💧 **Humidity:** {weather['humidity']}%\n"
                         f"💨 **Wind:** {weather['wind']} km/h\n"
-                        "━━━━━━━━━━━━━━━━━━━━\n"
+                        "━━━━━━━━━━━━━━\n"
                         "Have a great day ahead! ✨"
                     )
                     
