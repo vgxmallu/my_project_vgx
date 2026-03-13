@@ -124,12 +124,13 @@ async def music_scheduler_loop(app):
                         ]] 
                     )
                     caption = (
-                        "🎧 **Music Discovery Drop** 🎧\n"
+                        "💜 **Music Discovery Drop** 💜\n"
                         "━━━━━━━━━━━━━\n"
                         f"🎵 **Track:** {track['name']}\n"
                         f"🎤 **Artist:** {track['artist']}\n"
                         f"💿 **Album:** {track['album']}\n"
-                        f"📈 **Deezer Rank:** {track['popularity']}\n"
+                        f"📅 **Released:** {track['release_date']}\n"
+                        f"📊 **Deezer Rank:** {track['popularity']}\n"
                         "━━━━━━━━━━━━━\n"
                         f"🔗 [Listen Full Track]({track['url']}){preview_txt}"
                     )
