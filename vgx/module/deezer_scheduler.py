@@ -129,7 +129,6 @@ async def music_scheduler_loop(app):
                         f"🎵 **Track:** {track['name']}\n"
                         f"🎤 **Artist:** {track['artist']}\n"
                         f"💿 **Album:** {track['album']}\n"
-                        f"📅 **Released:** {track['release_date']}\n"
                         f"📊 **Deezer Rank:** {track['popularity']}\n"
                         "━━━━━━━━━━━━━\n"
                         f"🔗 [Listen Full Track]({track['url']}){preview_txt}"
