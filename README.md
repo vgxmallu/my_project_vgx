@@ -1,1 +1,1 @@
-**Hey :(, Im a Full Errors of Codes, im just made for a useless things 😹👊**
+**Hey :(, Im a Full Bunch of Error Codes, im just made for a useless things 😹👊**
