@@ -5,15 +5,9 @@ from vgx.database.db_advanc import db
 @Client.on_message(filters.private & filters.command("start"))
 async def start(c, m):
     await m.reply(
-        "🤖 **Advanced Scheduler Bot**\n\n"
-        "Features:\n"
-        "✅ Auto-Repeat (5m, 10m, 1h...)\n"
-        "✅ Auto-Delete & Pin\n"
-        "✅ Delete Previous Message\n"
-        "✅ Supports Photo/Video/Text\n\n"
+        "**Hey i am Advanced Scheduler Bot**\n\n"
         "Commands:\n"
-        "/schedule - New Schedule\n"
-        "/myjobs - Manage Schedules"
+        "/cmd - for my commands\n"
     )
 
 @Client.on_message(filters.private & filters.command("myjobs"))
