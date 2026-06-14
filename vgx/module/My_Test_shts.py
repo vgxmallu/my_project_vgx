@@ -3,7 +3,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 @Client.on_message(filters.private & filters.command("tt"))
-async def start(c, m):
+async def stahgrt(c, m):
     await m.reply(
         "<h1>Hey i am Advanced Scheduler Bot**\n</h1>"
         "Commands:\n"
