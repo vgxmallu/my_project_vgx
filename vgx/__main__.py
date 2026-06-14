@@ -8,7 +8,7 @@ from vgx.module.adv_engine import run_job
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 
-from vgx.module.night_schedul import start_nm_scheduler
+from vgx.module.Night_Mod import start_nm_scheduler
 from vgx.module.dfeed_scheduler import start_df_scheduler
 from vgx.module.anylz_schedul import start_anlyz_scheduler
 
