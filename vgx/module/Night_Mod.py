@@ -2,10 +2,9 @@
 from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions
 from vgx.database.night_db import get_chat, update_chat, add_vip, remove_vip, chats
-from vgx.module.night_m_keybord import get_settings_kb
+
 from timezonefinder import TimezoneFinder
 import pytz
-from vgx.module.night_schedul import set_day_permissions
 
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.enums import ButtonStyle
