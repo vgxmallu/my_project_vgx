@@ -3,13 +3,25 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputRich
 
 
 @Client.on_message(filters.private & filters.command("tt"))
-async def stahgrt(c, m):
+async def stahgrt(app, m):
+    chat_id = m.message.chat.id
+    message_id = m.message.id
     await m.send_rich_message(
-        chat.id, InputRichMessage("<h1>Hey i am Advanced Scheduler Bot\n</h1>"),
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [InlineKeyboardButton("Data", callback_data="callbackigih_data")],
-                [InlineKeyboardButton("Docs", url="https://docs.pyrogram.org")]
-            ]))
+        "<h1>Hey i am Advanced Scheduler Bot\n</h1>"
+        ""
+    ),
+    # Replace the current checklist with a new one
+    await app.edit_message_checklist(
+        chat_id=chat_id,
+        message_id=message_id,
+        checklist=types.InputChecklist(
+           title="Hey i am Advanced Scheduler Bot",
+           tasks=[
+               types.InputChecklistTask(id=1, text="Task 1"),
+               types.InputChecklistTask(id=2, text="Task 2")
+           ]
+       )
+    )
+
 
 
