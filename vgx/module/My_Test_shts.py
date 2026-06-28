@@ -4,7 +4,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputRich
 
 @Client.on_message(filters.private & filters.command("tt"))
 async def stahgrt(app, m):
-    chat_id = m.message.chat.id
+    chat_id = m.chat.id
     message_id = m.message.id
     await m.send_rich_message(
         "<h1>Hey i am Advanced Scheduler Bot\n</h1>"
