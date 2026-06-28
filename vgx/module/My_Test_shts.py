@@ -3,7 +3,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputRich
 
 
 
-@app.on_message(filters.private & filters.command("tt"))
+@Client.on_message(filters.private & filters.command("tt"))
 async def stahgrt(client, message):
     # 1. Send the initial text message using valid Telegram HTML (<b> instead of <h1>)
     # We assign it to 'bot_msg' so we can capture its unique message ID
