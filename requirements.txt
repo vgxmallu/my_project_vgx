@@ -1,7 +1,7 @@
 #pyrogram
-#git+https://github.com/KurimuzonAkuma/kurigram
+git+https://github.com/KurimuzonAkuma/kurigram
 #git+https://github.com/aiogram/aiogram
-git+https://github.com/python-telegram-bot/python-telegram-bot
+
 tgcrypto
 motor
 python-dateutil
