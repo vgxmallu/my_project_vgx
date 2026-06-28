@@ -8,8 +8,7 @@ async def stahgrt(app, m):
     message_id = m.message.id
     await m.send_rich_message(
         "<h1>Hey i am Advanced Scheduler Bot\n</h1>"
-        ""
-    ),
+    )
     # Replace the current checklist with a new one
     await app.edit_message_checklist(
         chat_id=chat_id,
