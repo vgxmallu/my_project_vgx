@@ -72,30 +72,51 @@ async def matches_cmd(client, message):
 
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# --- API DATA FUNCTIONS ---
+from datetime import datetime, timedelta  # 👈 Add this import at the top of your file!
+
+# ... (Keep your Client, filters, and configuration the same) ...
+
 def fetch_matches(date_filter="TODAY", league_code=None):
     """Fetches upcoming fixtures and delayed live scores."""
+    
+    # 1. Calculate the exact YYYY-MM-DD format using datetime
+    today = datetime.now()
+    if date_filter == "YESTERDAY":
+        target_date = (today - timedelta(days=1)).strftime("%Y-%m-%d")
+    elif date_filter == "TOMORROW":
+        target_date = (today + timedelta(days=1)).strftime("%Y-%m-%d")
+    else:
+        target_date = today.strftime("%Y-%m-%d")
+
+    # 2. Set the correct API endpoints
     if league_code:
         url = f"https://api.football-data.org/v4/competitions/{league_code}/matches"
     else:
         url = "https://api.football-data.org/v4/matches"
         
-    params = {"date": date_filter}
+    # 3. Use dateFrom and dateTo as required by the API
+    params = {
+        "dateFrom": target_date,
+        "dateTo": target_date
+    }
+    
     headers = {"X-Auth-Token": FOOTBALL_API_KEY}
     
     try:
         response = requests.get(url, headers=headers, params=params)
+        
         if response.status_code == 429:
             return "⚠️ **Rate Limit Exceeded!** Please wait a minute."
             
+        # This will now pass successfully instead of throwing a 400 error!
         response.raise_for_status()
         data = response.json()
         matches = data.get("matches", [])
         
         if not matches:
-            return f"❌ No matches found for your selected criteria ({date_filter})."
+            return f"❌ No matches found for your selected criteria ({target_date})."
         
-        msg = f"🏆 **Football Fixtures & Scores ({date_filter})** 🏆\n\n"
+        msg = f"🏆 **Football Fixtures & Scores ({target_date})** 🏆\n\n"
         
         for match in matches[:10]:
             comp = match["competition"]["name"]
@@ -112,8 +133,10 @@ def fetch_matches(date_filter="TODAY", league_code=None):
                 
             msg += f"🏅 **{comp}**\n⚽ {home_team} {score_str} {away_team}\n📌 Status: `{status}`\n──────────────\n"
         return msg
+        
     except Exception as e:
         return f"⚠️ Error fetching data: {e}"
+
 
 
 def fetch_standings(league_code="PL"):
