@@ -70,18 +70,8 @@ async def matches_cmd(client, message):
     )
 
 
-import requests
-from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.enums import ParseMode
 
-# --- CONFIGURATION ---
-BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
-API_ID = "YOUR_API_ID"        
-API_HASH = "YOUR_API_HASH"    
-FOOTBALL_API_KEY = "YOUR_FOOTBALL_DATA_API_KEY" 
-
-app = Client("football_advanced_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 def fetch_matches(date_filter="TODAY", league_code=None):
     """Fetches football matches with date and league filters."""
