@@ -2,17 +2,18 @@ import requests
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
 from vgx import app
+from config import Config
 
 
 # Get your free key from https://www.football-data.org/
-FOOTBALL_API_KEY = "2d92105f0d534281b711e8ea189cd8e4" 
+#FOOTBALL_API_KEY = "" 
 
 
 def scrape_todays_matches():
     """Fetches today's football matches from the API."""
     url = "https://api.football-data.org/v4/matches"
     headers = {
-        "X-Auth-Token": FOOTBALL_API_KEY
+        "X-Auth-Token": Config.FOOTBALL_API_KEY
     }
     
     try:
