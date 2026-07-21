@@ -27,6 +27,9 @@ class Config:
     UPDATE_INTERVAL = 300 
     # Directory to temporarily store downloads
     DOWNLOAD_DIR = "downloads"
+
+    #API's
+    FOOTBALL_API_KEY = environ.get("FOOTBALL_API_KEY")
     
     # Ensure download directory exists
     if not os.path.exists(DOWNLOAD_DIR):
