@@ -188,8 +188,8 @@ from vgx import app
 
 def register_handlers(app: Client):
 
-@app.on_message(filters.command("start"))
-async def start_cmd(client: Client, message: Message):
+@app.on_message(filters.command("footbal"))
+async def start_footcmd(client: Client, message: Message):
     await save_user(message.from_user.id, message.from_user.username or "Unknown")
     await message.reply_text(
         "⚽ **Ultimate SoccerData Engine Bot**\n\n"
