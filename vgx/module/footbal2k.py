@@ -188,14 +188,14 @@ from vgx import app
 
 def register_handlers(app: Client):
 
-    @app.on_message(filters.command("fbst"))
-    async def sthhart_cmd(client: Client, message: Message):
-        await save_user(message.from_user.id, message.from_user.username or "Unknown")
-        await message.reply_text(
-            "⚽ **Ultimate SoccerData Engine Bot**\n\n"
-            "Choose a statistical scraping engine to query data from:",
-            reply_markup=get_engine_menu()
-        )
+@app.on_message(filters.command("start"))
+async def start_cmd(client: Client, message: Message):
+    await save_user(message.from_user.id, message.from_user.username or "Unknown")
+    await message.reply_text(
+        "⚽ **Ultimate SoccerData Engine Bot**\n\n"
+        "Choose a statistical scraping engine to query data from:",
+        reply_markup=get_engine_menu()
+    )
 
     # 🎯 REGEX CALLBACK ROUTER: Intercepts engine navigation and sub-action triggers
     @app.on_callback_query(filters.regex(r"^(eng|sub)_(.+)"))
