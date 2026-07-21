@@ -1,31 +1,30 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from config import Config
-from datetime import datetime, timedelta
 
 # Initialize MongoDB connection
 client = AsyncIOMotorClient(Config.MONGO_URL)
 db = client[Config.DB_NAME]
 
+
+users_collection = db["users"]
+cache_collection = db["stats_cache"]
+
 async def save_user(user_id: int, username: str):
-    """Registers or updates a user in the database."""
-    await db.users.update_one(
+    """Saves user interactions to MongoDB."""
+    await users_collection.update_one(
         {"user_id": user_id},
-        {"$set": {"username": username, "last_active": datetime.utcnow()}},
+        {"$set": {"user_id": user_id, "username": username}},
         upsert=True
     )
 
-async def get_cache(key: str):
-    """Retrieves cached data if it hasn't expired."""
-    record = await db.cache.find_one({"_id": key})
-    if record and record['expires_at'] > datetime.utcnow():
-        return record['data']
-    return None
+async def get_cached_data(cache_key: str):
+    """Retrieves cached response string from MongoDB."""
+    return await cache_collection.find_one({"key": cache_key})
 
-async def set_cache(key: str, data: str, ttl_hours: int = 12):
-    """Stores data in the cache with a time-to-live (TTL)."""
-    expires_at = datetime.utcnow() + timedelta(hours=ttl_hours)
-    await db.cache.update_one(
-        {"_id": key},
-        {"$set": {"data": data, "expires_at": expires_at}},
+async def set_cached_data(cache_key: str, formatted_data: str):
+    """Stores generated response in MongoDB with timestamp."""
+    await cache_collection.update_one(
+        {"key": cache_key},
+        {"$set": {"key": cache_key, "data": formatted_data}},
         upsert=True
     )
