@@ -183,7 +183,7 @@ from pyrogram.types import Message, CallbackQuery
 from pyrogram.enums import ParseMode
 
 from vgx.database.food_db import save_user, get_cached_data, set_cached_data
-
+from vgx import app
 
 
 def register_handlers(app: Client):
