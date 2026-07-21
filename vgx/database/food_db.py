@@ -1,9 +1,9 @@
 from motor.motor_asyncio import AsyncIOMotorClient
-import config
+from config import Config
 
 # Initialize MongoDB client asynchronously
-client = AsyncIOMotorClient(config.MONGO_URI)
-db = client[config.DB_NAME]
+client = AsyncIOMotorClient(Config.MONGO_URI)
+db = client[Config.DB_NAME]
 
 users_collection = db["users"]
 cache_collection = db["stats_cache"]
