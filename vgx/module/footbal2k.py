@@ -188,14 +188,25 @@ from vgx import app
 
 def register_handlers(app: Client):
 
-@app.on_message(filters.command("footbal"))
+
+@app.on_message(filters.command(["football", "footbal"]))  # Handles both spellings
 async def start_footcmd(client: Client, message: Message):
-    await save_user(message.from_user.id, message.from_user.username or "Unknown")
+    # Guard clause: Ignore messages sent without a direct user (e.g., channel posts)
+    if not message.from_user:
+        return
+
+    user_id = message.from_user.id
+    username = message.from_user.username or "Unknown"
+
+    await save_user(user_id, username)
+
     await message.reply_text(
         "⚽ **Ultimate SoccerData Engine Bot**\n\n"
         "Choose a statistical scraping engine to query data from:",
         reply_markup=get_engine_menu()
     )
+
+
 
     # 🎯 REGEX CALLBACK ROUTER: Intercepts engine navigation and sub-action triggers
 @app.on_callback_query(filters.regex(r"^(eng|sub)_(.+)"))
@@ -272,5 +283,4 @@ async def main_callback_router(client: Client, query: CallbackQuery):
             parse_mode=ParseMode.MARKDOWN
         )
         return
-
 
