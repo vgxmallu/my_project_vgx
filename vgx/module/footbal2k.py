@@ -198,79 +198,79 @@ async def start_footcmd(client: Client, message: Message):
     )
 
     # 🎯 REGEX CALLBACK ROUTER: Intercepts engine navigation and sub-action triggers
-    @app.on_callback_query(filters.regex(r"^(eng|sub)_(.+)"))
-    async def main_callback_router(client: Client, query: CallbackQuery):
-        match = query.matches[0]
-        prefix = match.group(1)  # 'eng' or 'sub'
-        value = match.group(2)   # Target module or combined parameters
+@app.on_callback_query(filters.regex(r"^(eng|sub)_(.+)"))
+async def main_callback_router(client: Client, query: CallbackQuery):
+    match = query.matches[0]
+    prefix = match.group(1)  # 'eng' or 'sub'
+    value = match.group(2)   # Target module or combined parameters
 
-        await save_user(query.from_user.id, query.from_user.username or "Unknown")
-
+    await save_user(query.from_user.id, query.from_user.username or "Unknown")
         # 1. Main Navigation Routing
-        if prefix == "eng":
-            if value == "main":
-                await query.message.edit_text("Select an engine:", reply_markup=get_engine_menu())
-                return
+    if prefix == "eng":
+        if value == "main":
+            await query.message.edit_text("Select an engine:", reply_markup=get_engine_menu())
+            return
 
-            if value == "clubelo":
-                await query.answer("Fetching ClubElo data...")
-                await query.message.edit_text("⏳ **Scraping ClubElo Power Rankings...**", parse_mode=ParseMode.MARKDOWN)
+        if value == "clubelo":
+            await query.answer("Fetching ClubElo data...")
+            await query.message.edit_text("⏳ **Scraping ClubElo Power Rankings...**", parse_mode=ParseMode.MARKDOWN)
+            
+            cached = await get_cached_data("clubelo")
+            res = cached["data"] if cached else await get_clubelo_rankings()
+            if not cached:
+                await set_cached_data("clubelo", res)
                 
-                cached = await get_cached_data("clubelo")
-                res = cached["data"] if cached else await get_clubelo_rankings()
-                if not cached:
-                    await set_cached_data("clubelo", res)
-                
-                await query.message.edit_text(res, reply_markup=get_engine_menu(), parse_mode=ParseMode.MARKDOWN)
-                return
+            await query.message.edit_text(res, reply_markup=get_engine_menu(), parse_mode=ParseMode.MARKDOWN)
+            return
 
             # Display league menu for engines requiring a targeted league
-            await query.message.edit_text(
-                f"Select a league for **{value.upper()}**:",
-                reply_markup=get_league_menu(value)
-            )
-            return
+        await query.message.edit_text(
+            f"Select a league for **{value.upper()}**:",
+            reply_markup=get_league_menu(value)
+        )
+        return
 
         # 2. Sub-Category Engine Action Execution
-        if prefix == "sub":
-            parts = value.split("_", 1)
-            engine = parts[0]
-            league = parts[1]
+    if prefix == "sub":
+        parts = value.split("_", 1)
+        engine = parts[0]
+            
+        league = parts[1]
 
-            await query.answer(f"Loading {engine} for {league}...")
-            await query.message.edit_text(f"⏳ **Processing Data via {engine.upper()}...**", parse_mode=ParseMode.MARKDOWN)
-
-            cache_key = f"{engine}_{league}"
+        await query.answer(f"Loading {engine} for {league}...") 
+        await query.message.edit_text(f"⏳ **Processing Data via {engine.upper()}...**", parse_mode=ParseMode.MARKDOWN)
+        cache_key = f"{engine}_{league}"
             
             # --- ENGINE ROUTING LOGIC ---
-            if engine == "understat":
-                photo_buf = await get_understat_shotmap(league)
-                await query.message.reply_photo(photo=photo_buf, caption=f"🎯 Shot Map: {league}")
-                await query.message.delete()
-                return
-
-            cached = await get_cached_data(cache_key)
-            if cached:
-                result_text = cached["data"]
-            else:
-                if engine == "fbref":
-                    result_text = await get_fbref_stats(league, "standard")
-                elif engine == "capology":
-                    result_text = await get_capology_salaries(league)
-                elif engine == "sofifa":
-                    result_text = await get_sofifa_ratings(league)
-                elif engine == "matchhistory":
-                    result_text = await get_matchhistory_stats(league)
-                else:
-                    result_text = "⚠️ Unknown Engine Request."
-                
-                await set_cached_data(cache_key, result_text)
-
-            await query.message.edit_text(
-                result_text,
-                reply_markup=get_engine_menu(),
-                parse_mode=ParseMode.MARKDOWN
-            )
+        if engine == "understat":
+            photo_buf = await get_understat_shotmap(league)
+            await query.message.reply_photo(photo=photo_buf, caption=f"🎯 Shot Map: {league}")
+            await query.message.delete()
             return
+
+        cached = await get_cached_data(cache_key)
+        if cached:
+            result_text = cached["data"]
+        else:
+            if engine == "fbref":
+                result_text = await get_fbref_stats(league, "standard")
+            elif engine == "capology":
+                result_text = await get_capology_salaries(league)
+            elif engine == "sofifa":
+                result_text = await get_sofifa_ratings(league)
+            elif engine == "matchhistory":
+                result_text = await get_matchhistory_stats(league)
+            else:
+                    
+                result_text = "⚠️ Unknown Engine Request."
+                
+            await set_cached_data(cache_key, result_text)
+
+        await query.message.edit_text(
+            result_text,
+            reply_markup=get_engine_menu(),
+            parse_mode=ParseMode.MARKDOWN
+        )
+        return
 
 
