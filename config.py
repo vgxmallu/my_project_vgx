@@ -30,7 +30,7 @@ class Config:
 
     #API's
     FOOTBALL_API_KEY = environ.get("FOOTBALL_API_KEY")
-    
+    API_FOOTBALL_KEY = environ.get("API_FOOTBALL_KEY")
     # Ensure download directory exists
     if not os.path.exists(DOWNLOAD_DIR):
         os.makedirs(DOWNLOAD_DIR)
