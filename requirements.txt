@@ -32,8 +32,4 @@ tgcrypto>=1.2.5
 motor>=3.3.0
 requests>=2.31.0
 
-
-soccerdata>=1.8.0
-pandas>=2.0.0
-matplotlib>=3.7.0
-httpx==0.23.2
+httpx[http2]
