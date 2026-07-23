@@ -5,10 +5,25 @@ from vgx.module.football_api import get_live_scores, get_standings
 from vgx.module.football_schedule import send_managed_message
 from vgx.database.footballdb import get_group_settings, update_group_setting, toggle_group_module, set_user_target, get_user_target
 
+
 def main_menu():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔴 Live Scores", callback_data="fb_live"), InlineKeyboardButton("⚙️ Group Settings", callback_data="cfg_menu")],
-        [InlineKeyboardButton("🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", callback_data="fb_standings_39"), InlineKeyboardButton("🇪🇸 La Liga", callback_data="fb_standings_140")],
+        [
+            InlineKeyboardButton("🔴 Live Scores", callback_data="fb_live"), 
+            InlineKeyboardButton("⚙️ Group Settings", callback_data="cfg_menu")
+        ],
+        [
+            InlineKeyboardButton("🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", callback_data="fb_standings_39"), 
+            InlineKeyboardButton("🇪🇸 La Liga", callback_data="fb_standings_140")
+        ],
+        [
+            InlineKeyboardButton("🇮🇹 Serie A", callback_data="fb_standings_135"), 
+            InlineKeyboardButton("🇩🇪 Bundesliga", callback_data="fb_standings_78")
+        ],
+        [
+            InlineKeyboardButton("🇫🇷 Ligue 1", callback_data="fb_standings_61"), 
+            InlineKeyboardButton("🇪🇺 Champions League", callback_data="fb_standings_2")
+        ]
     ])
 
 def settings_menu(settings: dict, active_target: int = None):
@@ -16,8 +31,13 @@ def settings_menu(settings: dict, active_target: int = None):
     pin_str = "ON ✅" if settings.get("pin_messages", False) else "OFF ❌"
     sched_str = {0: "OFF", 60: "1m", 300: "5m", 1200: "20m", 1800: "30m", 3600: "1h"}.get(settings.get("live_schedule", 0), "OFF")
     
+    # Target row logic: Add a clear button if a target is currently active
+    target_row = [InlineKeyboardButton(f"🎯 Target: {active_target or 'Current Chat'}", callback_data="cfg_target_info")]
+    if active_target:
+        target_row.append(InlineKeyboardButton("❌ Clear Target", callback_data="cfg_clear_target"))
+
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(f"🎯 Target Group: {active_target or 'Current Chat'}", callback_data="cfg_target_info")],
+        target_row,
         [InlineKeyboardButton(f"⏱ Auto-Delete: {auto_del}", callback_data="cfg_cycle_autodel"), InlineKeyboardButton(f"📌 Pin: {pin_str}", callback_data="cfg_toggle_pin")],
         [InlineKeyboardButton(f"📡 Scheduled Live: {sched_str}", callback_data="cfg_cycle_sched")],
         [InlineKeyboardButton("🧩 Toggle Modules", callback_data="cfg_modules")],
