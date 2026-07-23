@@ -24,15 +24,12 @@ from vgx.module.Auto_mod_scheduler import weekly_audit_loop
 from vgx.module.weather_schedul import morning_briefing_loop
 from vgx.module.spoty import drop_sender_loop, auto_delete_loop
 from vgx.module.deezer_scheduler import music_scheduler_loop
-
+from vgx.module.football_schedule import fboll_scheduler
 
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SchedulerBot")
-
-
-
 
 
 async def restore_jobs():
@@ -108,6 +105,10 @@ if __name__ == "__main__":
     print("🚀 Deezer Music Scheduler Online!")
     loop9 = asyncio.get_event_loop()
     loop9.create_task(music_scheduler_loop(app))
+
+    print("⚽ Booting API-Football Bot...")
+    loop10 = asyncio.get_event_loop()
+    loop10.create_task(fboll_scheduler(app))
     
     print("🎧 Spotify Pro System Online!")
     loop_spot = asyncio.get_event_loop()
