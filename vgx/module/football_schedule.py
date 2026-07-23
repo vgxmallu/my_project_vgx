@@ -23,7 +23,7 @@ async def send_managed_message(client: Client, chat_id: int, text: str, reply_ma
         asyncio.create_task(auto_delete_task(client, chat_id, msg.id, auto_del))
     return msg
 
-async def match_scheduler(client: Client):
+async def fboll_scheduler(client: Client):
     while True:
         try:
             await asyncio.sleep(30) # Tick every 30 seconds
