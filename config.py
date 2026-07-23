@@ -18,7 +18,10 @@ class Config:
 
     SPOTIPY_CLIENT_ID = os.environ.get("SPOTIPY_CLIENT_ID", "your_client_id_here")
     SPOTIPY_CLIENT_SECRET = os.environ.get("SPOTIPY_CLIENT_SECRET", "your_client_secret_here")
-    
+
+    # Bot Owner / Admin User IDs (Comma-separated)
+    SUDO_USERS = [int(x) for x in os.getenv("SUDO_USERS", "784589736").split(",") if x.strip()]
+
     ADMIN_ID = 784589736 # Your Telegram ID (to prevent abuse)
     DEFAULT_INTERVAL = 3600 # Default interval in seconds (3 hours =
     # Viral threshold: 1.5 = 50% higher than average
