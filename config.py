@@ -32,8 +32,12 @@ class Config:
     DOWNLOAD_DIR = "downloads"
 
     #API's
+    #1
     FOOTBALL_API_KEY = os.environ.get("FOOTBALL_API_KEY")
+    #2
     API_FOOTBALL_KEY = os.environ.get("API_FOOTBALL_KEY")
+    API_FOOTBALL_HOST = "v3.football.api-sports.io"
+    
     # Ensure download directory exists
     if not os.path.exists(DOWNLOAD_DIR):
         os.makedirs(DOWNLOAD_DIR)
