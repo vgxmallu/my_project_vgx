@@ -208,117 +208,117 @@ def back_to_main():
 def register_handlers(app: Client):
 
     # --- COMMAND HANDLERS ---
-    @app.on_message(filters.command("football"))
-    async def starhhd(client: Client, message: Message):
-        if not message.from_user:
-            return
-        await save_user(message.from_user.id, message.from_user.username or "Unknown")
-        await message.reply_text(
-            "⚽ **Ultimate API-Football Bot**\n\n"
-            "Choose a league or query option below:",
-            reply_markup=main_menu_keyboard(),
-            parse_mode=ParseMode.MARKDOWN
-        )
+@app.on_message(filters.command("football"))
+async def starhhd(client: Client, message: Message):
+    if not message.from_user:
+        return
+    await save_user(message.from_user.id, message.from_user.username or "Unknown")
+    await message.reply_text(
+        "⚽ **Ultimate API-Football Bot**\n\n"
+        "Choose a league or query option below:",
+        reply_markup=main_menu_keyboard(),
+        parse_mode=ParseMode.MARKDOWN
+    )
 
-    @app.on_message(filters.command("predict"))
-    async def predivvct_cmd(client: Client, message: Message):
-        if not message.from_user:
-            return
-        args = message.command
-        if len(args) < 2:
-            await message.reply_text("⚠️ **Usage:** `/predict <fixture_id>`\nExample: `/predict 1035088`")
-            return
+@app.on_message(filters.command("predict"))
+async def predivvct_cmd(client: Client, message: Message):
+    if not message.from_user:
+        return
+    args = message.command
+    if len(args) < 2:
+        await message.reply_text("⚠️ **Usage:** `/predict <fixture_id>`\nExample: `/predict 1035088`")
+        return
         
-        fixture_id = int(args[1])
-        res = await get_match_prediction(fixture_id)
-        await message.reply_text(res, reply_markup=fixture_details_keyboard(fixture_id), parse_mode=ParseMode.MARKDOWN)
+    fixture_id = int(args[1])
+    res = await get_match_prediction(fixture_id)
+    await message.reply_text(res, reply_markup=fixture_details_keyboard(fixture_id), parse_mode=ParseMode.MARKDOWN)
 
-    @app.on_message(filters.command("h2h"))
-    async def h2h_cmd(client: Client, message: Message):
-        if not message.from_user:
-            return
-        args = message.command
-        if len(args) < 3:
-            await message.reply_text("⚠️ **Usage:** `/h2h <team1_id> <team2_id>`\nExample: `/h2h 33 34`")
-            return
+@app.on_message(filters.command("h2h"))
+async def h2h_cmd(client: Client, message: Message):
+    if not message.from_user:
+        return
+    args = message.command
+    if len(args) < 3:
+        await message.reply_text("⚠️ **Usage:** `/h2h <team1_id> <team2_id>`\nExample: `/h2h 33 34`")
+        return
         
-        t1, t2 = int(args[1]), int(args[2])
-        res = await get_head_to_head(t1, t2)
-        await message.reply_text(res, reply_markup=back_to_main(), parse_mode=ParseMode.MARKDOWN)
+    t1, t2 = int(args[1]), int(args[2])
+    res = await get_head_to_head(t1, t2)
+    await message.reply_text(res, reply_markup=back_to_main(), parse_mode=ParseMode.MARKDOWN)
 
 
     # 🎯 UNIVERSAL REGEX CALLBACK ROUTER
     # Intercepts all callbacks starting with 'af_' using group capturing
-    @app.on_callback_query(filters.regex(r"^af_(main|live|league|standings|topscorers|predict|lineup|injuries|h2h)(?:_(.+))?$"))
-    async def callbgack_router(client: Client, query: CallbackQuery):
-        await query.answer()
-        if not query.from_user:
-            return
+@app.on_callback_query(filters.regex(r"^af_(main|live|league|standings|topscorers|predict|lineup|injuries|h2h)(?:_(.+))?$"))
+async def callbgack_router(client: Client, query: CallbackQuery):
+    await query.answer()
+    if not query.from_user:
+        return
 
-        await save_user(query.from_user.id, query.from_user.username or "Unknown")
+    await save_user(query.from_user.id, query.from_user.username or "Unknown")
 
-        action = query.matches[0].group(1)
-        param = query.matches[0].group(2) # Optional parameter string
+    action = query.matches[0].group(1)
+    param = query.matches[0].group(2) # Optional parameter string
 
-        try:
-            if action == "main":
-                await query.message.edit_text(
-                    "⚽ **Ultimate API-Football Bot**\n\nChoose an option below:",
-                    reply_markup=main_menu_keyboard(),
-                    parse_mode=ParseMode.MARKDOWN
-                )
+    try:
+        if action == "main":
+            await query.message.edit_text(
+                "⚽ **Ultimate API-Football Bot**\n\nChoose an option below:",
+                reply_markup=main_menu_keyboard(),
+                parse_mode=ParseMode.MARKDOWN
+            )
 
-            elif action == "live":
-                await query.message.edit_text("⏳ **Fetching live scores...**")
-                res = await get_live_scores()
-                await query.message.edit_text(res, reply_markup=back_to_main(), parse_mode=ParseMode.MARKDOWN)
+        elif action == "live":
+            await query.message.edit_text("⏳ **Fetching live scores...**")
+            res = await get_live_scores()
+            await query.message.edit_text(res, reply_markup=back_to_main(), parse_mode=ParseMode.MARKDOWN)
 
-            elif action == "league":
-                league_id = int(param)
-                await query.message.edit_text(
-                    f"🏆 **League Options (ID: {league_id})**\nSelect statistics category:",
-                    reply_markup=league_menu_keyboard(league_id),
-                    parse_mode=ParseMode.MARKDOWN
-                )
+        elif action == "league":
+            league_id = int(param)
+            await query.message.edit_text(
+                f"🏆 **League Options (ID: {league_id})**\nSelect statistics category:",
+                reply_markup=league_menu_keyboard(league_id),
+                parse_mode=ParseMode.MARKDOWN
+            )
 
-            elif action == "standings":
-                league_id = int(param)
-                await query.message.edit_text("⏳ **Fetching Standings...**")
-                res = await get_standings(league_id)
-                await query.message.edit_text(res, reply_markup=league_menu_keyboard(league_id), parse_mode=ParseMode.MARKDOWN)
+        elif action == "standings":
+            league_id = int(param)
+            await query.message.edit_text("⏳ **Fetching Standings...**")
+            res = await get_standings(league_id)
+            await query.message.edit_text(res, reply_markup=league_menu_keyboard(league_id), parse_mode=ParseMode.MARKDOWN)
 
-            elif action == "topscorers":
-                league_id = int(param)
-                await query.message.edit_text("⏳ **Fetching Top Scorers...**")
-                res = await get_top_scorers(league_id)
-                await query.message.edit_text(res, reply_markup=league_menu_keyboard(league_id), parse_mode=ParseMode.MARKDOWN)
+        elif action == "topscorers":
+            league_id = int(param)
+            await query.message.edit_text("⏳ **Fetching Top Scorers...**")
+            res = await get_top_scorers(league_id)
+            await query.message.edit_text(res, reply_markup=league_menu_keyboard(league_id), parse_mode=ParseMode.MARKDOWN)
 
-            elif action == "predict":
-                fixture_id = int(param)
-                await query.message.edit_text("⏳ **Analyzing Match Predictions...**")
-                res = await get_match_prediction(fixture_id)
-                await query.message.edit_text(res, reply_markup=fixture_details_keyboard(fixture_id), parse_mode=ParseMode.MARKDOWN)
+        elif action == "predict":
+            fixture_id = int(param)
+            await query.message.edit_text("⏳ **Analyzing Match Predictions...**")
+            res = await get_match_prediction(fixture_id)
+            await query.message.edit_text(res, reply_markup=fixture_details_keyboard(fixture_id), parse_mode=ParseMode.MARKDOWN)
 
-            elif action == "lineup":
-                fixture_id = int(param)
-                await query.message.edit_text("⏳ **Fetching Lineups...**")
-                res = await get_lineups(fixture_id)
-                await query.message.edit_text(res, reply_markup=fixture_details_keyboard(fixture_id), parse_mode=ParseMode.MARKDOWN)
+        elif action == "lineup":
+            fixture_id = int(param)
+            await query.message.edit_text("⏳ **Fetching Lineups...**")
+            res = await get_lineups(fixture_id)
+            await query.message.edit_text(res, reply_markup=fixture_details_keyboard(fixture_id), parse_mode=ParseMode.MARKDOWN)
 
-            elif action == "injuries":
-                fixture_id = int(param)
-                await query.message.edit_text("⏳ **Checking Injury Reports...**")
-                res = await get_injuries(fixture_id)
-                await query.message.edit_text(res, reply_markup=fixture_details_keyboard(fixture_id), parse_mode=ParseMode.MARKDOWN)
+        elif action == "injuries":
+            fixture_id = int(param)
+            await query.message.edit_text("⏳ **Checking Injury Reports...**")
+            res = await get_injuries(fixture_id)
+            await query.message.edit_text(res, reply_markup=fixture_details_keyboard(fixture_id), parse_mode=ParseMode.MARKDOWN)
 
-            elif action == "h2h":
-                t1, t2 = map(int, param.split("-"))
-                await query.message.edit_text("⏳ **Loading Head-to-Head History...**")
+        elif action == "h2h":
+            t1, t2 = map(int, param.split("-"))
+            await query.message.edit_text("⏳ **Loading Head-to-Head History...**")
                 res = await get_head_to_head(t1, t2)
                 await query.message.edit_text(res, reply_markup=back_to_main(), parse_mode=ParseMode.MARKDOWN)
 
         except Exception as e:
             await query.message.edit_text(
-                f"⚠️ **Error processing request:** `{str(e)}`",
-                reply_markup=back_to_main()
-            )
+            f"⚠️ **Error processing request:** `{str(e)}`",
+            reply_markup=back_to_main()
+        )
