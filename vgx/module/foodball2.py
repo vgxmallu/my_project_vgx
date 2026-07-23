@@ -205,13 +205,6 @@ def back_to_main():
 
 
 
-def register_handlers(app: Client):
-
-
-def some_previous_function():
-    print("This is the previous function") # <--- Make sure this is indented!
-
-
     # --- COMMAND HANDLERS ---
 @app.on_message(filters.command("football"))
 def starhhd(client: Client, message: Message):
