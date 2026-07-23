@@ -11,6 +11,7 @@ groups_col = db.group_settings
 targets_col = db.target_groups
 cache_col = db.api_cache
 
+
 # --- GROUP SETTINGS ---
 async def get_group_settings(chat_id: int) -> dict:
     default_settings = {
@@ -49,6 +50,12 @@ async def set_user_target(user_id: int, target_chat_id: int):
 async def get_user_target(user_id: int):
     doc = await targets_col.find_one({"user_id": user_id})
     return doc.get("active_target") if doc else None
+
+# NEW: Clear the target chat to revert back to PM settings
+async def clear_user_target(user_id: int):
+    await targets_col.update_one(
+        {"user_id": user_id}, {"$unset": {"active_target": ""}}
+    )
 
 # --- API CACHING ---
 async def get_cached_api(cache_key: str):
