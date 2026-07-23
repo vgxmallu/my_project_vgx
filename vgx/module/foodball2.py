@@ -207,9 +207,14 @@ def back_to_main():
 
 def register_handlers(app: Client):
 
+
+def some_previous_function():
+    print("This is the previous function") # <--- Make sure this is indented!
+
+
     # --- COMMAND HANDLERS ---
 @app.on_message(filters.command("football"))
-async def starhhd(client: Client, message: Message):
+def starhhd(client: Client, message: Message):
     if not message.from_user:
         return
     await save_user(message.from_user.id, message.from_user.username or "Unknown")
@@ -221,7 +226,7 @@ async def starhhd(client: Client, message: Message):
     )
 
 @app.on_message(filters.command("predict"))
-async def predivvct_cmd(client: Client, message: Message):
+def predivvct_cmd(client: Client, message: Message):
     if not message.from_user:
         return
     args = message.command
@@ -234,7 +239,7 @@ async def predivvct_cmd(client: Client, message: Message):
     await message.reply_text(res, reply_markup=fixture_details_keyboard(fixture_id), parse_mode=ParseMode.MARKDOWN)
 
 @app.on_message(filters.command("h2h"))
-async def h2h_cmd(client: Client, message: Message):
+def h2h_cmd(client: Client, message: Message):
     if not message.from_user:
         return
     args = message.command
@@ -250,7 +255,7 @@ async def h2h_cmd(client: Client, message: Message):
     # 🎯 UNIVERSAL REGEX CALLBACK ROUTER
     # Intercepts all callbacks starting with 'af_' using group capturing
 @app.on_callback_query(filters.regex(r"^af_(main|live|league|standings|topscorers|predict|lineup|injuries|h2h)(?:_(.+))?$"))
-async def callbgack_router(client: Client, query: CallbackQuery):
+def callbgack_router(client: Client, query: CallbackQuery):
     await query.answer()
     if not query.from_user:
         return
@@ -317,8 +322,8 @@ async def callbgack_router(client: Client, query: CallbackQuery):
                 res = await get_head_to_head(t1, t2)
                 await query.message.edit_text(res, reply_markup=back_to_main(), parse_mode=ParseMode.MARKDOWN)
 
-        except Exception as e:
-            await query.message.edit_text(
-            f"⚠️ **Error processing request:** `{str(e)}`",
-            reply_markup=back_to_main()
-        )
+    except Exception as e:
+        await query.message.edit_text(
+        f"⚠️ **Error processing request:** `{str(e)}`",
+        reply_markup=back_to_main()
+    )
