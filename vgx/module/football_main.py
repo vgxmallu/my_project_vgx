@@ -3,7 +3,9 @@ from pyrogram import Client, filters
  
 from vgx.module.football_api import get_live_scores, get_standings
 from vgx.module.football_schedule import send_managed_message
-from vgx.database.footballdb import get_group_settings, update_group_setting, toggle_group_module, set_user_target, get_user_target
+from vgx.database.footballdb import get_group_settings, update_group_setting, toggle_group_module, clear_user_target, set_user_target, get_user_target
+
+
 
 
 def main_menu():
@@ -95,16 +97,16 @@ async def football_callbacks(client: Client, query: CallbackQuery):
 
 
 @Client.on_message(filters.command("f_settarget"))
-async def set_target_command(client: Client, message: Message):
+async def set_tsgmand(client: Client, message: Message):
     try:
         target_id = int(message.command[1])
         await set_user_target(message.from_user.id, target_id)
-        await message.reply_text(f"✅ **Target Group set to:** `{target_id}`\nSettings changed via PM will now apply here.")
+        await message.reply_text(f"✅ **Target Group set to:** `{target_id}`\nSettings changed via PM will now apply to this group!")
     except (IndexError, ValueError):
         await message.reply_text("⚠️ **Usage:** `/settarget <group_id>`")
 
 # Strict Regex Callback for Configuration
-@Client.on_callback_query(filters.regex(r"^cfg_(menu|target_info|cycle_autodel|toggle_pin|cycle_sched|modules|mod_.*)$"))
+@Client.on_callback_query(filters.regex(r"^cfg_(menu|target_info|clear_target|cycle_autodel|toggle_pin|cycle_sched|modules|mod_.*)$"))
 async def settings_callbacks(client: Client, query: CallbackQuery):
     await query.answer()
     user_id = query.from_user.id
@@ -120,7 +122,17 @@ async def settings_callbacks(client: Client, query: CallbackQuery):
         await query.message.edit_text(f"⚙️ **Group Controls**\nConfiguring ID: `{chat_id}`", reply_markup=settings_menu(settings, active_target))
 
     elif action == "target_info":
-        await query.message.edit_text("🎯 **Target Group Setup:**\n1. Add bot to group.\n2. In this PM send `/settarget <group_id>`.", reply_markup=back_btn())
+        await query.message.edit_text("🎯 **Target Group Setup:**\n1. Add bot to group.\n2. In this PM send `/settarget <group_id>`.\n\n*Use the 'Clear Target' button to revert back to controlling this current chat.*", reply_markup=back_btn())
+
+    elif action == "clear_target":
+        await clear_user_target(user_id)
+        # Revert chat_id back to the current chat (PM)
+        new_chat_id = query.message.chat.id
+        settings = await get_group_settings(new_chat_id)
+        await query.message.edit_text(
+            "✅ **Target Cleared!**\nYou are now managing settings for this current chat again.", 
+            reply_markup=settings_menu(settings, None)
+        )
 
     elif action == "cycle_autodel":
         current = (await get_group_settings(chat_id)).get("auto_delete", 0)
