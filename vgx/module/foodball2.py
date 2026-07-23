@@ -312,8 +312,8 @@ def callbgack_router(client: Client, query: CallbackQuery):
         elif action == "h2h":
             t1, t2 = map(int, param.split("-"))
             await query.message.edit_text("⏳ **Loading Head-to-Head History...**")
-                res = await get_head_to_head(t1, t2)
-                await query.message.edit_text(res, reply_markup=back_to_main(), parse_mode=ParseMode.MARKDOWN)
+            res = await get_head_to_head(t1, t2)
+            await query.message.edit_text(res, reply_markup=back_to_main(), parse_mode=ParseMode.MARKDOWN)
 
     except Exception as e:
         await query.message.edit_text(
