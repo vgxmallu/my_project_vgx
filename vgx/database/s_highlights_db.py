@@ -17,7 +17,7 @@ async def get_group_settings(chat_id: int) -> dict:
         "pin_messages": False,
         "live_schedule": 0,       # 0, 60, 300, 1200, 1800, 3600
         "last_live_run": datetime.utcnow() - timedelta(days=1),
-        "modules": {sport: True for sport in config.SPORTS}
+        "modules": {sport: True for sport in Config.SPORTS}
     }
     default_settings["modules"].update({"highlights": True, "odds": True, "h2h": True})
     
