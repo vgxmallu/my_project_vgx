@@ -37,7 +37,16 @@ class Config:
     #2
     API_FOOTBALL_KEY = os.environ.get("API_FOOTBALL_KEY")
     API_FOOTBALL_HOST = "v3.football.api-sports.io"
-    
+    #3
+    # Highlightly API Configuration
+    HIGHLIGHTLY_API_KEY = os.getenv("HIGHLIGHTLY_API_KEY", "YOUR_HIGHLIGHTLY_KEY")
+    HIGHLIGHTLY_BASE_URL = "https://api.highlightly.net/v1" # Standardized endpoint base
+
+    # Supported Sports List
+    SPORTS = [
+         "football", "basketball", "american-football", "hockey", 
+         "baseball", "cricket", "rugby", "volleyball", "handball"
+    ]   
     # Ensure download directory exists
     if not os.path.exists(DOWNLOAD_DIR):
         os.makedirs(DOWNLOAD_DIR)
