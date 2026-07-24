@@ -1,8 +1,9 @@
 import asyncio
 from datetime import datetime, timedelta
 from pyrogram import Client
+
 from vgx.database.s_highlights_db import db, get_group_settings, update_group_setting
-from  import format_live_scores
+from vgx.module.s_highlightly_api import format_live_scores
 
 async def auto_delete_task(client: Client, chat_id: int, message_id: int, delay: int):
     if delay <= 0: return
