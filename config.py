@@ -32,8 +32,27 @@ class Config:
     DOWNLOAD_DIR = "downloads"
 
     #API's
-    #1
-    FOOTBALL_API_KEY = os.environ.get("FOOTBALL_API_KEY")
+
+
+    FOOTBALL_API_KEY = os.getenv("FOOTBALL_API_KEY")
+    FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4"
+
+# Free Tier Covered Competitions (Codes & Names)
+    COMPETITIONS = {
+        "PL": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League",
+        "PD": "🇪🇸 La Liga",
+        "SA": "🇮🇹 Serie A",
+        "BL1": "🇩🇪 Bundesliga",
+        "FL1": "🇫🇷 Ligue 1",
+        "CL": "🇪🇺 UEFA Champions League",
+        "ELC": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship",
+        "DED": "🇳🇱 Eredivisie",
+        "PPL": "🇵🇹 Primeira Liga",
+        "BSA": "🇧🇷 Brasileirão Série A",
+        "EC": "🇪🇺 European Championship",
+        "WC": "🏆 FIFA World Cup"
+    }
+    
     #2
     API_FOOTBALL_KEY = os.environ.get("API_FOOTBALL_KEY")
     API_FOOTBALL_HOST = "v3.football.api-sports.io"
