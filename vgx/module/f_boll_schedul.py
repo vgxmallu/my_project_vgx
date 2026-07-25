@@ -33,7 +33,7 @@ async def send_managed_message(client: Client, chat_id: int, text: str, reply_ma
         asyncio.create_task(auto_delete_task(client, chat_id, msg.id, auto_del))
     return msg
 
-async def live_match_scheduler(client: Client):
+async def match_scheduler(client: Client):
     """Periodically posts match updates based on custom group interval settings."""
     while True:
         try:
