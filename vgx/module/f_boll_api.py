@@ -14,7 +14,7 @@ async def fetch_football_data(endpoint: str, params: dict = None, ttl: int = 300
     async with httpx.AsyncClient() as client:
         try:
             res = await client.get(
-                f"{config.FOOTBALL_DATA_BASE_URL}/{endpoint}",
+                f"{Config.FOOTBALL_DATA_BASE_URL}/{endpoint}",
                 headers=HEADERS,
                 params=params,
                 timeout=10.0
@@ -56,7 +56,7 @@ async def format_fixtures(competition_code: str) -> str:
     if not matches:
         return f"📅 **No upcoming matches scheduled for {competition_code}.**"
 
-    comp_name = config.COMPETITIONS.get(competition_code, competition_code)
+    comp_name = Config.COMPETITIONS.get(competition_code, competition_code)
     text = f"📅 **Upcoming Fixtures — {comp_name}**\n\n"
     
     for m in matches[:8]:
