@@ -2,18 +2,9 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, 
 from config import Config
 from pyrogram import Client, filters
 
-from database import (
-    get_group_settings, 
-    update_group_setting, 
-    toggle_group_module, 
-    set_user_target, 
-    get_user_target, 
-    clear_user_target
-)
-
 from vgx.module.f_boll_api import format_standings, format_fixtures, format_recent_results_with_spoilers
 from vgx.module.f_boll_schedul import send_managed_message
-from vgx.database.fdb import get_group_settings, get_user_favorite_team, set_user_favorite_team
+from vgx.database.fdb import get_group_settings, get_user_favorite_team, set_user_favorite_team, update_group_setting, toggle_group_module, set_user_target, get_user_target, clear_user_target
 
 
 
