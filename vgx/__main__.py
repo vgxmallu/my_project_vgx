@@ -27,7 +27,13 @@ from vgx.module.deezer_scheduler import music_scheduler_loop
 from vgx.module.football_schedule import fboll_scheduler
 from vgx.module.s_scheduler import live_match_scheduler
 
+from vgx.module.f_boll_schedul import match_scheduler
+
     
+
+
+
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SchedulerBot")
@@ -114,6 +120,10 @@ if __name__ == "__main__":
     print("🎯 Highlightly Sports Engine...")
     loop11 = asyncio.get_event_loop()
     loop11.create_task(live_match_scheduler(app))
+
+    print("📢 Booting Football-Data.org Telegram Bot...")
+    loop12 = asyncio.get_event_loop()
+    loop12.create_task(live_scheduler(app))
     
     print("🎧 Spotify Pro System Online!")
     loop_spot = asyncio.get_event_loop()
