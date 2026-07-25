@@ -2,7 +2,7 @@ import httpx
 from config import Config
 from vgx.database.fdb import get_cached_api, set_cached_api
 
-HEADERS = {"X-Auth-Token": Config.FOOTBALL_DATA_API_KEY}
+HEADERS = {"X-Auth-Token": Config.FOOTBALL_API_KEY}
 
 async def fetch_football_data(endpoint: str, params: dict = None, ttl: int = 300) -> dict:
     """Fetches data with built-in MongoDB TTL caching to comply with 10 req/min rate limit."""
