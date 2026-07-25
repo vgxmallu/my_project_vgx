@@ -75,8 +75,8 @@ def modules_menu(modules: dict):
 
 
 # --- COMMAND HANDLERS ---
-@Client.on_message(filters.command(["start", "help", "football"]))
-async def start_command(client: Client, message: Message):
+@Client.on_message(filters.command("ftball"))
+async def starhrhtt_command(client: Client, message: Message):
     await send_managed_message(
         client,
         message.chat.id,
@@ -85,7 +85,7 @@ async def start_command(client: Client, message: Message):
     )
 
 @Client.on_message(filters.command("standings"))
-async def standings_command(client: Client, message: Message):
+async def stanfdings_command(client: Client, message: Message):
     code = message.command[1].upper() if len(message.command) > 1 else "PL"
     text = await format_standings(code)
     await send_managed_message(client, message.chat.id, text)
@@ -164,7 +164,7 @@ async def sports_callbacks(client: Client, query: CallbackQuery):
 #====================================================
 
 
-@Client.on_message(filters.command("settarget"))
+@Client.on_message(filters.command("ftarget"))
 async def set_target_command(client: Client, message: Message):
     if len(message.command) < 2:
         return await message.reply("⚠️ Usage: `/settarget -1001234567890`")
