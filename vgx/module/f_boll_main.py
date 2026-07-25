@@ -1,5 +1,5 @@
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
-from config import config
+from config import Config
 from pyrogram import Client, filters
 
 from database import (
@@ -31,7 +31,7 @@ def main_menu():
 def league_selector_menu(action_prefix: str):
     buttons = []
     row = []
-    for code, name in config.COMPETITIONS.items():
+    for code, name in Config.COMPETITIONS.items():
         row.append(InlineKeyboardButton(name, callback_data=f"fb_{action_prefix}_{code}"))
         if len(row) == 2:
             buttons.append(row)
