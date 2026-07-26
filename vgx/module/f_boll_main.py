@@ -206,7 +206,7 @@ async def clear_target_command(client: Client, message: Message):
     await message.reply("✅ **Target Chat Cleared.** Controls returned to PM.")
 
 # --- REGEX CALLBACK QUERY HANDLERS ---
-@Client.on_callback_query(filters.regex(r"^cfg_(menu|target_info|clear_target|cycle_autodel|toggle_pin|cycle_sched|modules|mod_.*)$"))
+@Client.on_callback_query(filters.regex(r"^cfg_(menu|target_info|clear_target|cycle_autodel|toggle_pin|cycle_sched|modules|mod_.*|main|stand_.*|fix_.*|res_.*|sco_.*|today|myteam)$"))
 async def settings_callbacks(client: Client, query: CallbackQuery):
     await query.answer()
     uid = query.from_user.id
@@ -261,13 +261,7 @@ async def settings_callbacks(client: Client, query: CallbackQuery):
         settings = await get_group_settings(chat_id)
         await query.message.edit_reply_markup(reply_markup=modules_menu(settings.get("modules", {})))
 
-
-# We expanded the regex block to catch the new 'sco_.*' and 'today' callbacks
-@Client.on_callback_query(filters.regex(r"^fb_(main|menu_.*|stand_.*|fix_.*|res_.*|sco_.*|today|myteam)$"))
-async def sports_callbacks(client: Client, query: CallbackQuery):
-    # ... (existing code) ...
-
-    # Add these exact blocks into the if/elif chain:
+    #up
     elif data == "menu_scorers":
         await query.message.edit_text("🎯 Select a Competition:", reply_markup=league_selector_menu("sco"))
 
@@ -283,3 +277,5 @@ async def sports_callbacks(client: Client, query: CallbackQuery):
         # Add a back button to return to the main menu
         kb = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="fb_main")]])
         await query.message.edit_text(text, reply_markup=kb)
+
+    
