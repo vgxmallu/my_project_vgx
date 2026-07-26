@@ -2,7 +2,15 @@ import httpx
 from config import Config
 from vgx.database.fdb import get_cached_api, set_cached_api
 
-HEADERS = {"X-Auth-Token": Config.FOOTBALL_API_KEY}
+#HEADERS = {"X-Auth-Token": Config.FOOTBALL_API_KEY}
+
+HEADERS = {
+    "X-Auth-Token": Config.FOOTBALL_API_KEY,
+    "X-Unfold-Goals": "true",    # Automatically includes who scored in match lists!
+    "X-Unfold-Bookings": "true", # Automatically includes yellow/red cards
+    "X-Unfold-Lineups": "true"   # Automatically includes starting XI
+}
+
 
 async def fetch_football_data(endpoint: str, params: dict = None, ttl: int = 300) -> dict:
     """Fetches data with built-in MongoDB TTL caching to comply with 10 req/min rate limit."""
@@ -156,3 +164,60 @@ async def format_squad(team_id: int) -> str:
         text += f"`{pos} {name} {nat}`\n"
         
     return text[:4000] 
+
+
+#nn
+
+async def format_head_to_head(match_id: int) -> str:
+    """Calculates historical win rates between two teams facing off in a match."""
+    data = await fetch_football_data(f"matches/{match_id}/head2head", ttl=86400)
+    
+    h2h = data.get("aggregates", data.get("head2head", {}))
+    if not h2h or "homeTeam" not in h2h:
+        return "⚠️ Head-to-Head historical data is not available for this match."
+
+    home_stats = h2h['homeTeam']
+    away_stats = h2h['awayTeam']
+    total_matches = h2h.get('numberOfMatches', 0)
+    total_goals = h2h.get('totalGoals', 0)
+    
+    # Retrieve the names from the first recent encounter if available
+    recent = data.get("matches", [])
+    home_name = recent[0]['homeTeam']['name'] if recent else "Home Team"
+    away_name = recent[0]['awayTeam']['name'] if recent else "Away Team"
+
+    text = f"⚔️ **Head-to-Head Analytics**\n"
+    text += f"**{home_name}** vs **{away_name}**\n\n"
+    text += f"📊 **Total Historical Matches:** {total_matches}\n"
+    text += f"⚽ **Total Goals Scored:** {total_goals}\n\n"
+    
+    text += f"🏠 **{home_name} Record:**\n"
+    text += f"Wins: `{home_stats['wins']}` | Draws: `{home_stats['draws']}` | Losses: `{home_stats['losses']}`\n\n"
+    
+    text += f"✈️ **{away_name} Record:**\n"
+    text += f"Wins: `{away_stats['wins']}` | Draws: `{away_stats['draws']}` | Losses: `{away_stats['losses']}`\n"
+    
+    return text
+
+async def format_person_profile(person_id: int) -> str:
+    """Fetches in-depth data for a specific player, coach, or referee."""
+    data = await fetch_football_data(f"persons/{person_id}", ttl=86400)
+    if "name" not in data:
+        return "⚠️ Person not found. Check the ID."
+
+    name = data['name']
+    nationality = data.get('nationality', 'Unknown')
+    dob = data.get('dateOfBirth', 'Unknown')
+    
+    team_data = data.get('currentTeam', {})
+    team_name = team_data.get('name', 'Free Agent / Unknown')
+    contract_end = team_data.get('contract', {}).get('until', 'N/A')
+    
+    text = f"👤 **Profile: {name}**\n\n"
+    text += f"🌍 **Nationality:** {nationality}\n"
+    text += f"🎂 **Born:** {dob}\n"
+    text += f"🛡️ **Current Club:** {team_name}\n"
+    if contract_end != 'N/A':
+        text += f"📜 **Contract Valid Until:** {contract_end.split('-')[0]}\n"
+        
+    return text
