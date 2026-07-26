@@ -6,6 +6,9 @@ import random
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 
+import asyncio
+from datetime import datetime
+from pyrogram.errors import FloodWait
 
 
 
@@ -17,6 +20,248 @@ history_db = db["history"]
 favorites_db = db["favorites"]
 predictions_db = db["predictions"]
 points_db = db["points"]
+
+settings_col = db["broadcast_settings"]
+
+# Active background task tracking dictionary: { chat_id: asyncio.Task }
+active_schedulers = {}
+
+async def get_settings(chat_id: int):
+    doc = await settings_col.find_one({"chat_id": chat_id})
+    if not doc:
+        # Default settings: Disabled, 1 hour interval, 300s delete, pin disabled
+        doc = {
+            "chat_id": chat_id,
+            "enabled": False,
+            "interval_seconds": 3600,  # 1 hour
+            "interval_label": "1h",
+            "delete_seconds": 300,     # 300s (5 mins)
+            "delete_label": "300s",
+            "pin_enabled": False
+        }
+        await settings_col.update_one({"chat_id": chat_id}, {"$set": doc}, upsert=True)
+    return doc
+
+# --- Background Broadcaster Loop ---
+async def broadcast_loop(client: Client, chat_id: int):
+    while True:
+        try:
+            config = await get_settings(chat_id)
+            if not config.get("enabled", False):
+                break
+            
+            interval = config.get("interval_seconds", 3600)
+            del_time = config.get("delete_seconds", 300)
+            pin_on = config.get("pin_enabled", False)
+            
+            # Fetch live/today matches from sports API (using eventsday endpoint or fallback search)
+            today = datetime.utcnow().strftime("%Y-%m-%d")
+            from services.sports_api import fetch_api
+            api_data = await fetch_api("eventsday.php", {"d": today})
+            events = api_data.get("events", [])
+            
+            text = f"⚽ **Live & Upcoming Match Schedule Updates** ({today})\n\n"
+            if not events:
+                text += "No live or scheduled fixtures recorded for today yet. Check back soon!"
+            else:
+                for e in events[:5]:
+                    status = e.get('strStatus', 'NS')
+                    score = f"{e.get('intHomeScore', '0')} - {e.get('intAwayScore', '0')}" if status != 'NS' else "vs"
+                    text += (
+                        f"🏆 **{e.get('strLeague', 'League')}**\n"
+                        f"⚔️ {e.get('strHomeTeam')} `{score}` {e.get('strAwayTeam')}\n"
+                        f"🕒 Status: `{status} | {e.get('strTime', 'TBA')}`\n\n"
+                    )
+            
+            # Send message
+            msg = await client.send_message(chat_id, text, parse_mode=None)
+            
+            # Handle Pinning
+            if pin_on:
+                try:
+                    await msg.pin(disable_notification=True)
+                except Exception:
+                    pass
+            
+            # Handle Auto-Deletion Task
+            if del_time > 0:
+                async def delete_later():
+                    await asyncio.sleep(del_time)
+                    try:
+                        await msg.delete()
+                    except Exception:
+                        pass
+                asyncio.create_task(delete_later())
+                
+            await asyncio.sleep(interval)
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            print(f"Broadcast loop error in chat {chat_id}: {e}")
+            await asyncio.sleep(60)
+
+def restart_scheduler_task(client: Client, chat_id: int, enabled: bool):
+    if chat_id in active_schedulers:
+        active_schedulers[chat_id].cancel()
+        del active_schedulers[chat_id]
+    if enabled:
+        active_schedulers[chat_id] = asyncio.create_task(broadcast_loop(client, chat_id))
+
+
+# --- Command & Panel Interface ---
+@Client.on_message(filters.command("liveschedule") & filters.group)
+async def liveschedule_group_cmd(client: Client, message: Message):
+    chat_id = message.chat.id
+    config = await get_settings(chat_id)
+    
+    status_text = "🟢 **ENABLED**" if config["enabled"] else "🔴 **DISABLED**"
+    pin_text = "✅ Enabled" if config["pin_enabled"] else "❌ Disabled"
+    
+    text = (
+        f"⚙️ **Live Schedule Broadcast Control Panel**\n\n"
+        f"• **Status:** {status_text}\n"
+        f"• **Interval:** `{config.get('interval_label', '1h')}`\n"
+        f"• **Auto-Delete:** `{config.get('delete_label', '300s')}`\n"
+        f"• **Pin Message:** {pin_text}\n\n"
+        f"Use the buttons below to customize settings:"
+    )
+    
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton(f"Toggle: {'🟢 ON' if config['enabled'] else '🔴 OFF'}", callback_data=f"ls_toggle_{chat_id}")],
+        [
+            InlineKeyboardButton("⏱ 1m", callback_data=f"ls_int_{chat_id}_60_1m"),
+            InlineKeyboardButton("⏱ 5m", callback_data=f"ls_int_{chat_id}_300_5m"),
+            InlineKeyboardButton("⏱ 20m", callback_data=f"ls_int_{chat_id}_1200_20m"),
+        ],
+        [
+            InlineKeyboardButton("⏱ 30m", callback_data=f"ls_int_{chat_id}_1800_30m"),
+            InlineKeyboardButton("⏱ 1h", callback_data=f"ls_int_{chat_id}_3600_1h"),
+            InlineKeyboardButton("⏱ 2h+", callback_data=f"ls_int_{chat_id}_7200_2h"),
+        ],
+        [
+            InlineKeyboardButton("🗑 Del: 30s", callback_data=f"ls_del_{chat_id}_30_30s"),
+            InlineKeyboardButton("🗑 Del: 300s", callback_data=f"ls_del_{chat_id}_300_300s"),
+            InlineKeyboardButton("🗑 Del: 400s", callback_data=f"ls_del_{chat_id}_400_400s"),
+            InlineKeyboardButton("🗑 Del: 2400s", callback_data=f"ls_del_{chat_id}_2400_2400s"),
+        ],
+        [InlineKeyboardButton(f"📌 Pin Mode: {pin_text}", callback_data=f"ls_pin_{chat_id}")]
+    ])
+    
+    await message.reply(text, reply_markup=keyboard, parse_mode=None)
+
+
+# --- Private Target Group Management Command ---
+@Client.on_message(filters.command("targetschedule") & filters.private)
+async def target_schedule_cmd(client: Client, message: Message):
+    if len(message.command) < 2:
+        return await message.reply("⚠️ Usage: `/targetschedule <group_id>`\n*(Example: `/targetschedule -1001234567890`)*", parse_mode=None)
+    
+    try:
+        target_chat_id = int(message.command[1])
+    except ValueError:
+        return await message.reply("❌ Invalid Group ID format. Must be an integer (e.g., `-100...`).", parse_mode=None)
+    
+    config = await get_settings(target_chat_id)
+    status_text = "🟢 **ENABLED**" if config["enabled"] else "🔴 **DISABLED**"
+    
+    text = (
+        f"🎯 **Target Group Control Panel**\n"
+        f"Target ID: `{target_chat_id}`\n\n"
+        f"• **Status:** {status_text}\n"
+        f"• **Interval:** `{config.get('interval_label', '1h')}`\n"
+        f"• **Auto-Delete:** `{config.get('delete_label', '300s')}`\n"
+    )
+    
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton(f"Toggle Module: {'🟢 ON' if config['enabled'] else '🔴 OFF'}", callback_data=f"ls_toggle_{target_chat_id}")],
+        [InlineKeyboardButton("🔄 Refresh Panel", callback_data=f"ls_refresh_{target_chat_id}")]
+    ])
+    
+    await message.reply(text, reply_markup=keyboard, parse_mode=None)
+
+
+# --- Callback Handlers for Control Settings ---
+@Client.on_callback_query(filters.regex(r"^ls_toggle_(-?\d+)$"))
+async def ls_toggle_callback(client: Client, query: CallbackQuery):
+    chat_id = int(query.matches[0].group(1))
+    config = await get_settings(chat_id)
+    
+    new_status = not config["enabled"]
+    await settings_col.update_one({"chat_id": chat_id}, {"$set": {"enabled": new_status}}, upsert=True)
+    restart_scheduler_task(client, chat_id, new_status)
+    
+    await query.answer(f"Module successfully {'Enabled'ekyll}!" if new_status else "Module Disabled.", show_alert=True)
+    
+    # Refresh view
+    updated_config = await get_settings(chat_id)
+    status_text = "🟢 **ENABLED**" if updated_config["enabled"] else "🔴 **DISABLED**"
+    pin_text = "✅ Enabled" if updated_config["pin_enabled"] else "❌ Disabled"
+    
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton(f"Toggle: {'🟢 ON' if updated_config['enabled'] else '🔴 OFF'}", callback_data=f"ls_toggle_{chat_id}")],
+        [
+            InlineKeyboardButton("⏱ 1m", callback_data=f"ls_int_{chat_id}_60_1m"),
+            InlineKeyboardButton("⏱ 5m", callback_data=f"ls_int_{chat_id}_300_5m"),
+            InlineKeyboardButton("⏱ 20m", callback_data=f"ls_int_{chat_id}_1200_20m"),
+        ],
+        [
+            InlineKeyboardButton("⏱ 30m", callback_data=f"ls_int_{chat_id}_1800_30m"),
+            InlineKeyboardButton("⏱ 1h", callback_data=f"ls_int_{chat_id}_3600_1h"),
+            InlineKeyboardButton("⏱ 2h+", callback_data=f"ls_int_{chat_id}_7200_2h"),
+        ],
+        [
+            InlineKeyboardButton("🗑 Del: 30s", callback_data=f"ls_del_{chat_id}_30_30s"),
+            InlineKeyboardButton("🗑 Del: 300s", callback_data=f"ls_del_{chat_id}_300_300s"),
+            InlineKeyboardButton("🗑 Del: 400s", callback_data=f"ls_del_{chat_id}_400_400s"),
+            InlineKeyboardButton("🗑 Del: 2400s", callback_data=f"ls_del_{chat_id}_2400_2400s"),
+        ],
+        [InlineKeyboardButton(f"📌 Pin Mode: {pin_text}", callback_data=f"ls_pin_{chat_id}")]
+    ])
+    
+    await query.message.edit_text(
+        f"⚙️ **Live Schedule Broadcast Control Panel** (Chat: `{chat_id}`)\n\n"
+        f"• **Status:** {status_text}\n"
+        f"• **Interval:** `{updated_config.get('interval_label', '1h')}`\n"
+        f"• **Auto-Delete:** `{updated_config.get('delete_label', '300s')}`\n"
+        f"• **Pin Message:** {pin_text}",
+        reply_markup=keyboard,
+        parse_mode=None
+    )
+
+@Client.on_callback_query(filters.regex(r"^ls_int_(-?\d+)_(\d+)_([a-zA-Z0-9\+]+)$"))
+async def ls_interval_callback(client: Client, query: CallbackQuery):
+    chat_id = int(query.matches[0].group(1))
+    seconds = int(query.matches[0].group(2))
+    label = query.matches[0].group(3)
+    
+    await settings_col.update_one({"chat_id": chat_id}, {"$set": {"interval_seconds": seconds, "interval_label": label}}, upsert=True)
+    
+    # Restart task loop with new timer if enabled
+    config = await get_settings(chat_id)
+    if config["enabled"]:
+        restart_scheduler_task(client, chat_id, True)
+        
+    await query.answer(f"Interval updated to {label}!", show_alert=True)
+
+
+@Client.on_callback_query(filters.regex(r"^ls_del_(-?\d+)_(\d+)_([a-zA-Z0-9]+)$"))
+async def ls_delete_callback(client: Client, query: CallbackQuery):
+    chat_id = int(query.matches[0].group(1))
+    seconds = int(query.matches[0].group(2))
+    label = query.matches[0].group(3)
+    
+    await settings_col.update_one({"chat_id": chat_id}, {"$set": {"delete_seconds": seconds, "delete_label": label}}, upsert=True)
+    await query.answer(f"Auto-delete timer set to {label}!", show_alert=True)
+
+
+@Client.on_callback_query(filters.regex(r"^ls_pin_(-?\d+)$"))
+async def ls_pin_callback(client: Client, query: CallbackQuery):
+    chat_id = int(query.matches[0].group(1))
+    config = await get_settings(chat_id)
+    
+    new_pin = not config["pin_enabled"]
+    await settings_col.update_one({"chat_id": chat_id}, {"$set": {"pin_enabled": new_pin}}, upsert=True)
+    await query.answer(f"Pin feature {'Enabled' if new_pin else 'Disabled'}!", show_alert=True)
 
 async def fetch_api(endpoint: str, params: dict = None) -> dict:
     """Asynchronous HTTP GET request to TheSportsDB"""
