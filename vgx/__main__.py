@@ -111,13 +111,10 @@ if __name__ == "__main__":
     loop9 = asyncio.get_event_loop()
     loop9.create_task(music_scheduler_loop(app))
 
-    print("⚽ Booting API-Football Bot...")
-    loop10 = asyncio.get_event_loop()
-    loop10.create_task(fboll_scheduler(app))
 
     print("📢 Booting Football-Data.org Telegram Bot...")
-    loop12 = asyncio.get_event_loop()
-    loop12.create_task(fmatch_scheduler(app))
+    loop10 = asyncio.get_event_loop()
+    loop10.create_task(fmatch_scheduler(app))
     
     print("🎧 Spotify Pro System Online!")
     loop_spot = asyncio.get_event_loop()
