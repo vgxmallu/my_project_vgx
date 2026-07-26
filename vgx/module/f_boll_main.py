@@ -206,7 +206,7 @@ async def clear_target_command(client: Client, message: Message):
     await message.reply("✅ **Target Chat Cleared.** Controls returned to PM.")
 
 # --- REGEX CALLBACK QUERY HANDLERS ---
-@Client.on_callback_query(filters.regex(r"^cfg_(menu|target_info|clear_target|cycle_autodel|toggle_pin|cycle_sched|modules|mod_.*|main|stand_.*|fix_.*|res_.*|sco_.*|today|myteam)$"))
+@Client.on_callback_query(filters.regex(r"^cfg_(menu|target_info|clear_target|cycle_autodel|toggle_pin|cycle_sched|modules|mod_.*|main|menu_.*|stand_.*|fix_.*|res_.*|sco_.*|today|myteam)$"))
 async def settings_callbacks(client: Client, query: CallbackQuery):
     await query.answer()
     uid = query.from_user.id
