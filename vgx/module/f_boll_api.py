@@ -85,3 +85,74 @@ async def format_recent_results_with_spoilers(competition_code: str) -> str:
         text += f"• {home} vs {away} — ||{h_score} - {a_score}||\n"
         
     return text
+
+
+async def format_scorers(competition_code: str) -> str:
+    """Fetches the top scorers (Golden Boot race) for a specific competition."""
+    data = await fetch_football_data(f"competitions/{competition_code}/scorers", ttl=3600)
+    scorers = data.get("scorers", [])
+    if not scorers:
+        return f"⚽ No scorer data available for `{competition_code}`."
+
+    comp_name = data.get("competition", {}).get("name", competition_code)
+    text = f"🎯 **Top Scorers — {comp_name}**\n\n"
+    text += "`Pos  Player             Team         Gls`\n"
+    text += "`----------------------------------------`\n"
+    
+    for idx, s in enumerate(scorers[:10], start=1):
+        pos = str(idx).ljust(3)
+        player = s['player']['name'][:16].ljust(18)
+        team = s['team']['shortName'][:10].ljust(11)
+        goals = str(s.get('goals', 0)).rjust(3)
+        text += f"`{pos} {player} {team} {goals}`\n"
+        
+    return text
+
+async def format_today_matches() -> str:
+    """Uses the v4 'TODAY' shortcut filter to get all matches across covered leagues."""
+    data = await fetch_football_data("matches", params={"date": "TODAY"}, ttl=300)
+    matches = data.get("matches", [])
+    if not matches:
+        return "⚽ No matches scheduled for today across your covered competitions."
+
+    text = "🗓 **Today's Global Matches**\n\n"
+    for m in matches[:15]:  # Limit to 15 to avoid Telegram message length limits
+        comp = m['competition']['code']
+        home = m['homeTeam']['shortName']
+        away = m['awayTeam']['shortName']
+        status = m['status']
+        
+        if status == "IN_PLAY":
+            score = f"🔴 {m['score']['fullTime']['home']} - {m['score']['fullTime']['away']}"
+        elif status == "FINISHED":
+            score = f"✅ {m['score']['fullTime']['home']} - {m['score']['fullTime']['away']}"
+        else:
+            # Note: UTC time. Your server/users can adjust to IST or local timezone here.
+            score = "🕒 " + m['utcDate'][11:16] + " UTC" 
+            
+        text += f"**[{comp}]** {home} vs {away} | {score}\n"
+        
+    return text
+
+async def format_squad(team_id: int) -> str:
+    """Fetches the active roster for a specific team."""
+    data = await fetch_football_data(f"teams/{team_id}", ttl=86400) # Cache for 24h
+    squad = data.get("squad", [])
+    if not squad:
+        return "⚠️ Squad data not available. Ensure you used a valid Team ID."
+
+    team_name = data.get("name", "Team")
+    coach = data.get("coach", {}).get("name", "Unknown")
+    
+    text = f"🛡️ **{team_name} — Current Squad**\n"
+    text += f"👔 **Coach:** {coach}\n\n"
+    text += "`Pos  Name                  Nationality`\n"
+    text += "`--------------------------------------`\n"
+    
+    for p in squad:
+        pos = (p.get('position') or 'N/A')[:3].upper().ljust(4)
+        name = p.get('name', 'Unknown')[:20].ljust(21)
+        nat = p.get('nationality', 'Unknown')[:10]
+        text += f"`{pos} {name} {nat}`\n"
+        
+    return text[:4000] 
