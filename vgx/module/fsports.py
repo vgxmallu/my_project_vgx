@@ -79,15 +79,9 @@ async def send_team_overview(client: Client, chat_id: int, team: dict, is_favori
         await client.send_message(chat_id, text, reply_markup=keyboard)
 
 
-from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from database import users_db, history_db, favorites_db, predictions_db, points_db
-from services.sports_api import fetch_api
-from services.ui_renderer import send_team_overview
-import random
 
-@Client.on_message(filters.command("start"))
-async def start_cmd(client: Client, message: Message):
+@Client.on_message(filters.command("cdm"))
+async def startfff_cmd(client: Client, message: Message):
     user = message.from_user
     await users_db.update_one({"user_id": user.id}, {"$set": {"first_name": user.first_name}}, upsert=True)
     
