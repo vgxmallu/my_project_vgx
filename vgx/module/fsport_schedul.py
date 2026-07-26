@@ -6,7 +6,7 @@ from pyrogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineK
 from pyrogram.errors import RPCError
 from motor.motor_asyncio import AsyncIOMotorClient
 from config import Config
-
+from vgx import app
 
 THESPORTSDB_KEY = "3"  # Free API key for TheSportsDB
 
@@ -183,7 +183,7 @@ def sync_scheduler_task(client: Client, chat_id: int, enabled: bool):
 
 
 # ==================== COMMAND HANDLERS ====================
-@app.on_message(filters.command("fschedule") & filters.group)
+@app.on_message(filters.command("fschedule"))
 async def group_schedule_control(client: Client, message: Message):
     """Group Command: Displays the schedule control panel for the current group."""
     chat_id = message.chat.id
@@ -198,7 +198,7 @@ async def group_schedule_control(client: Client, message: Message):
     await message.reply(text, reply_markup=keyboard, parse_mode=None)
 
 
-@app.on_message(filters.command("targetschedule") & filters.private)
+@app.on_message(filters.command("targetschedule"))
 async def private_target_schedule_control(client: Client, message: Message):
     """Private Command: Target and control schedule settings for any group ID remotely."""
     if len(message.command) < 2:
