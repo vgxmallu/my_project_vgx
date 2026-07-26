@@ -9,7 +9,7 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, 
 import asyncio
 from datetime import datetime
 from pyrogram.errors import FloodWait
-
+from vgx import app
 
 
 client = AsyncIOMotorClient(Config.MONGO_URL)
