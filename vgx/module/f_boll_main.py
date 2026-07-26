@@ -2,7 +2,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, 
 from config import Config
 from pyrogram import Client, filters
 
-from vgx.module.f_boll_api import format_head_to_head, format_person_profile, format_standings, format_fixtures, format_recent_results_with_spoilers, format_scorers, format_today_matches, format_squad
+from vgx.module.f_boll_api import format_standings, format_fixtures, format_recent_results_with_spoilers, format_scorers, format_today_matches, format_squad
 from vgx.module.f_boll_schedul import send_managed_message
 from vgx.database.fdb import get_group_settings, get_user_favorite_team, set_user_favorite_team, update_group_setting, toggle_group_module, set_user_target, get_user_target, clear_user_target
 
@@ -73,23 +73,6 @@ def modules_menu(modules: dict):
 
 
 # --- COMMAND HANDLERS ---
-
-@Client.on_message(filters.command("h2h"))
-async def h2h_command(client: Client, message: Message):
-    """Command: /h2h <match_id>"""
-    if len(message.command) < 2:
-        return await message.reply("⚠️ Usage: `/h2h <match_id>` (Get match IDs from fixtures)")
-    text = await format_head_to_head(int(message.command[1]))
-    await send_managed_message(client, message.chat.id, text)
-
-@Client.on_message(filters.command("player"))
-async def player_command(client: Client, message: Message):
-    """Command: /player <person_id>"""
-    if len(message.command) < 2:
-        return await message.reply("⚠️ Usage: `/player <person_id>`")
-    text = await format_person_profile(int(message.command[1]))
-    await send_managed_message(client, message.chat.id, text)
-
 
 @Client.on_message(filters.command("scorers"))
 async def scorers_command(client: Client, message: Message):
