@@ -293,12 +293,6 @@ async def news_cmd(client: Client, message: Message):
     await message.reply(text)
 
 
-from pyrogram import Client, filters
-from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from database import favorites_db, points_db
-from services.sports_api import fetch_api
-from services.ui_renderer import send_team_overview
-
 @Client.on_callback_query(filters.regex(r"^team_(\d+)$"))
 async def team_back_callback(client: Client, query: CallbackQuery):
     team_id = query.matches[0].group(1)
