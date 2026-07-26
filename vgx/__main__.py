@@ -26,7 +26,6 @@ from vgx.module.spoty import drop_sender_loop, auto_delete_loop
 from vgx.module.deezer_scheduler import music_scheduler_loop
 
 from vgx.module.f_boll_schedul import fmatch_scheduler
-from vgx.module.fsports import scheduler_loop
 from vgx.module.fsport_schedul import restore_active_schedulers
 
 
@@ -118,11 +117,8 @@ if __name__ == "__main__":
 
     print("👀 SoprtsDB Telegram Bot...")
     loop11 = asyncio.get_event_loop()
-    loop11.create_task(scheduler_loop(app))
+    loop11.create_task(restore_active_schedulers(app))
     
-    print("✅ Telegram Bot...")
-    loop12 = asyncio.get_event_loop()
-    loop12.create_task(restore_active_schedulers(app))
     
     print("🎧 Spotify Pro System Online!")
     loop_spot = asyncio.get_event_loop()
