@@ -24,8 +24,6 @@ from vgx.module.Auto_mod_scheduler import weekly_audit_loop
 from vgx.module.weather_schedul import morning_briefing_loop
 from vgx.module.spoty import drop_sender_loop, auto_delete_loop
 from vgx.module.deezer_scheduler import music_scheduler_loop
-from vgx.module.football_schedule import fboll_scheduler
-from vgx.module.s_scheduler import live_match_scheduler
 
 from vgx.module.f_boll_schedul import fmatch_scheduler
 
@@ -116,10 +114,6 @@ if __name__ == "__main__":
     print("⚽ Booting API-Football Bot...")
     loop10 = asyncio.get_event_loop()
     loop10.create_task(fboll_scheduler(app))
-    
-    print("🎯 Highlightly Sports Engine...")
-    loop11 = asyncio.get_event_loop()
-    loop11.create_task(live_match_scheduler(app))
 
     print("📢 Booting Football-Data.org Telegram Bot...")
     loop12 = asyncio.get_event_loop()
