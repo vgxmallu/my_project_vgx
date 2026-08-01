@@ -458,4 +458,112 @@ async def trivia_answer_callback(client: Client, query: CallbackQuery):
 
 #====================================================
 
+from config import Config
+# ==================== LEAGUE MAPPING ====================
+# Using standard Football-Data.org Competition Codes
+LEAGUES = {
+    "PL": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League",
+    "PD": "🇪🇸 La Liga",
+    "SA": "🇮🇹 Serie A",
+    "BL1": "🇩🇪 Bundesliga",
+    "FL1": "🇫🇷 Ligue 1",
+    "DED": "🇳🇱 Eredivisie",
+    "PPL": "🇵🇹 Primeira Liga",
+    "ELC": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 EFL Championship"
+}
+
+# ==================== UI BUILDERS ====================
+def build_leagues_keyboard() -> InlineKeyboardMarkup:
+    """Generates a 2-column main menu keyboard for all supported leagues."""
+    keys = []
+    league_items = list(LEAGUES.items())
+    
+    # Loop through the dictionary and pair buttons two-by-two
+    for i in range(0, len(league_items), 2):
+        row = [InlineKeyboardButton(league_items[i][1], callback_data=f"std_{league_items[i][0]}")]
+        # Check if there is a second button to add to this row
+        if i + 1 < len(league_items):
+            row.append(InlineKeyboardButton(league_items[i+1][1], callback_data=f"std_{league_items[i+1][0]}"))
+        keys.append(row)
+    
+    # Add the close button at the bottom
+    keys.append([InlineKeyboardButton("❌ Close", callback_data="close_ui")])
+    return InlineKeyboardMarkup(keys)
+
+
+# ==================== COMMANDS ====================
+@app.on_message(filters.command("stand_ing"))
+async def standihhngs_command(client: Client, message: Message):
+    """Triggers the main league selection menu."""
+    text = "🏆 **Select a League to view current standings:**"
+    await message.reply(text, reply_markup=build_leagues_keyboard(), parse_mode=None)
+
+
+# ==================== CALLBACK HANDLERS ====================
+@app.on_callback_query(filters.regex(r"^std_([A-Z0-9]+)$"))
+async def fetch_standings(client: Client, query: CallbackQuery):
+    """Fetches data from the API and dynamically updates the message."""
+    league_code = query.matches[0].group(1)
+    league_name = LEAGUES.get(league_code, "League")
+    
+    # Provide instant UI feedback while waiting for the web request
+    await query.message.edit_text(f"⏳ *Fetching latest {league_name} standings...*", parse_mode=None)
+    
+    url = f"https://api.football-data.org/v4/competitions/{league_code}/standings"
+    headers = {"X-Auth-Token": Config.FOOTBALL_API_KEY}
+    
+    try:
+        async with aiohttp.ClientSession(headers=headers) as session:
+            async with session.get(url, timeout=10) as resp:
+                if resp.status != 200:
+                    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="back_leagues")]])
+                    return await query.message.edit_text(f"❌ API Error: Failed to fetch {league_name}.", reply_markup=kb)
+                
+                data = await resp.json()
+                
+                # The API returns an array of standings. [0] is the main "TOTAL" table.
+                standings = data.get("standings", [])[0].get("table", [])
+                
+                # Build a clean, monospaced text table
+                text = f"🏆 **{league_name} Standings**\n\n"
+                text += "`#   Team                 P   Pts`\n"
+                text += "`--------------------------------`\n"
+                
+                # We limit to the top 15 teams to ensure the message isn't too long for Telegram
+                for team in standings[:15]:  
+                    pos = str(team["position"]).ljust(3)
+                    name = team["team"]["shortName"][:18].ljust(18)
+                    played = str(team["playedGames"]).ljust(3)
+                    pts = str(team["points"])
+                    
+                    text += f"`{pos} {name} {played} {pts}`\n"
+                
+                if len(standings) > 15:
+                    text += "`... (Top 15 shown)`\n"
+                
+                # Add refresh and back buttons to the bottom of the table
+                kb = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🔄 Refresh Stats", callback_data=f"std_{league_code}")],
+                    [InlineKeyboardButton("🔙 Back to Leagues", callback_data="back_leagues")]
+                ])
+                
+                await query.message.edit_text(text, reply_markup=kb, parse_mode=None)
+                
+    except Exception as e:
+        print(f"Error fetching standings: {e}")
+        await query.answer("Network error fetching data!", show_alert=True)
+
+
+@app.on_callback_query(filters.regex(r"^back_leagues$"))
+async def back_to_leagues(client: Client, query: CallbackQuery):
+    """Returns the user to the main menu without sending a new message."""
+    text = "🏆 **Select a League to view current standings:**"
+    await query.message.edit_text(text, reply_markup=build_leagues_keyboard(), parse_mode=None)
+
+
+@app.on_callback_query(filters.regex(r"^close_ui$"))
+async def close_panel(client: Client, query: CallbackQuery):
+    """Deletes the interactive message entirely."""
+    await query.message.delete()
+
 
