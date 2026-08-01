@@ -492,7 +492,7 @@ def build_leagues_keyboard() -> InlineKeyboardMarkup:
 
 
 # ==================== COMMANDS ====================
-@app.on_message(filters.command("stand_ing"))
+@Client.on_message(filters.command("stand_ing"))
 async def standihhngs_command(client: Client, message: Message):
     """Triggers the main league selection menu."""
     text = "🏆 **Select a League to view current standings:**"
@@ -500,7 +500,7 @@ async def standihhngs_command(client: Client, message: Message):
 
 
 # ==================== CALLBACK HANDLERS ====================
-@app.on_callback_query(filters.regex(r"^std_([A-Z0-9]+)$"))
+@Client.on_callback_query(filters.regex(r"^std_([A-Z0-9]+)$"))
 async def fetch_standings(client: Client, query: CallbackQuery):
     """Fetches data from the API and dynamically updates the message."""
     league_code = query.matches[0].group(1)
@@ -554,14 +554,14 @@ async def fetch_standings(client: Client, query: CallbackQuery):
         await query.answer("Network error fetching data!", show_alert=True)
 
 
-@app.on_callback_query(filters.regex(r"^back_leagues$"))
+@Client.on_callback_query(filters.regex(r"^back_leagues$"))
 async def back_to_leagues(client: Client, query: CallbackQuery):
     """Returns the user to the main menu without sending a new message."""
     text = "🏆 **Select a League to view current standings:**"
     await query.message.edit_text(text, reply_markup=build_leagues_keyboard(), parse_mode=None)
 
 
-@app.on_callback_query(filters.regex(r"^close_ui$"))
+@Client.on_callback_query(filters.regex(r"^close_ui$"))
 async def close_panel(client: Client, query: CallbackQuery):
     """Deletes the interactive message entirely."""
     await query.message.delete()
