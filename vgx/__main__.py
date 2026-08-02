@@ -16,7 +16,7 @@ from vgx.module.bday_schedul import birthday_worker
 #from vgx.module.quets_broad import start_qet_scheduler
 #from vgx.module.quotes_schedul import run_quote_scheduler
 from vgx.module.quotes_schedul import quote_worker
-from vgx.module.anilist_schedul import anime_worker
+from vgx.module.anlyz_adm_cmd import anime_worker
 from vgx.module.rssfeed_scheduler import autopost_worker
 from vgx.module.pomodoro_scheduler import pomodoro_loop
 from vgx.module.bot_health import heartbeat_loop
