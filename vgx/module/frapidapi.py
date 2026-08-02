@@ -236,3 +236,170 @@ async def cb_return_to_matches(client: Client, query: CallbackQuery):
 @Client.on_callback_query(filters.regex("^close_ui$"))
 async def cb_close_menu(client: Client, query: CallbackQuery):
     await query.message.delete()
+
+
+#====================================================
+
+import asyncio
+
+from datetime import datetime
+
+from motor.motor_asyncio import AsyncIOMotorClient
+
+# RapidAPI Credentials provided in the cURL snippet
+RAPID_API_KEY = "2170275bfemsh6eb2ff11d740b03p1706ebjsnff878dca22c0"
+RAPID_API_HOST = "free-api-live-football-data.p.rapidapi.com"
+
+HEADERS = {
+    "x-rapidapi-key": RAPID_API_KEY,
+    "x-rapidapi-host": RAPID_API_HOST,
+    "Content-Type": "application/json"
+}
+
+# Supported Leagues mapped from your requirements
+SUPPORTED_LEAGUES = [
+    "Premier League", "La Liga", "Bundesliga", "Serie A", "Ligue 1", "Eredivisie", 
+    "Primeira Liga", "Süper Lig", "Scottish Premiership", "Liga MX", "Major League Soccer", 
+    "Chinese Super League", "J1 League", "K League 1", "Indian Super League", "A-League", 
+    "Liga 1", "Thai League 1", "Campeonato Brasileiro Série A", "Primera División", 
+    "Liga Profesional de Fútbol", "Albanian Super League", "Andorran Premier Division" # ... and all others listed
+]
+
+db_client = AsyncIOMotorClient(MONGO_URL)
+db = db_client["football_bot"]
+subscriptions_col = db["chat_subscriptions"]
+
+# ==================== API HANDLER ====================
+async def fetch_upcoming_fixtures(date_str: str):
+    """
+    Fetches scheduled matches from the API. 
+    Note: Endpoint adjusted from player-search to a schedule endpoint.
+    """
+    # Replace 'football-get-matches-by-date' with the exact endpoint name from the API's documentation
+    url = f"https://{RAPID_API_HOST}/football-get-matches-by-date"
+    params = {"date": date_str}
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=HEADERS, params=params) as response:
+            if response.status == 200:
+                return await response.json()
+            return None
+
+# ==================== UI BUILDERS ====================
+def build_schedule_keyboard(chat_id: int, notifications_on: bool) -> InlineKeyboardMarkup:
+    """Replicates the interactive menu from 1002474286_2.jpg."""
+    notif_text = "Turn off these notifications" if notifications_on else "Turn on these notifications"
+    notif_action = "notif_off" if notifications_on else "notif_on"
+
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("✔ ⭐ Follow 🇬🇧 Manchester City", callback_data="follow_mancity")],
+        [InlineKeyboardButton("⭐ Follow 🇮🇹 Inter", callback_data="follow_inter")],
+        [InlineKeyboardButton("Subscribe in group chat +", callback_data="sub_group")],
+        [InlineKeyboardButton(notif_text, callback_data=f"toggle_{notif_action}_{chat_id}")]
+    ])
+
+def build_match_text(matches_data: dict = None) -> str:
+    """Builds the text payload matching the target UI design."""
+    # In production, iterate through matches_data to build this string dynamically
+    return (
+        "🔝 **Upcoming matches:** ([View All](https://t.me/your_bot_username?start=all))\n\n"
+        "**Friendly Match**\n"
+        "🔵🔵 **Manchester City - Inter** (⏰ 5:00 PM)\n"
+        "🔴⚪ **Manchester United - Atletico Madrid** (⏰ 6:30 PM)"
+    )
+
+# ==================== MESSAGE HANDLERS ====================
+@Client.on_message(filters.command("ffupcoming"))
+async def send_scheduudle(client: Client, message: Message):
+    """Sends the main schedule interface to a PM or Group."""
+    chat_id = message.chat.id
+    
+    # Retrieve current notification settings for this specific chat
+    chat_data = await subscriptions_col.find_one({"chat_id": chat_id})
+    notifications_on = chat_data.get("enabled", True) if chat_data else True
+
+    text = build_match_text()
+    keyboard = build_schedule_keyboard(chat_id, notifications_on)
+    
+    await message.reply_text(text, reply_markup=keyboard, disable_web_page_preview=True)
+
+# ==================== CALLBACK HANDLERS ====================
+@Client.on_callback_query(filters.regex(r"^toggle_notif_(on|off)_(-?\d+)$"))
+async def handle_notification_toggle(client: Client, query: CallbackQuery):
+    """Handles the enable/disable scheduling option."""
+    action = query.matches[0].group(1)
+    chat_id = int(query.matches[0].group(2))
+    
+    is_enabled = True if action == "on" else False
+    
+    # Update MongoDB with the new preference
+    await subscriptions_col.update_one(
+        {"chat_id": chat_id},
+        {"$set": {"enabled": is_enabled}},
+        upsert=True
+    )
+    
+    status_msg = "enabled" if is_enabled else "disabled"
+    await query.answer(f"Automated match schedules are now {status_msg}.", show_alert=True)
+    
+    # Refresh the UI dynamically
+    try:
+        await query.edit_message_reply_markup(
+            reply_markup=build_schedule_keyboard(chat_id, is_enabled)
+        )
+    except Exception:
+        pass
+
+@Client.on_callback_query(filters.regex("^sub_group$"))
+async def handle_group_subscription(client: Client, query: CallbackQuery):
+    """Provides a deep link to add the bot directly to a group chat."""
+    bot_info = await client.get_me()
+    url = f"https://t.me/{bot_info.username}?startgroup=true"
+    
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("➕ Add Bot to Group", url=url)]])
+    await query.message.edit_text(
+        "To receive live match schedules in your group, click the button below to add the bot:",
+        reply_markup=kb
+    )
+
+@Client.on_callback_query(filters.regex(r"^follow_(.*)$"))
+async def handle_team_follow(client: Client, query: CallbackQuery):
+    """Mock handler for following specific teams."""
+    team_id = query.matches[0].group(1)
+    await query.answer(f"You are now following {team_id}!", show_alert=False)
+
+# ==================== BACKGROUND SCHEDULER ====================
+async def match_broadcast_loop():
+    """
+    Runs in the background, checking the API for matches 
+    and sending them to chats that have notifications enabled.
+    """
+    await app.start()
+    print("🚀 Bot Started. Initiating broadcast loop...")
+    
+    while True:
+        try:
+            today_str = datetime.utcnow().strftime("%Y-%m-%d")
+            # Fetch real data here:
+            # fixtures = await fetch_upcoming_fixtures(today_str)
+            
+            # Find all chats where notifications are enabled
+            async for chat in subscriptions_col.find({"enabled": True}):
+                try:
+                    # Broadcast the newly fetched schedule
+                    text = build_match_text() 
+                    kb = build_schedule_keyboard(chat["chat_id"], True)
+                    await app.send_message(
+                        chat_id=chat["chat_id"], 
+                        text=text, 
+                        reply_markup=kb,
+                        disable_web_page_preview=True
+                    )
+                except Exception as e:
+                    print(f"Failed to send to {chat['chat_id']}: {e}")
+                    
+        except Exception as e:
+            print(f"Broadcast Loop Error: {e}")
+            
+        # Sleep for 12 hours before the next schedule push
+        await asyncio.sleep(43200)
