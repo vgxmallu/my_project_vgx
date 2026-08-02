@@ -3,7 +3,7 @@ from config import Config
 import aiohttp
 from datetime import datetime
 from typing import Dict, Any, List, Optional
-
+from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
 
 
