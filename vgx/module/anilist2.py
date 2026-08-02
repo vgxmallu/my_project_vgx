@@ -44,8 +44,8 @@ class AniListAPI:
             
         return response.get("Media") or {}
 
-    
-    async def get_character(self, search: str) -> dict:
+
+        async def get_character(self, search: str) -> dict:
         query = """
         query ($search: String) {
           Character (search: $search) {
@@ -54,8 +54,10 @@ class AniListAPI:
           }
         }
         """
-        data = await self._request(query, {"search": search})
-        return data.get("Character", {})
+        response = await self._request(query, {"search": search})
+        if not response:
+            return {}
+        return response.get("Character") or {}
 
     async def get_schedules(self) -> list:
         query = """
@@ -67,8 +69,13 @@ class AniListAPI:
           }
         }
         """
-        data = await self._request(query)
-        return data.get("Page", {}).get("airingSchedules", [])
+        response = await self._request(query)
+        if not response:
+            return []
+        page = response.get("Page")
+        if not page:
+            return []
+        return page.get("airingSchedules") or []
 
     async def get_user(self, name: str) -> dict:
         query = """
@@ -79,11 +86,14 @@ class AniListAPI:
           }
         }
         """
-        data = await self._request(query, {"name": name})
-        return data.get("User", {})
+        response = await self._request(query, {"name": name})
+        if not response:
+            return {}
+        return response.get("User") or {}
 
 api = AniListAPI()
 
+    
 def format_date(date_dict: dict) -> str:
     """Safely converts AniList date dict to a readable string."""
     if not date_dict or not date_dict.get('year'):
