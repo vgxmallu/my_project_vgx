@@ -1,6 +1,12 @@
 import aiohttp
 from config import Config
 
+
+
+    
+
+
+
 class AniListAPI:
     async def _request(self, query: str, variables: dict = None) -> dict:
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
@@ -9,23 +15,36 @@ class AniListAPI:
                 data = await resp.json()
                 return data.get("data", {})
 
-    async def get_media(self, search: str, m_type: str = "ANIME") -> dict:
+
+        async def get_media(self, search: str = None, media_id: int = None, m_type: str = "ANIME") -> dict:
         query = """
-        query ($search: String, $type: MediaType) {
-          Media (search: $search, type: $type) {
+        query ($search: String, $id: Int, $type: MediaType) {
+          Media (search: $search, id: $id, type: $type) {
             id title { romaji english native } synonyms
             format episodes duration status
             startDate { year month day } endDate { year month day }
             season seasonYear averageScore meanScore popularity favourites
             source hashtag genres description(asHtml: false)
-            coverImage { extraLarge } bannerImage siteUrl
+            coverImage { extraLarge } siteUrl
+            trailer { id site }
             studios { edges { isMain node { name isAnimationStudio } } }
+            characters(sort: ROLE, perPage: 6) { edges { role node { name { full } } } }
           }
         }
         """
-        data = await self._request(query, {"search": search, "type": m_type})
-        return data.get("Media", {})
+        variables = {"type": m_type}
+        if media_id: variables["id"] = media_id
+        if search: variables["search"] = search
+        
+        response = await self._request(query, variables)
+        
+        # FIX: Ensure response is not None before calling .get()
+        if not response:
+            return {}
+            
+        return response.get("Media") or {}
 
+    
     async def get_character(self, search: str) -> dict:
         query = """
         query ($search: String) {
