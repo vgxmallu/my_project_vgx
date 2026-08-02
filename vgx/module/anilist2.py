@@ -96,7 +96,7 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 @Client.on_message(filters.command(["anime", "manga"]))
 async def cmd_media(client: Client, message: Message):
     if len(message.command) < 2:
-        return await message.reply_text(f"**Usage:** `/{message.command[0]} <title>`")
+        return await message.reply_text(f"**Usage:** `/{message.command[0]} [title]`")
     
     m_type = "ANIME" if message.command[0] == "anime" else "MANGA"
     msg = await message.reply_text("🔎 Fetching data...")
@@ -196,7 +196,7 @@ async def cmd_airing(client: Client, message: Message):
 
 @Client.on_message(filters.command("character"))
 async def cmd_character(client: Client, message: Message):
-    if len(message.command) < 2: return await message.reply_text("Usage: `/character <name>`")
+    if len(message.command) < 2: return await message.reply_text("Usage: `/character [name]`")
     
     data = await api.get_character(" ".join(message.command[1:]))
     if not data: return await message.reply_text("❌ Not found.")
@@ -213,7 +213,7 @@ async def cmd_character(client: Client, message: Message):
 
 @Client.on_message(filters.command("user"))
 async def cmd_user(client: Client, message: Message):
-    if len(message.command) < 2: return await message.reply_text("Usage: `/user <username>`")
+    if len(message.command) < 2: return await message.reply_text("Usage: `/user [username]`")
     
     data = await api.get_user(message.command[1])
     if not data: return await message.reply_text("❌ User not found.")
