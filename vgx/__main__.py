@@ -27,7 +27,6 @@ from vgx.module.deezer_scheduler import music_scheduler_loop
 
 from vgx.module.f_boll_schedul import fmatch_scheduler
 from vgx.module.fsport_schedul import sportsdb_scheduler_loop
-from vgx.module.ftmob import ftmob_broadcast_loop
 
 
 
@@ -109,7 +108,6 @@ if __name__ == "__main__":
     loop9 = asyncio.get_event_loop()
     loop9.create_task(music_scheduler_loop(app))
 
-
     print("📢 Booting Football-Data.org Telegram Bot...")
     loop10 = asyncio.get_event_loop()
     loop10.create_task(fmatch_scheduler(app))
@@ -117,11 +115,6 @@ if __name__ == "__main__":
     print("👀 SoprtsDB Telegram Bot...")
     loop11 = asyncio.get_event_loop()
     loop11.create_task(sportsdb_scheduler_loop(app))
-
-    print("🙂‍↕️ FotMob Telegram Bot...")
-    loop12 = asyncio.get_event_loop()
-    loop12.create_task(ftmob_broadcast_loop(app))
-    
     
     print("🎧 Spotify Pro System Online!")
     loop_spot = asyncio.get_event_loop()
