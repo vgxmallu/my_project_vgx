@@ -1,6 +1,9 @@
 import aiohttp
 from config import Config
+from pyrogram import Client, filters
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
+from pyrogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent
 
 
     
@@ -93,6 +96,13 @@ class AniListAPI:
 
 api = AniListAPI()
 
+
+def clean_html(text: str) -> str:
+    if not text: return "No description available."
+    # Remove standard HTML breaks returned by AniList
+    text = text.replace("<br>", "\n").replace("<i>", "").replace("</i>", "")
+    return text[:900] + "..." if len(text) > 900 else text
+
     
 def format_date(date_dict: dict) -> str:
     """Safely converts AniList date dict to a readable string."""
@@ -119,8 +129,6 @@ def parse_studios(edges: list) -> tuple:
             producers.append(node.get("name"))
     return ", ".join(studios) or "None", ", ".join(producers) or "None"
 
-from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 @Client.on_message(filters.command(["anime", "manga"]))
 async def cmd_media(client: Client, message: Message):
@@ -178,7 +186,6 @@ async def cmd_media(client: Client, message: Message):
     else:
         await message.reply_text(text, reply_markup=kb)
 
-from pyrogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent
 
 @Client.on_inline_query()
 async def inline_search(client: Client, query: InlineQuery):
@@ -257,3 +264,144 @@ async def cmd_user(client: Client, message: Message):
     img = data.get('avatar', {}).get('large')
     if img: await message.reply_photo(img, caption=text)
     else: await message.reply_text(text)
+
+
+#====================================================
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+def media_tabs_kb(media_id: int, current_tab: str, trailer: dict = None, url: str = None) -> InlineKeyboardMarkup:
+    """
+    Generates the UI buttons. Highlights the active tab with a ✅.
+    """
+    stats_btn = "✅ Statistics" if current_tab == "stats" else "📊 Statistics"
+    synops_btn = "✅ Synopsis" if current_tab == "synopsis" else "📝 Synopsis"
+    chars_btn = "✅ Characters" if current_tab == "chars" else "👥 Characters"
+
+    buttons = [
+        [
+            InlineKeyboardButton(stats_btn, callback_data=f"stats_{media_id}"),
+            InlineKeyboardButton(synops_btn, callback_data=f"synopsis_{media_id}")
+        ],
+        [
+            InlineKeyboardButton(chars_btn, callback_data=f"chars_{media_id}")
+        ]
+    ]
+    
+    links = []
+    if trailer and trailer.get("site") == "youtube":
+        links.append(InlineKeyboardButton("🎬 Trailer", url=f"https://youtube.com/watch?v={trailer.get('id')}"))
+    if url:
+        links.append(InlineKeyboardButton("🌐 AniList", url=url))
+        
+    if links:
+        buttons.append(links)
+        
+    return InlineKeyboardMarkup(buttons)
+
+from pyrogram import Client, filters
+from pyrogram.types import Message
+from pyrogram.types import CallbackQuery
+
+
+def build_stats_text(data: dict) -> str:
+    """Generates the deeply detailed Frieren-style stats page."""
+    t = data.get('title', {})
+    start_d, end_d = format_date(data.get('startDate')), format_date(data.get('endDate'))
+    studios, producers = parse_studios(data.get('studios', {}).get('edges', []))
+    
+    text = f"📺 **{t.get('romaji')}**\n"
+    if t.get('english'): text += f"**🇬🇧** {t.get('english')}\n"
+    if t.get('native'): text += f"**🇯🇵** {t.get('native')}\n\n"
+    
+    text += f"**Format:** {data.get('format', 'N/A')}\n"
+    text += f"**Episodes:** {data.get('episodes', 'N/A')}\n"
+    text += f"**Episode Duration:** {data.get('duration', 'N/A')} mins\n"
+    text += f"**Status:** {data.get('status', 'N/A')}\n"
+    text += f"**Start Date:** {start_d}\n"
+    text += f"**End Date:** {end_d}\n"
+    if data.get('season'):
+        text += f"**Season:** {data.get('season').capitalize()} {data.get('seasonYear')}\n"
+    text += f"**Average Score:** {data.get('averageScore', 'N/A')}%\n"
+    text += f"**Popularity:** {data.get('popularity', 'N/A')} | **Favorites:** {data.get('favourites', 'N/A')}\n\n"
+    
+    text += f"🎬 **Studios:** {studios}\n"
+    text += f"🏢 **Producers:** {producers}\n"
+    text += f"📖 **Source:** {data.get('source', 'N/A').replace('_', ' ').capitalize()}\n"
+    text += f"🎭 **Genres:** {', '.join(data.get('genres', []))}"
+    return text
+
+@Client.on_message(filters.command(["aanime"]))
+async def cmd_heanime(client: Client, message: Message):
+    if len(message.command) < 2:
+        return await message.reply_text(f"**Usage:** `/{message.command[0]} title`")
+    
+    m_type = "ANIME" if message.command[0] == "anime" else "MANGA"
+    msg = await message.reply_text("🔎 Fetching data...")
+    
+    data = await api.get_media(search=" ".join(message.command[1:]), m_type=m_type)
+    if not data:
+        return await msg.edit_text("❌ Media not found.")
+
+    text = build_stats_text(data)
+    kb = media_tabs_kb(data["id"], "stats", data.get("trailer"), data.get("siteUrl"))
+    img = data.get('coverImage', {}).get('extraLarge')
+    
+    await msg.delete()
+    if img:
+        await message.reply_photo(img, caption=text[:1024], reply_markup=kb)
+    else:
+        await message.reply_text(text, reply_markup=kb)
+
+
+
+@Client.on_callback_query(filters.regex(r"^media_(stats|synopsis|chars)_(\d+)$"))
+async def on_callback(client: Client, query: CallbackQuery):
+    # Extract action and media_id cleanly using regex match groups
+    _, action, media_id_str = query.matches[0].groups()
+    media_id = int(media_id_str)
+    
+    # Let Telegram know we received the click
+    await query.answer()
+
+    # Re-fetch data using the ID
+    data = await api.get_media(media_id=media_id)
+    if not data:
+        return await query.answer("❌ Error fetching data.", show_alert=True)
+
+    t = data.get('title', {})
+    header = f"📺 **{t.get('romaji')}**\n\n"
+    
+    # 1. STATISTICS TAB
+    if action == "stats":
+        text = build_stats_text(data)
+        
+    # 2. SYNOPSIS TAB
+    elif action == "synopsis":
+        desc = clean_html(data.get("description"))
+        text = header + f"📝 **Synopsis:**\n\n{desc}"
+        
+    # 3. CHARACTERS TAB
+    elif action == "chars":
+        chars = data.get("characters", {}).get("edges", [])
+        if not chars:
+            text = header + "❌ No character data available."
+        else:
+            text = header + "👥 **Main Characters:**\n\n"
+            for edge in chars:
+                role = edge.get("role")
+                name = edge.get("node", {}).get("name", {}).get("full")
+                text += f"▪️ **{name}** ({role})\n"
+    else:
+        return
+
+    # Generate the updated keyboard (highlights the active tab)
+    kb = media_tabs_kb(media_id, action, data.get("trailer"), data.get("siteUrl"))
+    
+    # Update the message gracefully
+    try:
+        if query.message.photo:
+            await query.edit_message_caption(caption=text[:1024], reply_markup=kb)
+        else:
+            await query.edit_message_text(text=text[:1024], reply_markup=kb)
+    except Exception:
+        pass # Ignore errors if the user clicks the same button twice
