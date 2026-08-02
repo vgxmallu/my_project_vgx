@@ -3,7 +3,7 @@ from datetime import datetime
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram.errors import MessageNotModified
-
+from config import Config
 # Credentials mapped directly from your provided snippet
 HEADERS = {
     "x-rapidapi-key": "2170275bfemsh6eb2ff11d740b03p1706ebjsnff878dca22c0",
@@ -265,7 +265,7 @@ SUPPORTED_LEAGUES = [
     "Liga Profesional de Fútbol", "Albanian Super League", "Andorran Premier Division" # ... and all others listed
 ]
 
-db_client = AsyncIOMotorClient(MONGO_URL)
+db_client = AsyncIOMotorClient(Comfig.MONGO_URL)
 db = db_client["football_bot"]
 subscriptions_col = db["chat_subscriptions"]
 
