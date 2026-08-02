@@ -19,7 +19,7 @@ class AniListAPI:
                 return data.get("data", {})
 
 
-        async def get_media(self, search: str = None, media_id: int = None, m_type: str = "ANIME") -> dict:
+    async def get_media(self, search: str = None, media_id: int = None, m_type: str = "ANIME") -> dict:
         query = """
         query ($search: String, $id: Int, $type: MediaType) {
           Media (search: $search, id: $id, type: $type) {
@@ -47,8 +47,10 @@ class AniListAPI:
             
         return response.get("Media") or {}
 
+    class AniListAPI:
+    # ... your other methods ...
 
-        async def get_character(self, search: str) -> dict:
+    async def get_character(self, search: str) -> dict:
         query = """
         query ($search: String) {
           Character (search: $search) {
