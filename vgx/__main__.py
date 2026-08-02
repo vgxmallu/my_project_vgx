@@ -10,13 +10,13 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from vgx.module.Night_Mod import start_nm_scheduler
 from vgx.module.dfeed_scheduler import start_df_scheduler
-from vgx.module.anylz_schedul import start_anlyz_scheduler
+from vgx.module.anlyz_adm_cmd import start_anlyz_scheduler
 
 from vgx.module.bday_schedul import birthday_worker
 #from vgx.module.quets_broad import start_qet_scheduler
 #from vgx.module.quotes_schedul import run_quote_scheduler
 from vgx.module.quotes_schedul import quote_worker
-from vgx.module.anlyz_adm_cmd import anime_worker
+from vgx.module.anilist_schedul import anime_worker
 from vgx.module.rssfeed_scheduler import autopost_worker
 from vgx.module.pomodoro_scheduler import pomodoro_loop
 from vgx.module.bot_health import heartbeat_loop
@@ -24,7 +24,6 @@ from vgx.module.Auto_mod_scheduler import weekly_audit_loop
 from vgx.module.weather_schedul import morning_briefing_loop
 from vgx.module.spoty import drop_sender_loop, auto_delete_loop
 from vgx.module.deezer_scheduler import music_scheduler_loop
-
 from vgx.module.f_boll_schedul import fmatch_scheduler
 from vgx.module.fsport_schedul import sportsdb_scheduler_loop
 
