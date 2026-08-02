@@ -143,14 +143,14 @@ async def cmd_login(client: Client, message: Message):
         "🔐 **Connect your AniList Account**\n\n"
         f"1. [Click here to Authorize]({auth_url})\n"
         "2. Copy the PIN code provided.\n"
-        "3. Send it to me using: `/auth <YOUR_PIN>`"
+        "3. Send it to me using: `/auth YOUR_PIN`"
     )
     await message.reply_text(text, disable_web_page_preview=True)
 
 @Client.on_message(filters.command("auth"))
 async def cmd_auth(client: Client, message: Message):
     if len(message.command) < 2:
-        return await message.reply_text("❌ Provide your PIN: `/auth <PIN>`")
+        return await message.reply_text("❌ Provide your PIN: `/auth PIN`")
     
     pin = message.command[1]
     msg = await message.reply_text("🔄 Verifying code...")
@@ -165,7 +165,7 @@ async def cmd_auth(client: Client, message: Message):
 
 @Client.on_message(filters.command("anime"))
 async def cmd_anime(client: Client, message: Message):
-    if len(message.command) < 2: return await message.reply_text("Usage: `/anime <title>`")
+    if len(message.command) < 2: return await message.reply_text("Usage: `/anime title`")
     
     data = await api.get_media(" ".join(message.command[1:]), "ANIME")
     if not data: return await message.reply_text("❌ Not found.")
@@ -186,7 +186,7 @@ async def cmd_anime(client: Client, message: Message):
 @Client.on_message(filters.command("setprogress"))
 async def cmd_setprogress(client: Client, message: Message):
     """Requires Authentication via /login"""
-    if len(message.command) < 3: return await message.reply_text("Usage: `/setprogress <anime_id> <episodes>`")
+    if len(message.command) < 3: return await message.reply_text("Usage: `/setprogress anime_id episodes`")
     
     media_id, progress = int(message.command[1]), int(message.command[2])
     data = await api.update_list(message.from_user.id, media_id, progress)
@@ -199,7 +199,7 @@ async def cmd_setprogress(client: Client, message: Message):
 
 @Client.on_message(filters.command("character"))
 async def cmd_character(client: Client, message: Message):
-    if len(message.command) < 2: return await message.reply_text("Usage: `/character <name>`")
+    if len(message.command) < 2: return await message.reply_text("Usage: `/character name`")
     
     data = await api.get_character(" ".join(message.command[1:]))
     if not data: return await message.reply_text("❌ Not found.")
