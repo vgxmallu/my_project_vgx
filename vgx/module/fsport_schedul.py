@@ -117,8 +117,8 @@ def build_voting_keyboard(match_id: str, h_name: str, a_name: str, votes: dict) 
     ])
 
 # ==================== COMMAND HANDLERS ====================
-@app.on_message(filters.command("schedules"))
-async def grosbup_schedule(client: Client, message: Message):
+@app.on_message(filters.command("fschedules"))
+async def grosbup_scheydule(client: Client, message: Message):
     conf = await get_chat_config(message.chat.id)
     await message.reply(f"⚙️ **Live Match Setup (Chat: {message.chat.id})**", reply_markup=control_panel_ui(message.chat.id, conf))
 
