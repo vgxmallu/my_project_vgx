@@ -1,100 +1,56 @@
-from motor.motor_asyncio import AsyncIOMotorClient
-from config import Config
 import aiohttp
-from pyrogram import Client, filters
-from pyrogram.types import Message
-
-
-
-class Database:
-    def __init__(self):
-        self.client = AsyncIOMotorClient(Config.MONGO_URL)
-        self.db = self.client["anilist_bot_db"]
-        self.users = self.db["users"]
-
-    async def save_token(self, user_id: int, access_token: str):
-        await self.users.update_one(
-            {"user_id": user_id},
-            {"$set": {"access_token": access_token}},
-            upsert=True
-        )
-
-    async def get_token(self, user_id: int) -> str:
-        user = await self.users.find_one({"user_id": user_id})
-        return user.get("access_token") if user else None
-
-db = Database()
-
+from config import Config
 
 class AniListAPI:
-    async def exchange_auth_code(self, authorization_code: str) -> str:
-        """Exchanges the PIN/Code for an OAuth2 Access Token using Client ID/Secret."""
-        payload = {
-            "grant_type": "authorization_code",
-            "client_id": Config.ANILIST_CLIENT_ID,
-            "client_secret": Config.ANILIST_CLIENT_SECRET,
-            "redirect_uri": "https://anilist.co/api/v2/oauth/pin",
-            "code": authorization_code
-        }
-        async with aiohttp.ClientSession() as session:
-            async with session.post(Config.OAUTH_URL, json=payload) as resp:
-                data = await resp.json()
-                return data.get("access_token")
-
-    async def _request(self, query: str, variables: dict = None, user_id: int = None) -> dict:
+    async def _request(self, query: str, variables: dict = None) -> dict:
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
-        
-        if user_id:
-            token = await db.get_token(user_id)
-            if token:
-                headers["Authorization"] = f"Bearer {token}"
-
         async with aiohttp.ClientSession() as session:
-            payload = {"query": query, "variables": variables or {}}
-            async with session.post(Config.GRAPHQL_URL, json=payload, headers=headers) as resp:
+            async with session.post(Config.GRAPHQL_URL, json={"query": query, "variables": variables or {}}, headers=headers) as resp:
                 data = await resp.json()
                 return data.get("data", {})
 
-    # --- 1. Media Data ---
     async def get_media(self, search: str, m_type: str = "ANIME") -> dict:
         query = """
         query ($search: String, $type: MediaType) {
           Media (search: $search, type: $type) {
-            id title { romaji english native } type format status
+            id title { romaji english native } synonyms
+            format episodes duration status
             startDate { year month day } endDate { year month day }
-            season episodes chapters volumes countryOfOrigin genres tags { name description }
-            averageScore meanScore popularity trending
-            coverImage { extraLarge } bannerImage siteUrl trailer { site id }
+            season seasonYear averageScore meanScore popularity favourites
+            source hashtag genres description(asHtml: false)
+            coverImage { extraLarge } bannerImage siteUrl
+            studios { edges { isMain node { name isAnimationStudio } } }
           }
         }
         """
         data = await self._request(query, {"search": search, "type": m_type})
         return data.get("Media", {})
 
-    # --- 2. Characters & Staff ---
     async def get_character(self, search: str) -> dict:
         query = """
         query ($search: String) {
           Character (search: $search) {
-            name { full native } image { large } gender age bloodType dateOfBirth { year month day }
+            name { full native } image { large } gender age bloodType 
+            description(asHtml: false) siteUrl
           }
         }
         """
         data = await self._request(query, {"search": search})
         return data.get("Character", {})
 
-    async def get_staff(self, search: str) -> dict:
+    async def get_schedules(self) -> list:
         query = """
-        query ($search: String) {
-          Staff (search: $search) {
-            name { full native } image { large } primaryOccupations yearsActive
+        query {
+          Page(page: 1, perPage: 10) {
+            airingSchedules(notYetAiring: true, sort: TIME) {
+              episode timeUntilAiring media { title { romaji } }
+            }
           }
         }
         """
-        data = await self._request(query, {"search": search})
-        return data.get("Staff", {})
+        data = await self._request(query)
+        return data.get("Page", {}).get("airingSchedules", [])
 
-    # --- 3. User & Social Data ---
     async def get_user(self, name: str) -> dict:
         query = """
         query ($name: String) {
@@ -107,119 +63,168 @@ class AniListAPI:
         data = await self._request(query, {"name": name})
         return data.get("User", {})
 
-    # --- 4. Live Airing Data ---
-    async def get_schedules(self) -> list:
-        query = """
-        query {
-          Page(page: 1, perPage: 5) {
-            airingSchedules(notYetAiring: true, sort: TIME) {
-              episode timeUntilAiring media { title { romaji } }
-            }
-          }
-        }
-        """
-        data = await self._request(query)
-        return data.get("Page", {}).get("airingSchedules", [])
-
-    # --- Authenticated Mutations ---
-    async def update_list(self, user_id: int, media_id: int, progress: int) -> dict:
-        mutation = """
-        mutation ($mediaId: Int, $progress: Int) {
-          SaveMediaListEntry (mediaId: $mediaId, progress: $progress) {
-            mediaId progress status media { title { romaji } }
-          }
-        }
-        """
-        data = await self._request(mutation, {"mediaId": media_id, "progress": progress}, user_id)
-        return data.get("SaveMediaListEntry", {})
-
 api = AniListAPI()
 
+def format_date(date_dict: dict) -> str:
+    """Safely converts AniList date dict to a readable string."""
+    if not date_dict or not date_dict.get('year'):
+        return "Unknown"
+    
+    months = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    y = date_dict.get('year')
+    m = date_dict.get('month')
+    d = date_dict.get('day')
+    
+    if y and m and d: return f"{months[m]} {d}, {y}"
+    if y and m: return f"{months[m]} {y}"
+    return str(y)
 
-@Client.on_message(filters.command("login"))
-async def cmd_login(client: Client, message: Message):
-    auth_url = f"https://anilist.co/api/v2/oauth/authorize?client_id={Config.ANILIST_CLIENT_ID}&redirect_uri=https://anilist.co/api/v2/oauth/pin&response_type=code"
-    text = (
-        "🔐 **Connect your AniList Account**\n\n"
-        f"1. [Click here to Authorize]({auth_url})\n"
-        "2. Copy the PIN code provided.\n"
-        "3. Send it to me using: `/auth YOUR_PIN`"
-    )
-    await message.reply_text(text, disable_web_page_preview=True)
+def parse_studios(edges: list) -> tuple:
+    """Separates Main Studios from Producers."""
+    studios, producers = [], []
+    for edge in edges:
+        node = edge.get("node", {})
+        if node.get("isAnimationStudio"):
+            studios.append(node.get("name"))
+        else:
+            producers.append(node.get("name"))
+    return ", ".join(studios) or "None", ", ".join(producers) or "None"
 
-@Client.on_message(filters.command("auth"))
-async def cmd_auth(client: Client, message: Message):
+from pyrogram import Client, filters
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+
+@Client.on_message(filters.command(["anime", "manga"]))
+async def cmd_media(client: Client, message: Message):
     if len(message.command) < 2:
-        return await message.reply_text("❌ Provide your PIN: `/auth PIN`")
+        return await message.reply_text(f"**Usage:** `/{message.command[0]} <title>`")
     
-    pin = message.command[1]
-    msg = await message.reply_text("🔄 Verifying code...")
-    
-    token = await api.exchange_auth_code(pin)
-    if token:
-        await db.save_token(message.from_user.id, token)
-        await msg.edit_text("✅ **Successfully linked your AniList account!** You can now use personalized commands.")
-    else:
-        await msg.edit_text("❌ Invalid or expired PIN. Please generate a new one using `/login`.")
-
-
-@Client.on_message(filters.command("anime"))
-async def cmd_anime(client: Client, message: Message):
-    if len(message.command) < 2: return await message.reply_text("Usage: `/anime title`")
-    
-    data = await api.get_media(" ".join(message.command[1:]), "ANIME")
-    if not data: return await message.reply_text("❌ Not found.")
-
-    title = data.get('title', {}).get('romaji', 'Unknown')
-    text = (
-        f"📺 **{title}**\n"
-        f"▪️ **Format:** {data.get('format')} | **Status:** {data.get('status')}\n"
-        f"▪️ **Eps:** {data.get('episodes')} | **Score:** {data.get('averageScore')}%\n"
-        f"▪️ **Genres:** {', '.join(data.get('genres', []))}\n"
-        f"🔗 [View on AniList]({data.get('siteUrl')})"
-    )
-    
-    img = data.get('coverImage', {}).get('extraLarge')
-    if img: await message.reply_photo(img, caption=text)
-    else: await message.reply_text(text)
-
-@Client.on_message(filters.command("setprogress"))
-async def cmd_setprogress(client: Client, message: Message):
-    """Requires Authentication via /login"""
-    if len(message.command) < 3: return await message.reply_text("Usage: `/setprogress anime_id episodes`")
-    
-    media_id, progress = int(message.command[1]), int(message.command[2])
-    data = await api.update_list(message.from_user.id, media_id, progress)
+    m_type = "ANIME" if message.command[0] == "anime" else "MANGA"
+    msg = await message.reply_text("🔎 Fetching data...")
+    data = await api.get_media(" ".join(message.command[1:]), m_type)
     
     if not data:
-        return await message.reply_text("❌ Failed. Have you linked your account with `/login`?")
+        return await msg.edit_text("❌ Media not found.")
+
+    t = data.get('title', {})
+    start_d = format_date(data.get('startDate'))
+    end_d = format_date(data.get('endDate'))
+    studios, producers = parse_studios(data.get('studios', {}).get('edges', []))
+    
+    text = f"**{t.get('romaji')}**\n"
+    if t.get('english'): text += f"**English:** {t.get('english')}\n"
+    if t.get('native'): text += f"**Native:** {t.get('native')}\n"
+    
+    synonyms = ", ".join(data.get('synonyms', []))
+    if synonyms: text += f"**Synonyms:** {synonyms}\n"
+    
+    text += "\n"
+    text += f"▪️ **Format:** {data.get('format', 'N/A')}\n"
+    text += f"▪️ **Episodes:** {data.get('episodes', 'N/A')}\n"
+    text += f"▪️ **Episode Duration:** {data.get('duration', 'N/A')} mins\n"
+    text += f"▪️ **Status:** {data.get('status', 'N/A')}\n"
+    text += f"▪️ **Start Date:** {start_d}\n"
+    text += f"▪️ **End Date:** {end_d}\n"
+    
+    if data.get('season'):
+        text += f"▪️ **Season:** {data.get('season').capitalize()} {data.get('seasonYear')}\n"
         
-    title = data.get('media', {}).get('title', {}).get('romaji')
-    await message.reply_text(f"✅ Updated **{title}** to Episode **{data.get('progress')}**!")
+    text += f"▪️ **Average Score:** {data.get('averageScore', 'N/A')}%\n"
+    text += f"▪️ **Mean Score:** {data.get('meanScore', 'N/A')}%\n"
+    text += f"▪️ **Popularity:** {data.get('popularity', 'N/A')}\n"
+    text += f"▪️ **Favorites:** {data.get('favourites', 'N/A')}\n\n"
+    
+    text += f"🎬 **Studios:** {studios}\n"
+    text += f"🏢 **Producers:** {producers}\n"
+    text += f"📖 **Source:** {data.get('source', 'N/A').replace('_', ' ').capitalize()}\n"
+    
+    if data.get('hashtag'): text += f"🏷️ **Hashtag:** {data.get('hashtag')}\n"
+    text += f"🎭 **Genres:** {', '.join(data.get('genres', []))}\n"
+
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🌐 View on AniList", url=data.get('siteUrl'))]])
+    img = data.get('coverImage', {}).get('extraLarge')
+    
+    await msg.delete()
+    if img:
+        await message.reply_photo(img, caption=text[:1024], reply_markup=kb) # Caption limits apply
+    else:
+        await message.reply_text(text, reply_markup=kb)
+
+from pyrogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent
+
+@Client.on_inline_query()
+async def inline_search(client: Client, query: InlineQuery):
+    if not query.query:
+        return
+        
+    data = await api.get_media(query.query, "ANIME")
+    if not data:
+        return
+
+    title = data.get("title", {}).get("romaji", "Unknown")
+    score = data.get("averageScore", "N/A")
+    episodes = data.get("episodes", "?")
+    url = data.get("siteUrl", "")
+    
+    text = f"📺 **{title}**\n▪️ Episodes: {episodes} | Score: {score}%\n🔗 {url}"
+
+    results = [
+        InlineQueryResultArticle(
+            title=title,
+            description=f"Format: {data.get('format')} | Score: {score}%",
+            thumb_url=data.get('coverImage', {}).get('extraLarge'),
+            input_message_content=InputTextMessageContent(text)
+        )
+    ]
+    
+    await query.answer(results, cache_time=5)
+
+
+from pyrogram.types import Message
+
+@Client.on_message(filters.command("airing"))
+async def cmd_airing(client: Client, message: Message):
+    schedules = await api.get_schedules()
+    if not schedules: return await message.reply_text("❌ No data available.")
+
+    text = "📡 **Upcoming Episode Airings**\n\n"
+    for item in schedules:
+        title = item.get('media', {}).get('title', {}).get('romaji')
+        hrs = item.get('timeUntilAiring', 0) / 3600
+        text += f"▪️ **{title}**\n   ↳ Ep {item.get('episode')} airs in **{hrs:.1f} hours**\n\n"
+        
+    await message.reply_text(text)
 
 @Client.on_message(filters.command("character"))
 async def cmd_character(client: Client, message: Message):
-    if len(message.command) < 2: return await message.reply_text("Usage: `/character name`")
+    if len(message.command) < 2: return await message.reply_text("Usage: `/character <name>`")
     
     data = await api.get_character(" ".join(message.command[1:]))
     if not data: return await message.reply_text("❌ Not found.")
 
     name = data.get('name', {}).get('full', 'Unknown')
-    text = f"👤 **{name}**\n▪️ **Gender:** {data.get('gender')}\n▪️ **Age:** {data.get('age')}"
+    text = f"👤 **{name}**\n\n▪️ **Gender:** {data.get('gender', 'N/A')}\n▪️ **Age:** {data.get('age', 'N/A')}\n▪️ **Blood Type:** {data.get('bloodType', 'N/A')}"
     
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Profile", url=data.get('siteUrl'))]])
     img = data.get('image', {}).get('large')
+    
+    if img: await message.reply_photo(img, caption=text, reply_markup=kb)
+    else: await message.reply_text(text, reply_markup=kb)
+
+
+@Client.on_message(filters.command("user"))
+async def cmd_user(client: Client, message: Message):
+    if len(message.command) < 2: return await message.reply_text("Usage: `/user <username>`")
+    
+    data = await api.get_user(message.command[1])
+    if not data: return await message.reply_text("❌ User not found.")
+
+    stats = data.get("statistics", {})
+    text = (
+        f"📊 **AniList Profile: {data.get('name')}**\n\n"
+        f"📺 **Anime:** {stats.get('anime', {}).get('count')} (Mean Score: {stats.get('anime', {}).get('meanScore')}%)\n"
+        f"📖 **Manga:** {stats.get('manga', {}).get('count')} (Mean Score: {stats.get('manga', {}).get('meanScore')}%)"
+    )
+    
+    img = data.get('avatar', {}).get('large')
     if img: await message.reply_photo(img, caption=text)
     else: await message.reply_text(text)
-
-@Client.on_message(filters.command("airing"))
-async def cmd_airing(client: Client, message: Message):
-    schedules = await api.get_schedules()
-    if not schedules: return await message.reply_text("❌ No data.")
-
-    text = "📡 **Upcoming Episodes**\n\n"
-    for item in schedules:
-        title = item.get('media', {}).get('title', {}).get('romaji')
-        hours = item.get('timeUntilAiring', 0) // 3600
-        text += f"▪️ **{title}** (Ep {item.get('episode')}) - in {hours}h\n"
-        
-    await message.reply_text(text)
