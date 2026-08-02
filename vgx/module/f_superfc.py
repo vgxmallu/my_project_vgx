@@ -73,7 +73,7 @@ def back_keyboard():
 
 
 
-@Client.on_message(filters.command("f scraper"))
+@Client.on_message(filters.command("fscraper"))
 async def stacjrt_command(client: Client, message: Message):
     text = (
         "<b>⚽ ScraperFC Intelligence Hub</b>\n\n"
