@@ -265,7 +265,7 @@ SUPPORTED_LEAGUES = [
     "Liga Profesional de Fútbol", "Albanian Super League", "Andorran Premier Division" # ... and all others listed
 ]
 
-db_client = AsyncIOMotorClient(Comfig.MONGO_URL)
+db_client = AsyncIOMotorClient(Config.MONGO_URL)
 db = db_client["football_bot"]
 subscriptions_col = db["chat_subscriptions"]
 
