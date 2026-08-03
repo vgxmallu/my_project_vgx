@@ -128,8 +128,8 @@ def get_keyboard(media_id: int, current_tab: str, trailer: dict = None, url: str
 
 #====================================================
 
-@Client.on_message(filters.command(["anime", "manga"]))
-async def search_media(client: Client, message: Message):
+@Client.on_message(filters.command(["animee", "manga"]))
+async def searjech_media(client: Client, message: Message):
     if len(message.command) < 2:
         return await message.reply_text(f"**Usage:** `/{message.command[0]} <name>`")
     
