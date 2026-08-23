@@ -90,7 +90,6 @@ if __name__ == "__main__":
     loop5 = asyncio.get_event_loop()
     loop5.create_task(pomodoro_loop(app))
 
-
     print("💓 Health Monitor Online!")
     loop7 = asyncio.get_event_loop()
     loop7.create_task(heartbeat_loop(app))
