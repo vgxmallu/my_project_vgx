@@ -20,7 +20,6 @@ from vgx.module.anilist_schedul import anime_worker
 from vgx.module.rssfeed_scheduler import autopost_worker
 from vgx.module.pomodoro_scheduler import pomodoro_loop
 from vgx.module.bot_health import heartbeat_loop
-from vgx.module.Auto_mod_scheduler import weekly_audit_loop
 from vgx.module.weather_schedul import morning_briefing_loop
 from vgx.module.spoty import drop_sender_loop, auto_delete_loop
 from vgx.module.deezer_scheduler import music_scheduler_loop
@@ -91,9 +90,6 @@ if __name__ == "__main__":
     loop5 = asyncio.get_event_loop()
     loop5.create_task(pomodoro_loop(app))
 
-    print("🛡 Auto-Mod System Online!")
-    loop6 = asyncio.get_event_loop()
-    loop6.create_task(weekly_audit_loop(app))
 
     print("💓 Health Monitor Online!")
     loop7 = asyncio.get_event_loop()
