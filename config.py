@@ -64,6 +64,9 @@ class Config:
     HIGHLIGHTLY_API_KEY = os.getenv("HIGHLIGHTLY_API_KEY", "YOUR_HIGHLIGHTLY_KEY")
     HIGHLIGHTLY_BASE_URL = "https://api.highlightly.net/v1" # Standardized endpoint base
 
+    # Get this from https://developer.pubg.com/
+    PUBG_API_KEY=your_pubg_developer_key
+    
     ANILIST_CLIENT_ID = os.getenv("ANILIST_CLIENT_ID")
     ANILIST_CLIENT_SECRET = os.getenv("ANILIST_CLIENT_SECRET")
     GRAPHQL_URL = "https://graphql.anilist.co"
