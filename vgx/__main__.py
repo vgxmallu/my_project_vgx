@@ -8,13 +8,14 @@ from vgx.module.adv_engine import run_job
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 
+
+#from vgx.module.quets_broad import start_qet_scheduler
+#from vgx.module.quotes_schedul import run_quote_scheduler
+
 from vgx.module.Night_Mod import start_nm_scheduler
 from vgx.module.dfeed_scheduler import start_df_scheduler
 from vgx.module.anlyz_adm_cmd import start_anlyz_scheduler
-
 from vgx.module.bday_schedul import birthday_worker
-#from vgx.module.quets_broad import start_qet_scheduler
-#from vgx.module.quotes_schedul import run_quote_scheduler
 from vgx.module.quotes_schedul import quote_worker
 from vgx.module.anilist_schedul import anime_worker
 from vgx.module.rssfeed_scheduler import autopost_worker
@@ -91,24 +92,24 @@ if __name__ == "__main__":
     loop5.create_task(pomodoro_loop(app))
 
     print("💓 Health Monitor Online!")
-    loop7 = asyncio.get_event_loop()
-    loop7.create_task(heartbeat_loop(app))
+    loop6 = asyncio.get_event_loop()
+    loop6.create_task(heartbeat_loop(app))
 
     print("🌤 Weather Morning Briefing System Online!")
-    loop8 = asyncio.get_event_loop()
-    loop8.create_task(morning_briefing_loop(app))
+    loop7 = asyncio.get_event_loop()
+    loop7.create_task(morning_briefing_loop(app))
 
     print("🚀 Deezer Music Scheduler Online!")
-    loop9 = asyncio.get_event_loop()
-    loop9.create_task(music_scheduler_loop(app))
+    loop8 = asyncio.get_event_loop()
+    loop8.create_task(music_scheduler_loop(app))
 
     print("📢 Booting Football-Data.org Telegram Bot...")
-    loop10 = asyncio.get_event_loop()
-    loop10.create_task(fmatch_scheduler(app))
+    loop9 = asyncio.get_event_loop()
+    loop9.create_task(fmatch_scheduler(app))
 
     print("👀 SoprtsDB Telegram Bot...")
-    loop11 = asyncio.get_event_loop()
-    loop11.create_task(sportsdb_scheduler_loop(app))
+    loop10 = asyncio.get_event_loop()
+    loop10.create_task(sportsdb_scheduler_loop(app))
     
     print("🎧 Spotify Pro System Online!")
     loop_spot = asyncio.get_event_loop()
