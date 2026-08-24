@@ -65,7 +65,7 @@ class Config:
     HIGHLIGHTLY_BASE_URL = "https://api.highlightly.net/v1" # Standardized endpoint base
 
     # Get this from https://developer.pubg.com/
-    PUBG_API_KEY=your_pubg_developer_key
+    PUBG_API_KEY = os.getenv("PUBG_API_KEY")
     
     ANILIST_CLIENT_ID = os.getenv("ANILIST_CLIENT_ID")
     ANILIST_CLIENT_SECRET = os.getenv("ANILIST_CLIENT_SECRET")
