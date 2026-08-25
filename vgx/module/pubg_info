@@ -1,6 +1,12 @@
 import aiohttp
 from config import Config
 
+from pyrogram import Client, filters
+from pyrogram.types import Message, CallbackQuery
+import re
+import aiohttp
+
+
 class PubgAPI:
     def __init__(self, platform: str = "steam"):
         self.api_key = Config.PUBG_API_KEY
@@ -104,10 +110,6 @@ class PubgAPI:
 pubg = PubgAPI()
 
 
-
-
-
-
 def format_stats(player_name: str, mode: str, stats: dict) -> str:
     if not stats:
         return f"❌ No data available for **{player_name}** in **{mode.upper()}**."
@@ -167,13 +169,7 @@ def stats_kb(account_id: str, current_mode: str) -> InlineKeyboardMarkup:
         
     return InlineKeyboardMarkup(buttons)
 
-
 #====================================================
-
-from pyrogram import Client, filters
-from pyrogram.types import Message, CallbackQuery
-import re
-import aiohttp
 
 @Client.on_message(filters.command("pubgstats"))
 async def cmd_pubgstats(client: Client, message: Message):
