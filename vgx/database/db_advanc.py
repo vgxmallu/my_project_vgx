@@ -3,6 +3,7 @@ from config import Config
 from bson.objectid import ObjectId
 
 class Database:
+    handlers = None 
     def __init__(self):
         self.client = AsyncIOMotorClient(Config.MONGO_URL)
         self.db = self.client[Config.DB_NAME]
@@ -35,3 +36,4 @@ class Database:
         await self.jobs.update_one({"_id": ObjectId(job_id)}, {"$set": {"paused": is_paused}})
 
 db = Database()
+
