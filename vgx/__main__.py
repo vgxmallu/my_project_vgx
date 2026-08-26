@@ -59,7 +59,7 @@ async def restore_jobs():
 if __name__ == "__main__":
     
     scheduler.start()
-    
+    app.start()
     
     print("💫 Night Mode System Online.")
     start_nm_scheduler(app)
@@ -124,7 +124,6 @@ if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.create_task(restore_jobs())
     
-    app.start()
     print("🚀 Bot Started! Send /schedule")
     idle()
     app.stop()
