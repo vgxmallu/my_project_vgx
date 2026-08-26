@@ -4,6 +4,7 @@ from bson.objectid import ObjectId
 
 class Database:
     self.handlers = None
+    
     def __init__(self):
         self.client = AsyncIOMotorClient(Config.MONGO_URL)
         self.db = self.client[Config.DB_NAME]
@@ -28,8 +29,8 @@ class Database:
     async def __getattr__(self, name):
         # Raising AttributeError forces Pyrogram's scanner to completely ignore this object
         if name == "handlers":
-            raise AttributeError("'SafeDatabase' object has no attribute 'handlers'")
-        return getattr(self._db, name)
+            raise AttributeError("'Database' object has no attribute 'handlers'")
+        return getattr(self.db, name)
         
     async def update_job(self, job_id, data):
         await self.jobs.update_one({"_id": ObjectId(job_id)}, {"$set": data})
