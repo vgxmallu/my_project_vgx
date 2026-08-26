@@ -7,6 +7,10 @@ class Database:
         self.client = AsyncIOMotorClient(Config.MONGO_URL)
         self.db = self.client[Config.DB_NAME]
         self.jobs = self.db.jobs
+    async def __getattr__(self, name):
+        if name == "handlers":
+            raise AttributeError("'Database' object has no attribute 'handlers'")
+        return getattr(self.db, name)
 
     async def add_job(self, data):
         return await self.jobs.insert_one(data)
@@ -35,5 +39,4 @@ class Database:
         await self.jobs.update_one({"_id": ObjectId(job_id)}, {"$set": {"paused": is_paused}})
 
 db = Database()
-
 
