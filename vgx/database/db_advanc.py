@@ -3,7 +3,7 @@ from config import Config
 from bson.objectid import ObjectId
 
 class Database:
-    self.handlers = None
+    handlers = None
     
     def __init__(self):
         self.client = AsyncIOMotorClient(Config.MONGO_URL)
