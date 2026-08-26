@@ -43,21 +43,4 @@ class Database:
 
 db = Database()
 
-from motor.motor_asyncio import AsyncIOMotorClient
 
-# 1. Your existing connection
-_client = AsyncIOMotorClient("YOUR_MONGODB_URI")
-_raw_db = _client["YOUR_DATABASE_NAME"]
-
-# 2. Corrected wrapper
-class SafeDatabase:
-    def __init__(self, db_instance):
-        self._db = db_instance
-
-    
-
-    def __getitem__(self, name):
-        return self._db[name]
-
-# 3. Export
-db = SafeDatabase(_raw_db)
