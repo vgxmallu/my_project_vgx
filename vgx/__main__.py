@@ -4,7 +4,7 @@ from datetime import datetime
 from pyrogram import idle
 
 from vgx import app, scheduler
-from vgx.database.db_advanc import db
+from vgx.database.db_advanc import _db as db
 from vgx.module.adv_engine import run_job
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
