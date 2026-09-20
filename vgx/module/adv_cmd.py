@@ -1,6 +1,6 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from vgx.database.db_advanc import db
+from vgx.database.db_advanc import _db as db
 
 @Client.on_message(filters.private & filters.command("start"))
 async def start(c, m):
