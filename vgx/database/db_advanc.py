@@ -38,5 +38,5 @@ class Database:
     async def toggle_pause(self, job_id, is_paused):
         await self.jobs.update_one({"_id": ObjectId(job_id)}, {"$set": {"paused": is_paused}})
 
-db = Database()
+_db = Database()
 
