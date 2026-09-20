@@ -1,6 +1,6 @@
 import datetime
 from vgx import app, scheduler
-from vgx.database.db_advanc import db
+from vgx.database.db_advanc import _db as db
 
 
 
