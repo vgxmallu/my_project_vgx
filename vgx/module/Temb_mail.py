@@ -5,7 +5,7 @@ from vgx.database.temb_db import db
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 
-API_BASE = "https://www.1secmail.com/api/v1/"
+API_BASE = "https://www.1secmail.com/api/v1/?action=genRandomMailbox&count=1"
 
 async def generate_email() -> tuple:
     """Generates a random temp email and returns (email, login, domain)."""
