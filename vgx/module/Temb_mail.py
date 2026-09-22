@@ -38,8 +38,8 @@ def get_main_keyboard():
         ]
     ])
 
-@Client.on_message(filters.command("start") & filters.private)
-async def start_command(client: Client, message: Message):
+@Client.on_message(filters.command("tmail") & filters.private)
+async def staznnzcommand(client: Client, message: Message):
     text = (
         "Welcome to Temp Mail Bot! 🚀\n\n"
         "Generate disposable emails and receive messages directly here.\n\n"
