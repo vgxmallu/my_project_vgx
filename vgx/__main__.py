@@ -15,7 +15,7 @@ from vgx.module.bday_schedul import birthday_worker
 from vgx.module.quotes_schedul import quote_worker
 from vgx.module.anilist_schedul import anime_worker
 from vgx.module.rssfeed_scheduler import autopost_worker
-from vgx.module.pomodoro_scheduler import pomodoro_loop
+from vgx.module.Pomodoro_scheduler import pomodoro_loop
 from vgx.module.bot_health import heartbeat_loop
 from vgx.module.weather_schedul import morning_briefing_loop
 from vgx.module.spoty import drop_sender_loop, auto_delete_loop
