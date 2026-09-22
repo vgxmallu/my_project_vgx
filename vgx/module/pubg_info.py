@@ -174,7 +174,7 @@ def stats_kb(account_id: str, current_mode: str) -> InlineKeyboardMarkup:
 @Client.on_message(filters.command("pubgstats"))
 async def cmd_pubgstats(client: Client, message: Message):
     if len(message.command) < 2:
-        return await message.reply_text("**Usage:** `/stats <PlayerName>`")
+        return await message.reply_text("**Usage:** `/stats PlayerName`")
     
     player_name = message.command[1]
     msg = await message.reply_text(f"🔎 Searching PUBG servers for `{player_name}`...")
@@ -217,7 +217,7 @@ async def callback_stats(client: Client, query: CallbackQuery):
 @Client.on_message(filters.command("pg_survival"))
 async def cmd_suggrvival(client: Client, message: Message):
     if len(message.command) < 2:
-        return await message.reply_text("**Usage:** `/survival <PlayerName>`")
+        return await message.reply_text("**Usage:** `/survival PlayerName`")
     
     player_name = message.command[1]
     msg = await message.reply_text(f"🔎 Checking survival mastery for `{player_name}`...")
@@ -235,7 +235,7 @@ async def cmd_suggrvival(client: Client, message: Message):
 @Client.on_message(filters.command("pglastmatch"))
 async def cmd_lashtmatch(client: Client, message: Message):
     if len(message.command) < 2:
-        return await message.reply_text("**Usage:** `/lastmatch <PlayerName>`")
+        return await message.reply_text("**Usage:** `/lastmatch PlayerName`")
 
     player_name = message.command[1]
     msg = await message.reply_text(f"🔎 Fetching latest match for `{player_name}`...")
@@ -273,7 +273,7 @@ async def cmd_lashtmatch(client: Client, message: Message):
 @Client.on_message(filters.command("pgweapons"))
 async def cmd_whpeapons(client: Client, message: Message):
     if len(message.command) < 2:
-        return await message.reply_text("**Usage:** `/weapons <PlayerName>`")
+        return await message.reply_text("**Usage:** `/weapons PlayerName`")
 
     player_name = message.command[1]
     msg = await message.reply_text(f"🔎 Fetching weapon mastery for `{player_name}`...")
@@ -309,7 +309,7 @@ async def cmd_whpeapons(client: Client, message: Message):
 @Client.on_message(filters.command("ranked"))
 async def cmd_ranked(client: Client, message: Message):
     if len(message.command) < 2:
-        return await message.reply_text("**Usage:** `/ranked <PlayerName>`")
+        return await message.reply_text("**Usage:** `/ranked PlayerName`")
 
     player_name = message.command[1]
     msg = await message.reply_text(f"🔎 Fetching ranked data for `{player_name}`...")
@@ -353,7 +353,7 @@ async def cmd_ranked(client: Client, message: Message):
 @Client.on_message(filters.command("airdrop"))
 async def cmd_airdrop(client: Client, message: Message):
     if len(message.command) < 2:
-        return await message.reply_text("**Usage:** `/airdrop <PlayerName>`")
+        return await message.reply_text("**Usage:** `/airdrop PlayerName`")
 
     player_name = message.command[1]
     msg = await message.reply_text(f"🔎 Scanning telemetry for airdrops in `{player_name}`'s last match...")
