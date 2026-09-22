@@ -7,7 +7,7 @@ async def start(c, m):
     await m.reply(
         "**Hey i am Advanced Scheduler Bot**\n\n"
         "Commands:\n"
-        "/cmd - for my commands\n"
+        "/cdm - for my commands\n"
     )
 
 @Client.on_message(filters.private & filters.command("myjobs"))
