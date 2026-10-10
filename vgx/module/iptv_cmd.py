@@ -267,7 +267,7 @@ async def test_streams_job(client):
                 upsert=True
             )
 
-def start_health_monitor(app, scheduler: AsyncIOScheduler):
+def start_iptv_monitor(app, scheduler: AsyncIOScheduler):
     """Schedules the stream health check worker every 2 hours."""
     scheduler.add_job(
         test_streams_job,
