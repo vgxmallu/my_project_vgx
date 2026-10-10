@@ -23,6 +23,9 @@ from vgx.module.deezer_scheduler import music_scheduler_loop
 from vgx.module.f_boll_schedul import fmatch_scheduler
 from vgx.module.fsport_schedul import sportsdb_scheduler_loop
 from vgx.module.Automod import weekly_audit_loop
+from vgx.module.iptv_cmd import start_iptv_monitor
+
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("SchedulerBot")
@@ -97,6 +100,9 @@ async def main():
 
     print("📢 Booting Football-Data.org Telegram Bot...")
     asyncio.create_task(fmatch_scheduler(app))
+
+    print("🖥️ IPTV-Org Bot Online & Scheduler started!")
+    asyncio.create_task(start_iptv_monitor(app))
 
     print("👀 SoprtsDB Telegram Bot...")
     asyncio.create_task(sportsdb_scheduler_loop(app))
