@@ -9,7 +9,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 # Explicitly load environment variables
 load_dotenv()
 
-MONGO_URI = os.getenv("Config.MONGO_URI")
+MONGO_URI = os.getenv("Config.MONGO_URL")
 
 if not MONGO_URI:
     raise ValueError("❌ CRITICAL: MONGO_URI is missing from your environment variables or .env file!")
