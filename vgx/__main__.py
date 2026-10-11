@@ -102,7 +102,7 @@ async def main():
     asyncio.create_task(fmatch_scheduler(app))
 
     print("🖥️ IPTV-Org Bot Online & Scheduler started!")
-    asyncio.create_task(start_iptv_monitor(app))
+    asyncio.create_task(start_iptv_monitor(app, scheduler))
 
     print("👀 SoprtsDB Telegram Bot...")
     asyncio.create_task(sportsdb_scheduler_loop(app))
