@@ -9,10 +9,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 # Explicitly load environment variables
 load_dotenv()
 
-
-if not MONGO_URI:
-    raise ValueError("❌ CRITICAL: MONGO_URI is missing from your environment variables or .env file!")
-
 class SafeDatabase:
     def __init__(self):
         self._client = AsyncIOMotorClient(Config.MONGO_URL)
