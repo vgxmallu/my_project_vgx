@@ -100,10 +100,7 @@ async def main():
 
     print("📢 Booting Football-Data.org Telegram Bot...")
     asyncio.create_task(fmatch_scheduler(app))
-
-    print("🖥️ IPTV-Org Bot Online & Scheduler started!")
-    asyncio.create_task(start_iptv_monitor(app, scheduler))
-
+    
     print("👀 SoprtsDB Telegram Bot...")
     asyncio.create_task(sportsdb_scheduler_loop(app))
 
@@ -116,12 +113,18 @@ async def main():
 
     # 4. Restore DB Jobs
     asyncio.create_task(restore_jobs())
-
     print("🚀 Bot Started! Send /schedule")
 
+
+    print("🖥️ IPTV-Org Bot Online & Scheduler started!")
+    # Correctly call the scheduler setup function directly
+    start_iptv_monitor(app, scheduler)
     # 5. Keep client alive safely
     await idle()
     await app.stop()
+
+    
+
 
 
 if __name__ == "__main__":
