@@ -113,7 +113,7 @@ async def cb_country_channels(client: Client, query: CallbackQuery):
     cc = query.matches[0].group(1)
     await query.answer(f"Fetching channels for {cc}...")
     
-    cursor = db.channels.find({"country": cc}).limit(10)
+    cursor = db.channels.find({"country": cc}).limit(30)
     channels = await cursor.to_list(length=None)
     
     if not channels:
@@ -140,7 +140,7 @@ async def cb_categories(client: Client, query: CallbackQuery):
     
     keyboard = []
     row = []
-    for cat in categories[:20]:
+    for cat in categories[:30]:
         row.append(InlineKeyboardButton(f"📂 {cat['name']}", callback_data=f"iptv_cat_{cat['id']}"))
         if len(row) == 2:
             keyboard.append(row)
@@ -160,7 +160,7 @@ async def cb_category_channels(client: Client, query: CallbackQuery):
     cat_id = query.matches[0].group(1)
     await query.answer("Loading category channels...")
     
-    cursor = db.channels.find({"categories": cat_id}).limit(10)
+    cursor = db.channels.find({"categories": cat_id}).limit(40)
     channels = await cursor.to_list(length=None)
     
     if not channels:
@@ -243,7 +243,7 @@ async def test_streams_job(client):
     """Background worker that periodically checks stream URL availability."""
     logger.info("🔍 Running stream health check worker...")
     
-    cursor = db.streams.find({}).limit(20)
+    cursor = db.streams.find({}).limit(50)
     streams = await cursor.to_list(length=None)
     
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
