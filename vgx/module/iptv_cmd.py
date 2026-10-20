@@ -93,7 +93,7 @@ async def cb_countries(client: Client, query: CallbackQuery):
     
     keyboard = []
     row = []
-    for c in countries[:12]:
+    for c in countries[:50]:
         row.append(InlineKeyboardButton(f"{c.get('flag', '🌐')} {c['name']}", callback_data=f"iptv_cc_{c['code']}"))
         if len(row) == 2:
             keyboard.append(row)
@@ -140,7 +140,7 @@ async def cb_categories(client: Client, query: CallbackQuery):
     
     keyboard = []
     row = []
-    for cat in categories[:10]:
+    for cat in categories[:20]:
         row.append(InlineKeyboardButton(f"📂 {cat['name']}", callback_data=f"iptv_cat_{cat['id']}"))
         if len(row) == 2:
             keyboard.append(row)
