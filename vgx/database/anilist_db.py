@@ -34,24 +34,3 @@ async def get_due_chats() -> list:
     return due_chats
 
 
-
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-class SafeDatabase:
-    def __init__(self):
-        self._client = AsyncIOMotorClient(os.getenv("Config.MONGO_URL"))
-        self._db = self._client["AnilistBotDB2"]
-        
-        # Collections for tracking favorites and collected stats
-        self.favorites = self._db.favorites
-        self.collected_items = self._db.collected_items
-
-    def __getattr__(self, name):
-        if name == "handlers":
-            raise AttributeError("'SafeDatabase' object has no attribute 'handlers'")
-        return getattr(self._db, name)
-
-db = SafeDatabase()
