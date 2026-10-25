@@ -22,7 +22,6 @@ from vgx.module.spoty import drop_sender_loop, auto_delete_loop
 from vgx.module.deezer_scheduler import music_scheduler_loop
 from vgx.module.f_boll_schedul import fmatch_scheduler
 from vgx.module.fsport_schedul import sportsdb_scheduler_loop
-from vgx.module.Automod import weekly_audit_loop
 from vgx.module.iptv_cmd import start_iptv_monitor
 
 
@@ -103,9 +102,6 @@ async def main():
     
     print("👀 SoprtsDB Telegram Bot...")
     asyncio.create_task(sportsdb_scheduler_loop(app))
-
-    print("🛡 Auto-Mod System Online!")
-    asyncio.create_task(weekly_audit_loop(app))
 
     print("🎧 Spotify Pro System Online!")
     asyncio.create_task(drop_sender_loop(app))
