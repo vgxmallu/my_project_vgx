@@ -7,19 +7,19 @@ import asyncio
 # 1. HELP COMMAND HANDLER (/help)
 # ==================================================================
 
-keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("🚀 Quick Start", callback_data="help_quick"),
-                InlineKeyboardButton("📋 Commands", callback_data="help_cmds")
-            ],
-            [
-                InlineKeyboardButton("⚙️ Job Settings", callback_data="help_settings"),
-                InlineKeyboardButton("🛠️ Managing Jobs", callback_data="help_manage")
-            ],
-            [
-                InlineKeyboardButton("❌ Close Help", callback_data="close")
-            ]
-        ])
+keyboard = InlineKeyboardMarkup(
+    [[
+        InlineKeyboardButton("🚀 Quick Start", callback_data="help_quick"),
+        InlineKeyboardButton("📋 Commands", callback_data="help_cmds")
+    ],
+    [
+        InlineKeyboardButton("⚙️ Job Settings", callback_data="help_settings"),
+        InlineKeyboardButton("🛠️ Managing Jobs", callback_data="help_manage")
+    ],
+    [
+        InlineKeyboardButton("❌ Close Help", callback_data="close")
+    ]]
+)
 
 @Client.on_message(filters.private & filters.command("help"))
 async def help_command(c, m):
