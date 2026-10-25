@@ -24,6 +24,8 @@ async def check_banned(client: Client, message: Message):
     return False
 
 
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 # ==========================================
 # 🟢 1. START COMMAND & USER LOGIN LOGGING
 # ==========================================
@@ -60,11 +62,24 @@ async def start_handler(client: Client, message: Message):
         )
         await client.send_message(Config.LOG_CHANNEL, log_text)
 
-    # Welcome response to user
+    # Define Inline Buttons for the Start Message
+    start_markup = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("➕ Add To Chat!", url="https://t.me/GojoSatoru_Xbot?startgroup=true"),
+            InlineKeyboardButton("📢 Channel!", url="https://t.me/XBOTS_X")
+        ],
+        [
+            InlineKeyboardButton("📚 Help & Commands", callback_data="help_menu")
+            
+        ]
+    ])
+
+    # Welcome response to user with buttons
     await message.reply_text(
         f"Hi **{user.first_name}**! 👋\n\n"
         f"Welcome to advanced schedule & management bot. You have successfully logged in!"
-        f"🍀 @XBOTS_X"
+        f"\n\n🍀 @XBOTS_X",
+        reply_markup=start_markup
     )
 
 
