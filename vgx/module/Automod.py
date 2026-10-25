@@ -107,8 +107,7 @@ async def target_cmd(client, message):
     except ValueError:
         await message.reply("❌ Please provide a valid numeric Group ID.")
 
-# Regex router for the UI actions
-@Client.on_callback_query(filters.regex(r"^w_(?P<action>tgl|list|pun_off|pun_kick|pun_mute|pun_ban|max)_(?P<val>[a-z0-9_]+)?_?(?P<chat_id>-?\d+)$"))
+@Client.on_callback_query(filters.regex(r"^w_(?P<action>tgl|list|pun_off|pun_kick|pun_mute|pun_ban|max)(?:_(?P<val>\d+))?_(?P<chat_id>-?\d+)$"))
 async def warn_ui_callbacks(client, query):
     action = query.matches[0].group("action")
     chat_id = int(query.matches[0].group("chat_id"))
@@ -122,8 +121,10 @@ async def warn_ui_callbacks(client, query):
         punishment_type = action.split("_")[1]
         await update_warn_settings(chat_id, punishment=punishment_type)
     elif action == "max":
-        val = int(query.matches[0].group("val"))
-        await update_warn_settings(chat_id, max_warns=val)
+        val_str = query.matches[0].group("val")
+        if val_str:
+            val = int(val_str)
+            await update_warn_settings(chat_id, max_warns=val)
 
     # Refresh the UI with the new database data
     s = await get_warn_settings(chat_id)
