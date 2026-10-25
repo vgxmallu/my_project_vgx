@@ -6,7 +6,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message
 from motor.motor_asyncio import AsyncIOMotorClient
 from config import Config
-
+from vgx import app
 
 
 mongo_client = AsyncIOMotorClient(Config.MONGO_URL)
