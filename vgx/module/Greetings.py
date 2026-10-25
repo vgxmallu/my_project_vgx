@@ -12,7 +12,7 @@ from vgx import app
 mongo_client = AsyncIOMotorClient(Config.MONGO_URL)
 db = mongo_client["GojoBotDB"]
 users_col = db["users"]
-
+groups_col = db["groups"] 
 
 # --- Helper: Check if User is Banned ---
 async def check_banned(client: Client, message: Message):
@@ -79,6 +79,7 @@ async def group_added_handler(client: Client, message: Message):
             adder = message.from_user
             adder_username = f"@{adder.username}" if adder.username else "No Username"
 
+            await groups_col.delete_one({"_id": chat.id})
             log_text = (
                 f"🤖 **Bot Added to Group**\n"
                 f"━━━━━━━━━━━━━━━━━━━\n"
@@ -99,13 +100,15 @@ async def stats_handler(client: Client, message: Message):
     total_users = await users_col.count_documents({})
     banned_users = await users_col.count_documents({"banned": True})
     active_users = total_users - banned_users
-
+    total_groups = await groups_col.count_documents({})
+    
     stats_text = (
         f"📊 **Bot Statistics Dashboard**\n"
         f"━━━━━━━━━━━━━━━━━━━\n"
         f"👥 **Total Started Users:** `{total_users}`\n"
         f"🟢 **Active Users:** `{active_users}`\n"
         f"🔴 **Banned Users:** `{banned_users}`"
+        f"🤖 **Total Groups Added:** `{total_groups}`"
     )
     await message.reply_text(stats_text)
 
