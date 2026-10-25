@@ -69,7 +69,7 @@ async def start_handler(client: Client, message: Message):
             InlineKeyboardButton("📢 Channel!", url="https://t.me/XBOTS_X")
         ],
         [
-            InlineKeyboardButton("📚 Help & Commands", callback_data="help_")
+            InlineKeyboardButton("📚 Help & Commands", callback_data="help_menu")
             
         ]
     ])
