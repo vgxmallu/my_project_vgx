@@ -22,6 +22,8 @@ class Config:
     # Bot Owner / Admin User IDs (Comma-separated)
     SUDO_USERS = [int(x) for x in os.getenv("SUDO_USERS", "784589736").split(",") if x.strip()]
 
+    LOG_CHANNEL = int(os.getenv("LOG_CHANNEL", "-1001997285269")) # Your log channel ID
+    
     ADMIN_ID = 784589736 # Your Telegram ID (to prevent abuse)
     DEFAULT_INTERVAL = 3600 # Default interval in seconds (3 hours =
     # Viral threshold: 1.5 = 50% higher than average
