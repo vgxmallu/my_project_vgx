@@ -1,5 +1,5 @@
 from pyrogram import Client, filters, enums
-from wallbot import wbot as app
+from vgx import app
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 import asyncio
 
