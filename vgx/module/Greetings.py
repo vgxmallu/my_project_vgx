@@ -62,7 +62,8 @@ async def start_handler(client: Client, message: Message):
     # Welcome response to user
     await message.reply_text(
         f"Hi **{user.first_name}**! 👋\n\n"
-        f"Welcome to the bot. You have successfully logged in!"
+        f"Welcome to advanced schedule & management bot. You have successfully logged in!"
+        f"🍀 @XBOTS_X"
     )
 
 
