@@ -141,7 +141,7 @@ async def broadcast_handler(client: Client, message: Message):
 # ==========================================
 # 🚫 5. BAN & UNBAN COMMANDS (Owner Only)
 # ==========================================
-@app.on_message(filters.command("ban") & filters.user(Config.SUDO_USERS))
+@app.on_message(filters.command("ban") & filters.user(Config.ADMIN_ID))
 async def ban_user_handler(client: Client, message: Message):
     if len(message.command) < 2:
         return await message.reply_text("Usage: `/ban <user_id>`")
@@ -161,7 +161,7 @@ async def ban_user_handler(client: Client, message: Message):
         await message.reply_text(f"✅ User `{target_id}` was not found in database, but marked as **banned**.")
 
 
-@app.on_message(filters.command("unban") & filters.user(Config.SUDO_USERS))
+@app.on_message(filters.command("unban") & filters.user(Config.ADMIN_ID))
 async def unban_user_handler(client: Client, message: Message):
     if len(message.command) < 2:
         return await message.reply_text("Usage: `/unban <user_id>`")
