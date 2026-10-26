@@ -44,12 +44,9 @@ async def imgbb_reply_handler(client: Client, message: Message):
         
         await status_msg.edit_text("🚀 **Uploading to ImgBB servers...**")
         
-        # Get ImgBB API key from environment
-        IMGBB_API_KEY = os.getenv("IMGBB_API_KEY", "")
-        
         # Run blocking requests call in a separate thread
         loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, upload_to_imgbb, file_path, IMGBB_API_KEY)
+        result = await loop.run_in_executor(None, upload_to_imgbb, file_path, Config.IMGBB_API_KEY)
         
         # Clean up local temporary file
         if file_path and os.path.exists(file_path):
