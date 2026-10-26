@@ -41,7 +41,9 @@ class Config:
 
     FOOTBALL_API_KEY = os.getenv("FOOTBALL_API_KEY")
     FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4"
-
+    
+    IMGBB_API_KEY = os.getenv("IMGBB_API_KEY")
+    
 # Free Tier Covered Competitions (Codes & Names)
     COMPETITIONS = {
         "PL": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League",
