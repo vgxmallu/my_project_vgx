@@ -10,7 +10,7 @@ from config import Config
 
 
 def upload_to_imgbb(file_path: str):
-    """Synchronous helper for ImgBB multipart POST request"""
+    """Synchronous helper function to upload image file to ImgBB"""
     url = "https://api.imgbb.com/1/upload"
     with open(file_path, "rb") as file:
         payload = {"key": Config.IMGBB_API_KEY}
@@ -46,7 +46,7 @@ async def imgbb_reply_handler(client: Client, message: Message):
         
         # Run blocking requests call in a separate thread
         loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, upload_to_imgbb, file_path, Config.IMGBB_API_KEY)
+        result = await loop.run_in_executor(None, upload_to_imgbb, file_path)
         
         # Clean up local temporary file
         if file_path and os.path.exists(file_path):
