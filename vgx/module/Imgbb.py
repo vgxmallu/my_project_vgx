@@ -18,20 +18,19 @@ def upload_to_imgbb(file_path: str):
         response = requests.post(url, data=payload, files=files)
         return response.json()
 
-@app.on_message(filters.command("imgbb") & filters.private)
-async def inmgbb_reply_handler(client: Client, message: Message):
-    # 1. Check if the user is replying to a message
+@Client.on_message(filters.command("imgbb") & filters.private)
+async def imgbb_reply_handler(client: Client, message: Message):
+    # 1. Check if replying to a message
     if not message.reply_to_message:
         return await message.reply_text("❌ Please **reply to a photo or image file** and use the `/imgbb` command.")
     
     target_msg = message.reply_to_message
     
-    # 2. Check if the replied message actually contains a photo or an image document
+    # 2. Check if the message contains an image or document
     target_media = target_msg.photo or target_msg.document
     if not target_media:
         return await message.reply_text("❌ The message you replied to does not contain an image or photo.")
     
-    # If it's a document, make sure it's an image mimetype
     if target_msg.document:
         if not target_msg.document.mime_type or not target_msg.document.mime_type.startswith("image/"):
             return await message.reply_text("❌ The replied document is not a valid image file.")
@@ -45,9 +44,12 @@ async def inmgbb_reply_handler(client: Client, message: Message):
         
         await status_msg.edit_text("🚀 **Uploading to ImgBB servers...**")
         
+        # Get ImgBB API key from environment
+        IMGBB_API_KEY = os.getenv("IMGBB_API_KEY", "")
+        
         # Run blocking requests call in a separate thread
         loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, upload_to_imgbb, file_path)
+        result = await loop.run_in_executor(None, upload_to_imgbb, file_path, IMGBB_API_KEY)
         
         # Clean up local temporary file
         if file_path and os.path.exists(file_path):
@@ -69,3 +71,8 @@ async def inmgbb_reply_handler(client: Client, message: Message):
         else:
             error_msg = result.get("error", {}).get("message", "Unknown API error")
             await status_msg.edit_text(f"❌ **Upload Failed:** `{error_msg}`")
+            
+    except Exception as e:
+        if file_path and os.path.exists(file_path):
+            os.remove(file_path)
+        await status_msg.edit_text(f"❌ **An error occurred:** `{str(e)}`")
