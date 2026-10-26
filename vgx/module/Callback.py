@@ -142,7 +142,7 @@ async def rss_help_callbacks(client, query):
     section = query.matches[0].group("section")
     
     keyboard_back = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="rss_help_home", style=ButtonStyle.PRIMARY)]
+        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="rss_home", style=ButtonStyle.PRIMARY)]
     ])
     
     if section == "home":
@@ -204,7 +204,7 @@ async def rss_help_callbacks(client, query):
             "✏️ **Custom Templates Guide**\n\n"
             "You can customize how your feed updates are formatted by clicking **✏️ Edit Template** on any feed configuration panel.\n\n"
             "• **How to use:** Click the button, then reply to the prompt with your custom text pattern.\n"
-            "• **Common Placeholders:** `{{title}}`, `{{link}}`, `{{summary}}`, `{{author}}`"
+            "• **Common Placeholders:** `{{title}}`, `{{link}}`, `{{summary}}`, `{{author}}`, `{{content}}`, `{{shortlink}}`, `{{tags}}`, Date: `{{y}} - {{d}} - {{m}}`, Time: `{{t}}`, `{{channel_title}}`, `{{feed_title}}`"
         )
         await query.message.edit_text(text, reply_markup=keyboard_back)
         
