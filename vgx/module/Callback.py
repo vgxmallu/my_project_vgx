@@ -9,16 +9,16 @@ from pyrogram.enums import ButtonStyle
 
 keyboard = InlineKeyboardMarkup(
     [[
-        InlineKeyboardButton("🚀 Quick Start", callback_data="help_quick"),
-        InlineKeyboardButton("📋 Commands", callback_data="help_cmds")
+        InlineKeyboardButton("🚀 Quick Start", callback_data="help_quick", style=ButtonStyle.PRIMARY),
+        InlineKeyboardButton("📋 Commands", callback_data="help_cmds", style=ButtonStyle.PRIMARY)
     ],
     [
-        InlineKeyboardButton("⚙️ Job Settings", callback_data="help_settings"),
-        InlineKeyboardButton("🛠️ Managing Jobs", callback_data="help_manage")
+        InlineKeyboardButton("⚙️ Job Settings", callback_data="help_settings", style=ButtonStyle.PRIMARY),
+        InlineKeyboardButton("🛠️ Managing Jobs", callback_data="help_manage", style=ButtonStyle.PRIMARY)
     ],
     [
-        InlineKeyboardButton("❌ Close Help", callback_data="close", style=ButtonStyle.DANGER),
-        InlineKeyboardButton("⬅️", callback_data="help_menu")
+        InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
+        InlineKeyboardButton("⬅️", callback_data="help_menu", style=ButtonStyle.PRIMARY)
     ]]
 )
 
@@ -38,12 +38,17 @@ async def help_command(c, m):
 # 2. HELP CALLBACK NAVIGATION HANDLERS
 # ==================================================================
 
-
+@app.on_callback_query(filters.regex("^close$"))
+async def col_callback(client, query):
+    await query.answer("Closed ❌")
+    await asyncio.sleep(2)
+    await query.message.delete()
+    
 @Client.on_callback_query(filters.regex(r"^help_"))
 async def help_navigation_callbacks(c, q):
     data = q.data
     keyboard_back = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="help_home")]
+        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="help_home", style=ButtonStyle.PRIMARY)]
     ])
     
     keyboard = InlineKeyboardMarkup(
@@ -57,7 +62,7 @@ async def help_navigation_callbacks(c, q):
         ],
         [
             InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
-            InlineKeyboardButton("⬅️", callback_data="help_menu")
+            InlineKeyboardButton("⬅️", callback_data="help_menu", style=ButtonStyle.PRIMARY)
     ]]
 )
     if data == "help_menu":
@@ -66,11 +71,11 @@ async def help_navigation_callbacks(c, q):
         )
         keyboard = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("Group Menu", callback_data="help_gp", style=ButtonStyle.PRIMARY)
+                InlineKeyboardButton("Group Menu", callback_data="help_gp", style=ButtonStyle.SUCCESS)
             ],[
-                InlineKeyboardButton("Scheduler Menu", callback_data="help_home", style=ButtonStyle.PRIMARY)
+                InlineKeyboardButton("Scheduler Menu", callback_data="help_home", style=ButtonStyle.SUCCESS)
             ],[
-                InlineKeyboardButton("RSS Menu", callback_data="rss_home", style=ButtonStyle.PRIMARY)
+                InlineKeyboardButton("RSS Menu", callback_data="rss_home", style=ButtonStyle.SUCCESS)
             ],[
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
             ]
