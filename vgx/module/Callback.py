@@ -71,7 +71,7 @@ async def help_navigation_callbacks(c, q):
                 InlineKeyboardButton("Scheduler Menu", callback_data="help_home", style=ButtonStyle.PRIMARY)
             ],[
                 InlineKeyboardButton("RSS Menu", callback_data="rss_home", style=ButtonStyle.PRIMARY)
-            [
+            ],[
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
             ]
         ])
