@@ -2,7 +2,7 @@ from pyrogram import Client, filters, enums
 from vgx import app
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 import asyncio
-
+from pyrogram.enums import ButtonStyle
 # ==================================================================
 # 1. HELP COMMAND HANDLER (/help)
 # ==================================================================
@@ -48,12 +48,12 @@ async def help_navigation_callbacks(c, q):
     
     keyboard = InlineKeyboardMarkup(
         [[
-            InlineKeyboardButton("🚀 Quick Start", callback_data="help_quick"),
-            InlineKeyboardButton("📋 Commands", callback_data="help_cmds")
+            InlineKeyboardButton("🚀 Quick Start", callback_data="help_quick", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton("📋 Commands", callback_data="help_cmds", style=ButtonStyle.PRIMARY)
         ],
         [
-            InlineKeyboardButton("⚙️ Job Settings", callback_data="help_settings"),
-            InlineKeyboardButton("🛠️ Managing Jobs", callback_data="help_manage")
+            InlineKeyboardButton("⚙️ Job Settings", callback_data="help_settings", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton("🛠️ Managing Jobs", callback_data="help_manage", style=ButtonStyle.PRIMARY)
         ],
         [
             InlineKeyboardButton("❌", callback_data="close"),
@@ -66,11 +66,11 @@ async def help_navigation_callbacks(c, q):
         )
         keyboard = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("Group Menu", callback_data="help_gp")
+                InlineKeyboardButton("Group Menu", callback_data="help_gp", style=ButtonStyle.PRIMARY)
             ],[
-                InlineKeyboardButton("Scheduler Menu", callback_data="help_home")
+                InlineKeyboardButton("Scheduler Menu", callback_data="help_home", style=ButtonStyle.PRIMARY)
             ],[
-                InlineKeyboardButton("RSS Menu", callback_data="rss_home")
+                InlineKeyboardButton("RSS Menu", callback_data="rss_home", style=ButtonStyle.PRIMARY)
             ],8
             [
                 InlineKeyboardButton("❌", callback_data="close")
