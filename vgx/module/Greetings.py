@@ -76,7 +76,7 @@ async def start_handler(client: Client, message: Message):
 
     # Welcome response to user with buttons
     await message.reply_text(
-        f"Hi **{user.first_name}**! 👋\n\n"
+        f"Hi **{user.first_name}**! [👋](https://ibb.co/svmCPTDJ)\n\n"
         f"Welcome to advanced schedule & management bot. You have successfully logged in!"
         f"\n\n🍀 @XBOTS_X",
         reply_markup=start_markup
