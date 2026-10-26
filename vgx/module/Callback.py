@@ -17,7 +17,7 @@ keyboard = InlineKeyboardMarkup(
         InlineKeyboardButton("🛠️ Managing Jobs", callback_data="help_manage")
     ],
     [
-        InlineKeyboardButton("❌ Close Help", callback_data="close"),
+        InlineKeyboardButton("❌ Close Help", callback_data="close", style=ButtonStyle.DANGER),
         InlineKeyboardButton("⬅️", callback_data="help_menu")
     ]]
 )
@@ -56,7 +56,7 @@ async def help_navigation_callbacks(c, q):
             InlineKeyboardButton("🛠️ Managing Jobs", callback_data="help_manage", style=ButtonStyle.PRIMARY)
         ],
         [
-            InlineKeyboardButton("❌", callback_data="close"),
+            InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
             InlineKeyboardButton("⬅️", callback_data="help_menu")
     ]]
 )
@@ -71,9 +71,8 @@ async def help_navigation_callbacks(c, q):
                 InlineKeyboardButton("Scheduler Menu", callback_data="help_home", style=ButtonStyle.PRIMARY)
             ],[
                 InlineKeyboardButton("RSS Menu", callback_data="rss_home", style=ButtonStyle.PRIMARY)
-            ],8
             [
-                InlineKeyboardButton("❌", callback_data="close")
+                InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
             ]
         ])
         await q.message.edit_text(text, reply_markup=keyboard)
