@@ -355,7 +355,7 @@ async def anlyz_help_callbacks(client, query):
             "• **Today & Week:** Filters rankings by recent member activity.\n"
             "• **Global Ranking:** Compares top active members across all connected groups."
         )
-        await query.message
+        await query.message.edit_text(text, reply_markup=keyboard_back)
         
     elif section == "viral":
         text = (
