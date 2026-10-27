@@ -166,7 +166,8 @@ async def rss_help_callbacks(client, query):
                 InlineKeyboardButton("✏️ Custom Templates", callback_data="rss_templates", style=ButtonStyle.PRIMARY)
             ],
             [
-                InlineKeyboardButton("❌ Close Help", callback_data="close", style=ButtonStyle.DANGER)
+                InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
+                InlineKeyboardButton("⬅️", callback_data="help_menu", style=ButtonStyle.PRIMARY)
             ]
         ])
         await query.message.edit_text(text, reply_markup=keyboard)
