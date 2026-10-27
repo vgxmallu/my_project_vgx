@@ -111,7 +111,7 @@ async def group_added_handler(client: Client, message: Message):
 # ==========================================
 # 📊 3. STATS COMMAND (Owner Only)
 # ==========================================
-@app.on_message(filters.command("stats") & filters.user(Config.ADMIN_ID))
+@app.on_message(filters.private & filters.command("stats") & filters.user(Config.ADMIN_ID))
 async def stats_handler(client: Client, message: Message):
     total_users = await users_col.count_documents({})
     banned_users = await users_col.count_documents({"banned": True})
@@ -132,7 +132,7 @@ async def stats_handler(client: Client, message: Message):
 # ==========================================
 # 📢 4. BROADCAST COMMAND (Owner Only)
 # ==========================================
-@app.on_message(filters.command("broadcast") & filters.user(Config.ADMIN_ID))
+@app.on_message(filters.private & filters.command("broadcast") & filters.user(Config.ADMIN_ID))
 async def broadcast_handler(client: Client, message: Message):
     if not message.reply_to_message:
         return await message.reply_text("❌ Please reply to a message to broadcast it to all users.")
@@ -162,7 +162,7 @@ async def broadcast_handler(client: Client, message: Message):
 # ==========================================
 # 🚫 5. BAN & UNBAN COMMANDS (Owner Only)
 # ==========================================
-@app.on_message(filters.command("ban") & filters.user(Config.ADMIN_ID))
+@app.on_message(filters.private & filters.command("ban") & filters.user(Config.ADMIN_ID))
 async def ban_user_handler(client: Client, message: Message):
     if len(message.command) < 2:
         return await message.reply_text("Usage: `/ban <user_id>`")
@@ -182,7 +182,7 @@ async def ban_user_handler(client: Client, message: Message):
         await message.reply_text(f"✅ User `{target_id}` was not found in database, but marked as **banned**.")
 
 
-@app.on_message(filters.command("unban") & filters.user(Config.ADMIN_ID))
+@app.on_message(filters.private & filters.command("unban") & filters.user(Config.ADMIN_ID))
 async def unban_user_handler(client: Client, message: Message):
     if len(message.command) < 2:
         return await message.reply_text("Usage: `/unban <user_id>`")
@@ -198,5 +198,4 @@ async def unban_user_handler(client: Client, message: Message):
         await message.reply_text(f"✅ User `{target_id}` has been **unbanned**.")
     else:
         await message.reply_text(f"⚠️ User `{target_id}` was not found or was already unbanned.")
-
 
