@@ -62,7 +62,7 @@ async def refresh_ui(query, chat_id: int):
         pass
 
 # --- 3. The Command ---
-@Client.on_message(filters.command(["setanime", "anime"]))
+@Client.on_message(filters.command("setanime"))
 async def open_panel(client, message):
     target_id = message.chat.id
     if len(message.command) > 1:
