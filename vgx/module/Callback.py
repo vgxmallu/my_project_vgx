@@ -73,11 +73,13 @@ async def help_navigation_callbacks(c, q):
             [
                 InlineKeyboardButton("Group Menu", callback_data="help_gp", style=ButtonStyle.SUCCESS)
             ],[
-                InlineKeyboardButton("Scheduler Menu", callback_data="help_home", style=ButtonStyle.SUCCESS)
+                InlineKeyboardButton("📨 Scheduler Menu", callback_data="help_home", style=ButtonStyle.SUCCESS)
             ],[
-                InlineKeyboardButton("RSS Menu", callback_data="rss_home", style=ButtonStyle.SUCCESS)
+                InlineKeyboardButton("📢 RSS Menu", callback_data="rss_home", style=ButtonStyle.SUCCESS)
             ],[
-                InlineKeyboardButton("Anime Menu", callback_data="anime_home", style=ButtonStyle.SUCCESS)
+                InlineKeyboardButton("🐉 Anime Menu", callback_data="anime_home", style=ButtonStyle.SUCCESS)
+            ],[
+                InlineKeyboardButton("📊 Analytics Menu", callback_data="anlyz_home", style=ButtonStyle.SUCCESS)
             ],[
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
             ]
@@ -137,8 +139,6 @@ async def help_navigation_callbacks(c, q):
         await q.message.edit_text(text, reply_markup=keyboard_back)
         
     await q.answer()
-
-
 
 # ==================================================================
 # 6. HELP MENU & INTERACTIVE GUIDE (/rsshelp)
@@ -287,6 +287,81 @@ async def anime_help_callbacks(client, query):
             "⏱️ **Intervals & Auto-Delete Guide**\n\n"
             "• **Intervals:** Choose how frequently the bot cycles updates (e.g., 1m, 5m, 20m, 30m, 1h).\n"
             "• **Auto-Delete:** Keep your channel clean by choosing a self-destruction duration (e.g., 30s, 300s, 400s, 2400s, or Turn OFF)."
+        )
+        await query.message.edit_text(text, reply_markup=keyboard_back)
+        
+    await query.answer()
+
+# ==================================================================
+# HELP MENU & INTERACTIVE GUIDE MODULE ANLYST
+# ==================================================================
+
+
+@Client.on_callback_query(filters.regex(r"^anlyz_(?P<section>[a-z]+)$"))
+async def anlyz_help_callbacks(client, query):
+    section = query.matches[0].group("section")
+    
+    keyboard_back = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="anlyz_home", style=ButtonStyle.PRIMARY)]
+    ])
+    
+    if section == "home":
+        text = (
+            "📊 **Group Analytics & AI Tools - Help Center**\n\n"
+            "Welcome! This bot tracks group activity, ranks top active members, "
+            "detects viral spikes, and schedules broadcasts at peak traffic hours.\n\n"
+            "👇 **Select a category below to learn more:**"
+        )
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🚀 Quick Start", callback_data="anlyz_quick", style=ButtonStyle.PRIMARY),
+                InlineKeyboardButton("📋 Commands", callback_data="anlyz_cmds", style=ButtonStyle.PRIMARY)
+            ],
+            [
+                InlineKeyboardButton("🏆 Leaderboard", callback_data="anlyz_leaders", style=ButtonStyle.PRIMARY),
+                InlineKeyboardButton("🔥 Viral & Golden Hour", callback_data="anlyz_viral", style=ButtonStyle.PRIMARY)
+            ],
+            [
+                InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
+                InlineKeyboardButton("⬅️ Back to Home", callback_data="help_menu", style=ButtonStyle.PRIMARY)
+            ]
+        ])
+        await query.message.edit_text(text, reply_markup=keyboard)
+        
+    elif section == "quick":
+        text = (
+            "🚀 **Quick Start Guide**\n\n"
+            "1. Add the bot to your Telegram group.\n"
+            "2. Ensure the bot has permission to read messages so it can record activity data.\n"
+            "3. Use `/leaderboard` to check member activity rankings.\n"
+            "4. Use `/set_viral_promo` to set up automated messages when the chat gets highly active!"
+        )
+        await query.message.edit_text(text, reply_markup=keyboard_back)
+        
+    elif section == "cmds":
+        text = (
+            "📋 **Commands Reference**\n\n"
+            "• `/leaderboard` — Displays top active members for Overall, Today, Week, or Global views.\n"
+            "• `/schedule_best [message]` — Schedules a message to automatically post during your group's peak historical activity hour (Golden Hour).\n"
+            "• `/set_viral_promo` — **(Reply to a message)** Sets the promotional content to auto-post when chat activity suddenly spikes.\n"
+            "• `/anlyzhelp` or `/help` — Opens this help center."
+        )
+        await query.message.edit_text(text, reply_markup=keyboard_back)
+        
+    elif section == "leaders":
+        text = (
+            "🏆 **Leaderboard Features**\n\n"
+            "• **Group Overall:** Ranks total messages sent in the current group.\n"
+            "• **Today & Week:** Filters rankings by recent member activity.\n"
+            "• **Global Ranking:** Compares top active members across all connected groups."
+        )
+        await query.message
+        
+    elif section == "viral":
+        text = (
+            "🔥 **Viral Spikes & Golden Hour Explained**\n\n"
+            "• **Golden Hour (`/schedule_best`):** Calculates historical message density by hour and queues your message to post when member engagement is highest.\n"
+            "• **Viral Spikes:** Automatically monitors message counts per 5 minutes. If activity exceeds 1.5x your average, the bot broadcasts your pre-configured promo message."
         )
         await query.message.edit_text(text, reply_markup=keyboard_back)
         
