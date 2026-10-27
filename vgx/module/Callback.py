@@ -77,7 +77,7 @@ async def help_navigation_callbacks(c, q):
             ],[
                 InlineKeyboardButton("RSS Menu", callback_data="rss_home", style=ButtonStyle.SUCCESS)
             ],[
-                InlineKeyboardButton("Anime Schedule Mesnu", callback_data="anime_home_", style=ButtonStyle.SUCCESS)
+                InlineKeyboardButton("Anime Menu", callback_data="anime_home", style=ButtonStyle.SUCCESS)
             ],[
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
             ]
@@ -97,7 +97,7 @@ async def help_navigation_callbacks(c, q):
         text = (
             "🚀 **Quick Start Guide**\n\n"
             "1. Type `/schedule` in private chat to open the wizard dashboard.\n"
-            "2. Click **Target** and use `/settarget <chat_id>` to define where messages go.\n"
+            "2. Click **Target** and use `/settarget chat_id` to define where messages go.\n"
             "3. Click **Content**, then **reply** to any message/media with `/settext` or `/setcontent`.\n"
             "4. Configure intervals and preferences, then click **Save & Start**!"
         )
@@ -110,7 +110,7 @@ async def help_navigation_callbacks(c, q):
             "• `/schedule` — Opens the creation wizard.\n"
             "• `/myjobs` — Lists all your active and paused jobs.\n"
             "• `/settext` or `/setcontent` — **(Must reply to a message)** Saves text, photos, videos, or stickers into your active session.\n"
-            "• `/settarget <chat_id>` — Sets the target destination channel/chat ID.\n"
+            "• `/settarget chat_id` — Sets the target destination channel/chat ID.\n"
             "• `/help` — Opens this help menu."
         )
         await q.message.edit_text(text, reply_markup=keyboard_back)
@@ -178,7 +178,7 @@ async def rss_help_callbacks(client, query):
         text = (
             "🚀 **Quick Start Guide**\n\n"
             "1. Make sure you are chatting with the bot in **Private Chat**.\n"
-            "2. Run `/addfeed <chat_id>` (e.g., `/addfeed -100123456789`) for your target group or channel.\n"
+            "2. Run `/addfeed chat_id` (e.g., `/addfeed -100123456789`) for your target group or channel.\n"
             "3. **Reply** to the bot's prompt with your valid RSS or ATOM feed URL(s).\n"
             "4. Manage and customize your feeds anytime using `/managerss <chat_id>`!"
         )
@@ -188,8 +188,8 @@ async def rss_help_callbacks(client, query):
         text = (
             "📋 **Commands Reference**\n\n"
             "• `/rss` — View basic bot introduction.\n"
-            "• `/addfeed <chat_id>` — Connect new RSS/ATOM feed URLs (max 5 per chat).\n"
-            "• `/managerss` (or `/manage`) `<chat_id>` — Open the interactive configuration panel for a chat's feeds.\n"
+            "• `/addfeed chat_id` — Connect new RSS/ATOM feed URLs (max 5 per chat).\n"
+            "• `/managerss` (or `/manage`) `chat_id` — Open the interactive configuration panel for a chat's feeds.\n"
             "• `/rsshelp` — Open this interactive help center."
         )
         await query.message.edit_text(text, reply_markup=keyboard_back)
@@ -220,76 +220,74 @@ async def rss_help_callbacks(client, query):
 
 #====================================================#====================================================
 
-# --- Help Keyboard Builder ---
-def build_help_menu(chat_id: int, section: str = "home"):
+# ==================================================================
+# 6. HELP MENU & INTERACTIVE GUIDE ANIME (/help)
+# ==================================================================
+
+@Client.on_callback_query(filters.regex(r"^anime_(?P<section>[a-z]+)$"))
+async def anime_help_callbacks(client, query):
+    section = query.matches[0].group("section")
+    
+    keyboard_back = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="anime_home", style=ButtonStyle.PRIMARY)]
+    ])
+    
     if section == "home":
-        return InlineKeyboardMarkup([
+        text = (
+            "⛩️ **Anime Scheduler - Help Center**\n\n"
+            "Welcome! This bot automatically fetches and posts anime schedule updates to your target chats or channels.\n\n"
+            "👇 **Select a category below to learn more:**"
+        )
+        keyboard = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("🚀 Quick Start", callback_data=f"anime_quick_{chat_id}", style=ButtonStyle.PRIMARY),
-                InlineKeyboardButton("⏱️ Intervals", callback_data=f"anime_int_{chat_id}", style=ButtonStyle.PRIMARY)
+                InlineKeyboardButton("🚀 Quick Start", callback_data="anime_quick", style=ButtonStyle.PRIMARY),
+                InlineKeyboardButton("📋 Commands", callback_data="anime_cmds", style=ButtonStyle.PRIMARY)
             ],
             [
-                InlineKeyboardButton("🗑️ Auto-Delete", callback_data=f"anime_del_{chat_id}", style=ButtonStyle.PRIMARY),
-                InlineKeyboardButton("📌 Status & Pin", callback_data=f"anime_stat_{chat_id}", style=ButtonStyle.PRIMARY)
+                InlineKeyboardButton("⚙️ Settings Guide", callback_data="anime_settings", style=ButtonStyle.PRIMARY),
+                InlineKeyboardButton("⏱️ Intervals & Del", callback_data="anime_timers", style=ButtonStyle.PRIMARY)
             ],
             [
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
                 InlineKeyboardButton("⬅️", callback_data="help_menu", style=ButtonStyle.PRIMARY)
             ]
         ])
-    else:
-        # Sub-menu views with a Back button returning to the help home
-        return InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("🔙 Back to Help Menu", callback_data=f"anime_home_{chat_id}", style=ButtonStyle.PRIMARY)
-            ]
-        ])
-
-# --- 2. Help Callback Router ---
-@Client.on_callback_query(filters.regex(r"^anime_(?P<section>home|quick|int|del|stat)_(?P<chat_id>-?\d+)$"))
-async def standalone_help_callbacks(client, query):
-    section = query.matches[0].group("section")
-    chat_id = int(query.matches[0].group("chat_id"))
-
-    if section == "home":
-        text = (
-            "📖 **Anime Scheduler - Help Center**\n\n"
-            "Welcome! This bot automatically fetches and posts anime schedule updates to your target chats or channels.\n\n"
-            "👇 **Select a category below to learn how to use these features:**"
-        )
-        await query.message.edit_text(text, reply_markup=build_help_menu(chat_id, "home"))
-
+        await query.message.edit_text(text, reply_markup=keyboard)
+        
     elif section == "quick":
         text = (
             "🚀 **Quick Start Guide**\n\n"
-            "1. Run `/setanime` (or `/setanime <chat_id>` for groups where you are admin).\n"
-            "2. Click **Status: OFF** to toggle it **🟢 ON**.\n"
-            "3. Choose your posting frequency and auto-delete settings using the interactive control panel, and the bot will run automatically!"
+            "1. Open your management panel by sending `/setanime` (or `/setanime chat_id` for groups where you are an admin).\n"
+            "2. Toggle **Status: OFF** to turn it **🟢 ON**.\n"
+            "3. Configure your frequency intervals and auto-delete timers using the control buttons, and the bot will run automatically!"
         )
-        await query.message.edit_text(text, reply_markup=build_help_menu(chat_id, "quick"))
-
-    elif section == "int":
+        await query.message.edit_text(text, reply_markup=keyboard_back)
+        
+    elif section == "cmds":
         text = (
-            "⏱ **Intervals Explained**\n\n"
-            "• **What it does:** Sets how often the bot checks for and posts new schedule updates.\n"
-            "• **How to use:** Click **⏱ Set Interval** from your main panel and select a timeframe (from 1 minute up to 1 hour)."
+            "📋 **Commands Reference**\n\n"
+            "• `/setanime` — Open the main interactive configuration panel for your chat/channel.\n"
+            "• `/setanime chat_id` — Open the control panel for a specific group or channel (Requires Admin permissions).\n"
+            "• `/help` — Open this interactive help center."
         )
-        await query.message.edit_text(text, reply_markup=build_help_menu(chat_id, "int"))
-
-    elif section == "del":
+        await query.message.edit_text(text, reply_markup=keyboard_back)
+        
+    elif section == "settings":
         text = (
-            "🗑 **Auto-Delete Explained**\n\n"
-            "• **What it does:** Cleans up your channel automatically by deleting the bot's previous post before sending a fresh update.\n"
-            "• **How to use:** Click **🗑 Auto-Delete** in the main menu and pick your preferred self-destruction timer."
+            "⚙️ **Panel Settings Explained**\n\n"
+            "• 🟢/🔴 **Status:** Master toggle to enable or pause automated posting for the chat.\n"
+            "• 📌 **Pin:** Automatically pin incoming scheduled anime updates to the top of the chat for high visibility.\n"
+            "• ⏱ **Set Interval:** Change how often updates are checked and delivered.\n"
+            "• 🗑 **Auto-Delete:** Set a timer to clean up previous posts automatically."
         )
-        await query.message.edit_text(text, reply_markup=build_help_menu(chat_id, "del"))
-
-    elif section == "stat":
+        await query.message.edit_text(text, reply_markup=keyboard_back)
+        
+    elif section == "timers":
         text = (
-            "📌 **Status & Pin Toggles Explained**\n\n"
-            "• **Status:** Master switch to enable or pause automated scheduler posting for the chat.\n"
-            "• **Pin:** Automatically pins incoming scheduled updates to the top of your group or channel for higher visibility."
+            "⏱️ **Intervals & Auto-Delete Guide**\n\n"
+            "• **Intervals:** Choose how frequently the bot cycles updates (e.g., 1m, 5m, 20m, 30m, 1h).\n"
+            "• **Auto-Delete:** Keep your channel clean by choosing a self-destruction duration (e.g., 30s, 300s, 400s, 2400s, or Turn OFF)."
         )
-        await query.message.edit_text(text, reply_markup=build_help_menu(chat_id, "stat"))
-
+        await query.message.edit_text(text, reply_markup=keyboard_back)
+        
     await query.answer()
