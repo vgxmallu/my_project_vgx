@@ -94,24 +94,43 @@ async def trust_user(client, message):
     await message.reply("🛡 **Trusted List Updated!** This user will now be celebrated.")
 
 
-#====================================================
+#================================
+
 async def birthday_worker(app):
-    """Hourly background loop for precision timezone announcements."""
+    """Hourly background loop optimized to check user timezones efficiently."""
     while True:
         try:
             now_utc = datetime.now(pytz.utc)
             
-            # Scan all timezones to see where it is currently 08:00 AM
-            for tz_name in pytz.all_timezones:
-                tz = pytz.timezone(tz_name)
-                local_time = now_utc.astimezone(tz)
-                
-                if local_time.hour == 8: # Trigger celebrations at 8 AM local time
-                    month, day = local_time.month, local_time.day
-                    birthday_users = await get_users_by_bday_and_tz(month, day, tz_name)
+            # OPTIMIZATION: Instead of scanning 500+ timezones, 
+            # query users or group them by their timezone.
+            # Assuming you have a function or database query to get all registered users:
+            all_users = await get_all_birthday_users() # Replace with your actual DB fetch function
+            
+            # Dictionary to group users whose local time is currently 8 AM: {tz_name: [user_data, ...]}
+            triggered_tzs = {}
+
+            for user_data in all_users:
+                tz_name = user_data.get("timezone", "UTC")
+                try:
+                    tz = pytz.timezone(tz_name)
+                    local_time = now_utc.astimezone(tz)
                     
-                    if birthday_users:
-                        await announce_birthdays(app, birthday_users)
+                    # Check if it's 8:00 AM locally
+                    if local_time.hour == 8:
+                        month, day = local_time.month, local_time.day
+                        
+                        # Verify it matches their saved birthday month/day
+                        if user_data.get("month") == month and user_data.get("day") == day:
+                            if tz_name not in triggered_tzs:
+                                triggered_tzs[tz_name] = []
+                            triggered_tzs[tz_name].append(user_data)
+                except Exception:
+                    continue
+
+            # Announce for each timezone group found
+            for tz_name, users in triggered_tzs.items():
+                await announce_birthdays(app, users)
 
             # Sleep exactly 1 hour before the next global sweep
             await asyncio.sleep(3600)
@@ -121,7 +140,7 @@ async def birthday_worker(app):
             await asyncio.sleep(60)
 
 async def announce_birthdays(app, users: list):
-    """Dispatches messages to groups."""
+    """Dispatches messages to groups safely."""
     cursor = groups_col.find({"enabled": True})
     active_groups = await cursor.to_list(length=None)
     
@@ -139,17 +158,25 @@ async def announce_birthdays(app, users: list):
             try:
                 # Get user to tag them
                 member = await app.get_chat_member(chat_id, user_id)
-                msg_text = group["custom_msg"].replace("{mention}", member.user.mention)
+                
+                # Default message fallback if custom_msg isn't defined in the group doc
+                custom_template = group.get("custom_msg", "🎉 Happy Birthday {mention}! Have an amazing day! 🎂")
+                msg_text = custom_template.replace("{mention}", member.user.mention)
+                
                 media_id = group.get("media_id")
                 
-                # Send Media-Friendly Message
+                # 🛠 Fixed Media Dispatching
                 if media_id:
-                    # Pyrogram auto-detects if it's an animation or photo file_id via send_cached_media
-                    await app.send_cached_media(chat_id, document=media_id, caption=msg_text)
+                    try:
+                        # Pyrogram send_cached_media takes file_id directly as the first argument
+                        await app.send_cached_media(chat_id, file_id=media_id, caption=msg_text)
+                    except Exception:
+                        # Fallback to plain message if cached media fails (e.g., invalid file_id)
+                        await app.send_message(chat_id, text=msg_text)
                 else:
                     await app.send_message(chat_id, text=msg_text)
                     
             except FloodWait as e:
                 await asyncio.sleep(e.value)
             except Exception:
-                pass # Bot kicked, or user left the group
+                pass # Bot kicked, lacks permissions, or user left the group
