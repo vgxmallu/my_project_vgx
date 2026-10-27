@@ -67,7 +67,7 @@ async def start_handler(client: Client, message: Message):
     start_markup = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("➕ Add To Chat!", url="https://t.me/GojoSatoru_Xbot?startgroup=true", style=ButtonStyle.SUCCESS),
-            InlineKeyboardButton("📢 Channel!", url="https://t.me/XBOTS_X",style=ButtonStyle.PRIMARY)
+            InlineKeyboardButton("📢 Channel!", url="https://t.me/XBOTS_X", style=ButtonStyle.PRIMARY)
         ],
         [
             InlineKeyboardButton("📚 Help & Commands", callback_data="help_menu", style=ButtonStyle.PRIMARY)
