@@ -8,6 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from config import Config
 from vgx import app
 
+from pyrogram.enums import ButtonStyle
 
 mongo_client = AsyncIOMotorClient(Config.MONGO_URL)
 db = mongo_client["GojoBotDB"]
