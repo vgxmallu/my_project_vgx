@@ -77,6 +77,8 @@ async def help_navigation_callbacks(c, q):
             ],[
                 InlineKeyboardButton("RSS Menu", callback_data="rss_home", style=ButtonStyle.SUCCESS)
             ],[
+                InlineKeyboardButton("Anime Schedule Mesnu", callback_data="anime_home_", style=ButtonStyle.SUCCESS)
+            ],[
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
             ]
         ])
@@ -214,4 +216,80 @@ async def rss_help_callbacks(client, query):
         )
         await query.message.edit_text(text, reply_markup=keyboard_back)
         
+    await query.answer()
+
+#====================================================#====================================================
+
+# --- Help Keyboard Builder ---
+def build_help_menu(chat_id: int, section: str = "home"):
+    if section == "home":
+        return InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🚀 Quick Start", callback_data=f"anime_quick_{chat_id}", style=ButtonStyle.PRIMARY),
+                InlineKeyboardButton("⏱️ Intervals", callback_data=f"anime_int_{chat_id}", style=ButtonStyle.PRIMARY)
+            ],
+            [
+                InlineKeyboardButton("🗑️ Auto-Delete", callback_data=f"anime_del_{chat_id}", style=ButtonStyle.PRIMARY),
+                InlineKeyboardButton("📌 Status & Pin", callback_data=f"anime_stat_{chat_id}", style=ButtonStyle.PRIMARY)
+            ],
+            [
+                InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
+                InlineKeyboardButton("⬅️", callback_data="help_menu", style=ButtonStyle.PRIMARY)
+            ]
+        ])
+    else:
+        # Sub-menu views with a Back button returning to the help home
+        return InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🔙 Back to Help Menu", callback_data=f"anime_home_{chat_id}", style=ButtonStyle.PRIMARY)
+            ]
+        ])
+
+# --- 2. Help Callback Router ---
+@Client.on_callback_query(filters.regex(r"^anime_(?P<section>home|quick|int|del|stat)_(?P<chat_id>-?\d+)$"))
+async def standalone_help_callbacks(client, query):
+    section = query.matches[0].group("section")
+    chat_id = int(query.matches[0].group("chat_id"))
+
+    if section == "home":
+        text = (
+            "📖 **Anime Scheduler - Help Center**\n\n"
+            "Welcome! This bot automatically fetches and posts anime schedule updates to your target chats or channels.\n\n"
+            "👇 **Select a category below to learn how to use these features:**"
+        )
+        await query.message.edit_text(text, reply_markup=build_help_menu(chat_id, "home"))
+
+    elif section == "quick":
+        text = (
+            "🚀 **Quick Start Guide**\n\n"
+            "1. Run `/setanime` (or `/setanime <chat_id>` for groups where you are admin).\n"
+            "2. Click **Status: OFF** to toggle it **🟢 ON**.\n"
+            "3. Choose your posting frequency and auto-delete settings using the interactive control panel, and the bot will run automatically!"
+        )
+        await query.message.edit_text(text, reply_markup=build_help_menu(chat_id, "quick"))
+
+    elif section == "int":
+        text = (
+            "⏱ **Intervals Explained**\n\n"
+            "• **What it does:** Sets how often the bot checks for and posts new schedule updates.\n"
+            "• **How to use:** Click **⏱ Set Interval** from your main panel and select a timeframe (from 1 minute up to 1 hour)."
+        )
+        await query.message.edit_text(text, reply_markup=build_help_menu(chat_id, "int"))
+
+    elif section == "del":
+        text = (
+            "🗑 **Auto-Delete Explained**\n\n"
+            "• **What it does:** Cleans up your channel automatically by deleting the bot's previous post before sending a fresh update.\n"
+            "• **How to use:** Click **🗑 Auto-Delete** in the main menu and pick your preferred self-destruction timer."
+        )
+        await query.message.edit_text(text, reply_markup=build_help_menu(chat_id, "del"))
+
+    elif section == "stat":
+        text = (
+            "📌 **Status & Pin Toggles Explained**\n\n"
+            "• **Status:** Master switch to enable or pause automated scheduler posting for the chat.\n"
+            "• **Pin:** Automatically pins incoming scheduled updates to the top of your group or channel for higher visibility."
+        )
+        await query.message.edit_text(text, reply_markup=build_help_menu(chat_id, "stat"))
+
     await query.answer()
