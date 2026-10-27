@@ -39,7 +39,7 @@ async def help_command(c, m):
 # ==================================================================
 
 @app.on_callback_query(filters.regex("^close$"))
-async def col_callback(client, query):
+async def colce_callback(client, query):
     await query.answer("Closed ❌")
     await asyncio.sleep(2)
     await query.message.delete()
@@ -166,7 +166,7 @@ async def rss_help_callbacks(client, query):
                 InlineKeyboardButton("✏️ Custom Templates", callback_data="rss_templates", style=ButtonStyle.PRIMARY)
             ],
             [
-                InlineKeyboardButton("❌ Close Help", callback_data="cancel", style=ButtonStyle.DANGER)
+                InlineKeyboardButton("❌ Close Help", callback_data="close", style=ButtonStyle.DANGER)
             ]
         ])
         await query.message.edit_text(text, reply_markup=keyboard)
