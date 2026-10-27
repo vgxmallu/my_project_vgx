@@ -54,7 +54,7 @@ async def start_handler(client: Client, message: Message):
 
         # Send log to log channel for new user
         log_text = (
-            f"🟢 **New User Started Bot**\n"
+            f"🟢 **#New User Started Bot**\n"
             f"━━━━━━━━━━━━━━━━━\n"
             f"👤 **Name:** {user.mention}\n"
             f"🆔 **ID:** `{user_id}`\n"
@@ -97,10 +97,10 @@ async def group_added_handler(client: Client, message: Message):
 
             await groups_col.delete_one({"_id": chat.id})
             log_text = (
-                f"🤖 **Bot Added to Group**\n"
+                f"🤖 **Bot Added to #Group**\n"
                 f"━━━━━━━━━━━━━━━━━━━\n"
                 f"👥 **Group Name:** {chat.title}\n"
-                f"©️ **Group Username:** @{chat.username}"
+                f"©️ **Group Username:** @{chat.username}\n"
                 f"🆔 **Group ID:** `{chat.id}`\n"
                 f"💬 **Members Count:** {await client.get_chat_members_count(chat.id)}\n"
                 f"👤 **Added By:** {adder.mention} (`{adder.id}` | {adder_username})"
