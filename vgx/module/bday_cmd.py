@@ -1,7 +1,6 @@
 import pytz
 from pyrogram import Client, filters
 from pyrogram.enums import ChatMemberStatus
-from vgx.database.bday_db import set_user_bday, get_group, update_group, add_trusted_user, get_users_by_bday_and_tz, groups_col
 
 import asyncio
 from datetime import datetime
