@@ -81,6 +81,8 @@ async def help_navigation_callbacks(c, q):
             ],[
                 InlineKeyboardButton("📊 Analytics Menu", callback_data="anlyz_home", style=ButtonStyle.SUCCESS)
             ],[
+                InlineKeyboardButton("🧝🏻‍♀️ Anilist Menu", callback_data="anime_home", style=ButtonStyle.SUCCESS)
+            ],[
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
             ]
         ])
@@ -362,6 +364,78 @@ async def anlyz_help_callbacks(client, query):
             "🔥 **Viral Spikes & Golden Hour Explained**\n\n"
             "• **Golden Hour (`/schedule_best`):** Calculates historical message density by hour and queues your message to post when member engagement is highest.\n"
             "• **Viral Spikes:** Automatically monitors message counts per 5 minutes. If activity exceeds 1.5x your average, the bot broadcasts your pre-configured promo message."
+        )
+        await query.message.edit_text(text, reply_markup=keyboard_back)
+        
+    await query.answer()
+
+#====================================================
+# ==================================================================
+# STANDALONE ANIME SCHEDULER HELP MENU
+# ==================================================================
+
+
+@Client.on_callback_query(filters.regex(r"^anime_(?P<section>[a-z]+)$"))
+async def anime_help_callbacks(client, query):
+    section = query.matches[0].group("section")
+    
+    keyboard_back = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="anime_help_home", style=ButtonStyle.PRIMARY)]
+    ])
+    
+    if section == "home":
+        text = (
+            "⛩️ **Anime Scheduler - Help Center**\n\n"
+            "Welcome! This bot automatically fetches and posts anime schedule updates to your target chats or channels.\n\n"
+            "👇 **Select a category below to learn more:**"
+        )
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🚀 Quick Start", callback_data="anime_quick", style=ButtonStyle.PRIMARY),
+                InlineKeyboardButton("📋 Commands", callback_data="anime_cmds", style=ButtonStyle.PRIMARY)
+            ],
+            [
+                InlineKeyboardButton("⚙️ Settings Guide", callback_data="anime_set", style=ButtonStyle.PRIMARY),
+                InlineKeyboardButton("⏱️ Timers & Del", callback_data="anime_timers", style=ButtonStyle.PRIMARY)
+            ],
+            [
+                InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
+                InlineKeyboardButton("🏠", callback_data="help_menu", style=ButtonStyle.PRIMARY)
+            ]
+        ])
+        await query.message.edit_text(text, reply_markup=keyboard)
+        
+    elif section == "quick":
+        text = (
+            "🚀 **Quick Start Guide**\n\n"
+            "1. Run `/setanime` (or `/setanime <chat_id>` for groups where you are an admin).\n"
+            "2. Click **Status: OFF** to toggle it **🟢 ON**.\n"
+            "3. Configure your frequency intervals and auto-delete timers using the control panel, and the bot will run automatically!"
+        )
+        await query.message.edit_text(text, reply_markup=keyboard_back)
+        
+    elif section == "cmds":
+        text = (
+            "📋 **Commands Reference**\n\n"
+            "• `/setanime` — Open the main interactive configuration panel.\n"
+            "• `/setanime <chat_id>` — Open the control panel for a specific group/channel.\n"
+            "• `/animehelp` — Open this interactive help center."
+        )
+        await query.message.edit_text(text, reply_markup=keyboard_back)
+        
+    elif section == "set":
+        text = (
+            "⚙️ **Panel Settings Explained**\n\n"
+            "• 🟢/🔴 **Status:** Master switch to enable or pause automated posting for the chat.\n"
+            "• 📌 **Pin:** Automatically pin incoming scheduled anime updates to the top of the chat for high visibility."
+        )
+        await query.message.edit_text(text, reply_markup=keyboard_back)
+        
+    elif section == "timers":
+        text = (
+            "⏱️ **Intervals & Auto-Delete Guide**\n\n"
+            "• **Intervals:** Choose how frequently the bot cycles updates (e.g., 1m, 5m, 20m, 30m, 1h).\n"
+            "• **Auto-Delete:** Keep your channel clean by choosing a self-destruction duration (e.g., 30s, 300s, 400s, 2400s, or Turn OFF)."
         )
         await query.message.edit_text(text, reply_markup=keyboard_back)
         
