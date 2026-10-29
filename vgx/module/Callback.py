@@ -18,7 +18,7 @@ keyboard = InlineKeyboardMarkup(
     ],
     [
         InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
-        InlineKeyboardButton("⬅️", callback_data="help_menu", style=ButtonStyle.PRIMARY)
+        InlineKeyboardButton("🔙", callback_data="help_menu", style=ButtonStyle.PRIMARY)
     ]]
 )
 
@@ -62,7 +62,7 @@ async def help_navigation_callbacks(c, q):
         ],
         [
             InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
-            InlineKeyboardButton("⬅️", callback_data="help_menu", style=ButtonStyle.PRIMARY)
+            InlineKeyboardButton("🔙", callback_data="help_menu", style=ButtonStyle.PRIMARY)
     ]]
 )
     if data == "help_menu":
@@ -171,7 +171,7 @@ async def rss_help_callbacks(client, query):
             ],
             [
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
-                InlineKeyboardButton("⬅️", callback_data="help_menu", style=ButtonStyle.PRIMARY)
+                InlineKeyboardButton("🔙", callback_data="help_menu", style=ButtonStyle.PRIMARY)
             ]
         ])
         await query.message.edit_text(text, reply_markup=keyboard)
@@ -251,7 +251,7 @@ async def anime_help_callbacks(client, query):
             ],
             [
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
-                InlineKeyboardButton("⬅️", callback_data="help_menu", style=ButtonStyle.PRIMARY)
+                InlineKeyboardButton("🔙", callback_data="help_menu", style=ButtonStyle.PRIMARY)
             ]
         ])
         await query.message.edit_text(text, reply_markup=keyboard)
@@ -325,7 +325,7 @@ async def anlyz_help_callbacks(client, query):
             ],
             [
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
-                InlineKeyboardButton("⬅️ Back to Home", callback_data="help_menu", style=ButtonStyle.PRIMARY)
+                InlineKeyboardButton("🔙 Back to Home", callback_data="help_menu", style=ButtonStyle.PRIMARY)
             ]
         ])
         await query.message.edit_text(text, reply_markup=keyboard)
@@ -400,7 +400,7 @@ async def anime_help_callbacks(client, query):
             ],
             [
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
-                InlineKeyboardButton("🏠", callback_data="help_menu", style=ButtonStyle.PRIMARY)
+                InlineKeyboardButton("🔙", callback_data="help_menu", style=ButtonStyle.PRIMARY)
             ]
         ])
         await query.message.edit_text(text, reply_markup=keyboard)
