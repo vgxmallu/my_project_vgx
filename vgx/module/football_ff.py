@@ -325,9 +325,9 @@ async def cb_match_detail(client: Client, query: CallbackQuery):
     away_ft = ft.get("away", "-")
     home_ht = ht.get("home", "-")
     away_ht = ht.get("home", "-")
-    
-    # Referee Data
-referees = match.get("referees", [])
+
+# 🛠️ FIXED: Proper uniform indentation for Referee Data
+    referees = match.get("referees", [])
     ref_text = ""
     if referees:
         for r in referees:
