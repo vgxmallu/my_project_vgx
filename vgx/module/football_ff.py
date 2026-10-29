@@ -52,7 +52,7 @@ def get_main_menu(selected_date="TODAY", selected_comp="ALL", selected_status="A
             InlineKeyboardButton("🔄 Refresh", callback_data=f"m_ref_{selected_date}_{selected_comp}_{selected_status}")
         ],
         [
-            InlineKeyboardButton("❌ Close Panel", callback_data="m_close")
+            InlineKeyboardButton("❌", callback_data="close")
         ]
     ])
 
@@ -162,7 +162,7 @@ def build_match_selection_buttons(matches):
     if row:
         buttons.append(row)
     # Add footer control row
-    buttons.append([InlineKeyboardButton("❌ Close Panel", callback_data="m_close")])
+    buttons.append([InlineKeyboardButton("❌", callback_data="close")])
     return buttons
 
 
