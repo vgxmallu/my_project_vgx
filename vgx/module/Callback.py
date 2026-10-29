@@ -83,6 +83,10 @@ async def help_navigation_callbacks(c, q):
             ],[
                 InlineKeyboardButton("🧝🏻‍♀️ Anilist Menu", callback_data="anime_home", style=ButtonStyle.SUCCESS)
             ],[
+                InlineKeyboardButton("⚽ Football Menu", callback_data="fb_home", style=ButtonStyle.SUCCESS)
+            ],[
+                InlineKeyboardButton("💜 Deezer Menu", callback_data="dz_home", style=ButtonStyle.SUCCESS)
+            ],[
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
             ]
         ])
@@ -509,3 +513,72 @@ async def deezer_help_callbacks(client, query):
         await query.message.edit_text(text, reply_markup=keyboard_back)
         
     await query.answer()
+
+#====================================================
+#Footbaoll
+#====================================================
+@Client.on_callback_query(filters.regex(r"^fb_(?P<section>[a-z]+)$"))
+async def deezer_help_callbacks(client, query):
+    section = query.matches[0].group("section")
+    
+    keyboard_back = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="dz_home", style=ButtonStyle.PRIMARY)]
+    ])
+    # Help Sub-menus
+    if section == "home":
+        help_text = (
+            "⚽ **Football Sports Bot - Help Center**\n\n"
+            "Welcome! This bot tracks football league standings, fixtures, match results, top scorers, and live schedules.\n\n"
+            "👇 **Select a category below to learn more:**"
+        )
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("🚀 Quick Start", callback_data="fb_quick", style=ButtonStyle.PRIMARY),
+                InlineKeyboardButton("📋 Commands", callback_data="fb_cmds", style=ButtonStyle.PRIMARY)
+            ],
+            [
+                InlineKeyboardButton("⚙️ Settings Guide", callback_data="fb_set", style=ButtonStyle.PRIMARY),
+                InlineKeyboardButton("⭐ Watchlist & Targets", callback_data="fb_team", style=ButtonStyle.PRIMARY)
+            ],
+            [
+                InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
+                InlineKeyboardButton("🔙", callback_data="help_menu", style=ButtonStyle.PRIMARY)
+            ]
+        ])
+        await query.message.edit_text(help_text, reply_markup=keyboard)
+
+    elif data == "quick":
+        await query.message.edit_text(
+            "🚀 **Quick Start Guide**\n\n"
+            "1. Run `/ftball` to open the main interactive football panel.\n"
+            "2. Select Standings, Fixtures, or Results to check live football data.\n"
+            "3. Use `/setmyteam` to register your favorite watchlist club.",
+            reply_markup=keyboard_back
+        )
+
+    elif data == "cmds":
+        await query.message.edit_text(
+            "📋 **Commands Reference**\n\n"
+            "• `/ftball` — Open the main football dashboard.\n"
+            "• `/standings [league]` — View league tables (e.g., PL, CL).\n"
+            "• `/fixtures [league]` — View upcoming fixtures.\n"
+            "• `/scorers [league]` — Check top goalscorers.\n"
+            "• `/today` — View matches happening today.\n"
+            "• `/squad <team_id>` — Inspect a team roster.",
+            reply_markup=keyboard_back
+        )
+
+    elif data == "set":
+        await query.message.edit_text(
+            "⚙️ **Group Settings & Controls**\n\n"
+            "• Configure auto-deletion timers, pin toggles, live match schedules, and toggle active modules via the settings panel (`cfg_menu`).",
+            reply_markup=keyboard_back
+        )
+
+    elif data == "team":
+        await query.message.edit_text(
+            "⭐ **Watchlist & Remote Targets**\n\n"
+            "• Use `/setmyteam <name>` to save your favorite team.\n"
+            "• Use `/ftarget <group_id>` in PM to direct your personal control panel changes to a group chat remotely.",
+            reply_markup=keyboard_back
+        )
