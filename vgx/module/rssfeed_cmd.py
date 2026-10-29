@@ -22,7 +22,7 @@ def build_feed_menu(feed: dict):
         [InlineKeyboardButton("✏️ Edit Template", callback_data=f"rss_req_template_{fid}", style=ButtonStyle.PRIMARY),
          InlineKeyboardButton("🔄 Clear Cache", callback_data=f"rss_cmd_clear_{fid}", style=ButtonStyle.PRIMARY)],
         [InlineKeyboardButton("🗑 Delete Source", callback_data=f"rss_cmd_delete_{fid}", style=ButtonStyle.DANGER)],
-        [InlineKeyboardButton("❌ Cancel", callback_data="cancel", style=ButtonStyle.DANGER)]
+        [InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)]
     ])
 
 # --- 1. Main Command ---
