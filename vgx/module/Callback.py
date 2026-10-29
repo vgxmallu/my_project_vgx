@@ -408,7 +408,7 @@ async def anime_help_callbacks(client, query):
     elif section == "quick":
         text = (
             "🚀 **Quick Start Guide**\n\n"
-            "1. Run `/setanime` (or `/setanime <chat_id>` for groups where you are an admin).\n"
+            "1. Run `/setanime` (or `/setanime chat_id` for groups where you are an admin).\n"
             "2. Click **Status: OFF** to toggle it **🟢 ON**.\n"
             "3. Configure your frequency intervals and auto-delete timers using the control panel, and the bot will run automatically!"
         )
@@ -418,7 +418,7 @@ async def anime_help_callbacks(client, query):
         text = (
             "📋 **Commands Reference**\n\n"
             "• `/setanime` — Open the main interactive configuration panel.\n"
-            "• `/setanime <chat_id>` — Open the control panel for a specific group/channel.\n"
+            "• `/setanime chat_id` — Open the control panel for a specific group/channel.\n"
             "• `/animehelp` — Open this interactive help center."
         )
         await query.message.edit_text(text, reply_markup=keyboard_back)
