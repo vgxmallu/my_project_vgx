@@ -521,7 +521,7 @@ async def food_help_callbacks(client, query):
     section = query.matches[0].group("section")
     
     keyboard_back = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="dz_home", style=ButtonStyle.PRIMARY)]
+        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="fb_home", style=ButtonStyle.PRIMARY)]
     ])
     # Help Sub-menus
     if section == "home":
