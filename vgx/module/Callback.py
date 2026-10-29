@@ -82,9 +82,9 @@ async def help_navigation_callbacks(c, q):
             ],[
                 InlineKeyboardButton("📊 Analytics Menu", callback_data="anlyz_home", style=ButtonStyle.SUCCESS)
             ],[
-                InlineKeyboardButton("⚽ Football Menu", callback_data="fb_home", style=ButtonStyle.SUCCESS)
+                InlineKeyboardButton("⚽ Football Menu", callback_data="fob_home", style=ButtonStyle.SUCCESS)
             ],[
-                InlineKeyboardButton("💜 Deezer Menu", callback_data="dz_home", style=ButtonStyle.SUCCESS)
+                InlineKeyboardButton("💜 Deezer Menu", callback_data="deez_home", style=ButtonStyle.SUCCESS)
             ],[
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
             ]
@@ -447,6 +447,7 @@ async def anime_help_callbacks(client, query):
 # ==================================================================
 # DEEZER MUSIC BOT - HELP MENU & INTERACTIVE GUIDE (/deezerhelp)
 # ==================================================================
+from pyrogram.errors import MessageNotModified
 
 @Client.on_callback_query(filters.regex(r"^deez_(?P<section>[a-z]+)$"))
 async def deezer_help_callbacks(client, query):
@@ -456,72 +457,77 @@ async def deezer_help_callbacks(client, query):
         [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="deez_home", style=ButtonStyle.PRIMARY)]
     ])
     
-    if section == "home":
-        text = (
-            "🎧 **Deezer Music Schedule Bot - Help Center**\n\n"
-            "Welcome! This bot automatically discovers random tracks from Deezer and posts music drops to your target chats or channels at custom intervals.\n\n"
-            "👇 **Select a category below to learn more:**"
-        )
-        keyboard = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("🚀 Quick Start", callback_data="deez_quick", style=ButtonStyle.PRIMARY),
-                InlineKeyboardButton("📋 Commands", callback_data="deez_cmds", style=ButtonStyle.PRIMARY)
-            ],
-            [
-                InlineKeyboardButton("⚙️ Settings Guide", callback_data="deez_set", style=ButtonStyle.PRIMARY),
-                InlineKeyboardButton("⏱️ Intervals & Pin", callback_data="deez_timers", style=ButtonStyle.PRIMARY)
-            ],
-            [
-                InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
-                InlineKeyboardButton("🔙", callback_data="help_menu", style=ButtonStyle.PRIMARY)
-            ]
-        ])
-        await query.message.edit_text(text, reply_markup=keyboard)
-        
-    elif section == "quick":
-        text = (
-            "🚀 **Quick Start Guide**\n\n"
-            "1. Run `/deezertarget chat_id` in your private chat with the bot to configure a group or channel.\n"
-            "2. Click **Module: OFF** to toggle it **🟢 ON** (this immediately triggers the first song drop!).\n"
-            "3. Customize your interval and auto-pin preferences using the interactive control buttons."
-        )
-        await query.message.edit_text(text, reply_markup=keyboard_back)
-        
-    elif section == "cmds":
-        text = (
-            "📋 **Commands Reference**\n\n"
-            "• `/deezertarget chat_id` — Open the interactive configuration dashboard for a specific group or channel.\n"
-            "• `/deezerhelp` — Open this interactive help center."
-        )
-        await query.message.edit_text(text, reply_markup=keyboard_back)
-        
-    elif section == "set":
-        text = (
-            "⚙️ **Dashboard Settings Explained**\n\n"
-            "• 🟢/🔴 **Module:** Master toggle to turn automated music sharing ON or OFF. Turning it ON resets the timer for an immediate drop.\n"
-            "• 📌 **Auto-Pin:** Automatically pins incoming music discovery posts to the top of the chat for high visibility."
-        )
-        await query.message.edit_text(text, reply_markup=keyboard_back)
-        
-    elif section == "timers":
-        text = (
-            "⏱️ **Intervals Guide**\n\n"
-            "• **Interval Toggling:** Click the interval button to cycle through preset frequencies: `1m` -> `5m` -> `20m` -> `30m` -> `1h`.\n"
-            "• Determines how frequently a new random track is fetched from Deezer and posted to your target chat."
-        )
-        await query.message.edit_text(text, reply_markup=keyboard_back)
+    try:
+        if section == "home":
+            text = (
+                "🎧 **Deezer Music Schedule Bot - Help Center**\n\n"
+                "Welcome! This bot automatically discovers random tracks from Deezer and posts music drops to your target chats or channels at custom intervals.\n\n"
+                "👇 **Select a category below to learn more:**"
+            )
+            keyboard = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("🚀 Quick Start", callback_data="deez_quick", style=ButtonStyle.PRIMARY),
+                    InlineKeyboardButton("📋 Commands", callback_data="deez_cmds", style=ButtonStyle.PRIMARY)
+                ],
+                [
+                    InlineKeyboardButton("⚙️ Settings Guide", callback_data="deez_set", style=ButtonStyle.PRIMARY),
+                    InlineKeyboardButton("⏱️ Intervals & Pin", callback_data="deez_timers", style=ButtonStyle.PRIMARY)
+                ],
+                [
+                    InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
+                    InlineKeyboardButton("🔙", callback_data="deez_home", style=ButtonStyle.PRIMARY)
+                ]
+            ])
+            await query.message.edit_text(text, reply_markup=keyboard)
+            
+        elif section == "quick":
+            text = (
+                "🚀 **Quick Start Guide**\n\n"
+                "1. Run `/deezertarget chat_id` in your private chat with the bot to configure a group or channel.\n"
+                "2. Click **Module: OFF** to toggle it **🟢 ON** (this immediately triggers the first song drop!).\n"
+                "3. Customize your interval and auto-pin preferences using the interactive control buttons."
+            )
+            await query.message.edit_text(text, reply_markup=keyboard_back)
+            
+        elif section == "cmds":
+            text = (
+                "📋 **Commands Reference**\n\n"
+                "• `/deezertarget chat_id` — Open the interactive configuration dashboard for a specific group or channel.\n"
+                "• `/deezerhelp` — Open this interactive help center."
+            )
+            await query.message.edit_text(text, reply_markup=keyboard_back)
+            
+        elif section == "set":
+            text = (
+                "⚙️ **Dashboard Settings Explained**\n\n"
+                "• 🟢/🔴 **Module:** Master toggle to turn automated music sharing ON or OFF. Turning it ON resets the timer for an immediate drop.\n"
+                "• 📌 **Auto-Pin:** Automatically pins incoming music discovery posts to the top of the chat for high visibility."
+            )
+            await query.message.edit_text(text, reply_markup=keyboard_back)
+            
+        elif section == "timers":
+            text = (
+                "⏱️ **Intervals Guide**\n\n"
+                "• **Interval Toggling:** Click the interval button to cycle through preset frequencies: `1m` -> `5m` -> `20m` -> `30m` -> `1h`.\n"
+                "• Determines how frequently a new random track is fetched from Deezer and posted to your target chat."
+            )
+            await query.message.edit_text(text, reply_markup=keyboard_back)
+            
+    except MessageNotModified:
+        pass
         
     await query.answer()
+
 
 #====================================================
 #Footbaoll
 #====================================================
-@Client.on_callback_query(filters.regex(r"^fb_(?P<section>[a-z]+)$"))
+@Client.on_callback_query(filters.regex(r"^fob_(?P<section>[a-z]+)$"))
 async def food_help_callbacks(client, query):
     section = query.matches[0].group("section")
     
     keyboard_back = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="fb_home", style=ButtonStyle.PRIMARY)]
+        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="fob_home", style=ButtonStyle.PRIMARY)]
     ])
     # Help Sub-menus
     if section == "home":
@@ -532,12 +538,12 @@ async def food_help_callbacks(client, query):
         )
         keyboard = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("🚀 Quick Start", callback_data="fb_quick", style=ButtonStyle.PRIMARY),
-                InlineKeyboardButton("📋 Commands", callback_data="fb_cmds", style=ButtonStyle.PRIMARY)
+                InlineKeyboardButton("🚀 Quick Start", callback_data="fob_quick", style=ButtonStyle.PRIMARY),
+                InlineKeyboardButton("📋 Commands", callback_data="fob_cmds", style=ButtonStyle.PRIMARY)
             ],
             [
-                InlineKeyboardButton("⚙️ Settings Guide", callback_data="fb_set", style=ButtonStyle.PRIMARY),
-                InlineKeyboardButton("⭐ Watchlist & Targets", callback_data="fb_team", style=ButtonStyle.PRIMARY)
+                InlineKeyboardButton("⚙️ Settings Guide", callback_data="fob_set", style=ButtonStyle.PRIMARY),
+                InlineKeyboardButton("⭐ Watchlist & Targets", callback_data="fob_team", style=ButtonStyle.PRIMARY)
             ],
             [
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
