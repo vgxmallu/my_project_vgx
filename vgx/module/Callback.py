@@ -475,7 +475,7 @@ async def deezer_help_callbacks(client, query):
                 ],
                 [
                     InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
-                    InlineKeyboardButton("🔙", callback_data="deez_home", style=ButtonStyle.PRIMARY)
+                    InlineKeyboardButton("🔙", callback_data="help_menu", style=ButtonStyle.PRIMARY)
                 ]
             ])
             await query.message.edit_text(text, reply_markup=keyboard)
