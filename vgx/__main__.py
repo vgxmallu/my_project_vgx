@@ -11,7 +11,6 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from vgx.module.Night_Mod import start_nm_scheduler
 from vgx.module.dfeed_scheduler import start_df_scheduler
 from vgx.module.anlyz_adm_cmd import start_anlyz_scheduler
-from vgx.module.bday_cmd import birthday_worker
 from vgx.module.quotes_schedul import quote_worker
 from vgx.module.anilist_schedul import anime_worker
 from vgx.module.rssfeed_scheduler import autopost_worker
@@ -78,9 +77,6 @@ async def main():
 
     print("⛩️ Anime Bot Online! Interface & Commands ready.")
     asyncio.create_task(anime_worker(app))
-
-    print("🎂 Birthday & Event Scheduler is Live....")
-    asyncio.create_task(birthday_worker(app))
 
     print("📡 RSS Autopost Bot Online!")
     asyncio.create_task(autopost_worker(app))
