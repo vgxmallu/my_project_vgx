@@ -546,7 +546,7 @@ async def food_help_callbacks(client, query):
         ])
         await query.message.edit_text(help_text, reply_markup=keyboard)
 
-    elif data == "quick":
+    elif section == "quick":
         await query.message.edit_text(
             "🚀 **Quick Start Guide**\n\n"
             "1. Run `/ftball` to open the main interactive football panel.\n"
@@ -555,7 +555,7 @@ async def food_help_callbacks(client, query):
             reply_markup=keyboard_back
         )
 
-    elif data == "cmds":
+    elif section == "cmds":
         await query.message.edit_text(
             "📋 **Commands Reference**\n\n"
             "• `/ftball` — Open the main football dashboard.\n"
@@ -567,14 +567,14 @@ async def food_help_callbacks(client, query):
             reply_markup=keyboard_back
         )
 
-    elif data == "set":
+    elif section == "set":
         await query.message.edit_text(
             "⚙️ **Group Settings & Controls**\n\n"
             "• Configure auto-deletion timers, pin toggles, live match schedules, and toggle active modules via the settings panel (`cfg_menu`).",
             reply_markup=keyboard_back
         )
 
-    elif data == "team":
+    elif section == "team":
         await query.message.edit_text(
             "⭐ **Watchlist & Remote Targets**\n\n"
             "• Use `/setmyteam <name>` to save your favorite team.\n"
