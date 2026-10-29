@@ -9,7 +9,6 @@ from vgx.module.adv_shedule import run_job
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from vgx.module.Night_Mod import start_nm_scheduler
-from vgx.module.dfeed_scheduler import start_df_scheduler
 from vgx.module.anlyz_adm_cmd import start_anlyz_scheduler
 from vgx.module.quotes_schedul import quote_worker
 from vgx.module.anilist_schedul import anime_worker
@@ -64,9 +63,6 @@ async def main():
     # 2. Boot synchronous module setups
     print("💫 Night Mode System Online.")
     start_nm_scheduler(app)
-
-    print("🤖 Drip-Feed System Online..")
-    start_df_scheduler(app)
 
     print("🤖 Golden Hour Analytics Online...")
     start_anlyz_scheduler()
