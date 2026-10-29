@@ -13,7 +13,7 @@ def main_menu():
         [InlineKeyboardButton("🏆 Standings", callback_data="fb_menu_standings"), InlineKeyboardButton("📅 Fixtures", callback_data="fb_menu_fixtures")],
         [InlineKeyboardButton("⚽ Results", callback_data="fb_menu_results"), InlineKeyboardButton("🎯 Top Scorers", callback_data="fb_menu_scorers")],
         [InlineKeyboardButton("🗓 Today's Matches", callback_data="fb_today"), InlineKeyboardButton("⭐ My Team", callback_data="fb_myteam")],
-        [InlineKeyboardButton("⚙️ Group Settings", callback_data="cfg_menu"), InlineKeyboardButton("📖 Help Guide", callback_data="fb_help_home")]
+        [InlineKeyboardButton("⚙️ Group Settings", callback_data="cfg_menu"), InlineKeyboardButton("📖 Help Guide", callback_data="foob_home")]
     ])
 
 
