@@ -29,7 +29,7 @@ def get_wizard_kb(data):
         ],
         [
             InlineKeyboardButton("✅ SAVE & START", callback_data="wiz_save", style=ButtonStyle.SUCCESS),
-            InlineKeyboardButton("❌ Cancel", callback_data="wiz_cancel", style=ButtonStyle.DANGER)
+            InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
         ]
     ])
 
@@ -47,8 +47,11 @@ def get_job_controls(job_id, paused):
             InlineKeyboardButton("🕒 Custom Mins", callback_data="wiz_set_custom_int", style=ButtonStyle.PRIMARY),
             InlineKeyboardButton("🗑 Delete or Clear", callback_data=f"mngr_delete_{job_id}", style=ButtonStyle.DANGER)
         ],
-        [InlineKeyboardButton("🔙 Back to List", callback_data="myjobs_refresh", style=ButtonStyle.SUCCESS)]
-    ])
+        [
+            InlineKeyboardButton("🔙 Back to List", callback_data="myjobs_refresh", style=ButtonStyle.SUCCESS),
+            InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
+        ]]
+    )
 
 
 
