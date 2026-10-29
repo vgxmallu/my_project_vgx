@@ -1,12 +1,11 @@
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
 from config import Config
 from pyrogram import Client, filters
+from pyrogram.enums import ButtonStyle
 
 from vgx.module.f_boll_api import format_standings, format_fixtures, format_recent_results_with_spoilers, format_scorers, format_today_matches, format_squad
 from vgx.module.f_boll_schedul import send_managed_message
 from vgx.database.fdb import get_group_settings, get_user_favorite_team, set_user_favorite_team, update_group_setting, toggle_group_module, set_user_target, get_user_target, clear_user_target
-
-
 
 
 def main_menu():
@@ -14,18 +13,10 @@ def main_menu():
         [InlineKeyboardButton("🏆 Standings", callback_data="fb_menu_standings"), InlineKeyboardButton("📅 Fixtures", callback_data="fb_menu_fixtures")],
         [InlineKeyboardButton("⚽ Results", callback_data="fb_menu_results"), InlineKeyboardButton("🎯 Top Scorers", callback_data="fb_menu_scorers")],
         [InlineKeyboardButton("🗓 Today's Matches", callback_data="fb_today"), InlineKeyboardButton("⭐ My Team", callback_data="fb_myteam")],
-        [InlineKeyboardButton("⚙️ Group Settings", callback_data="cfg_menu")]
+        [InlineKeyboardButton("⚙️ Group Settings", callback_data="cfg_menu"), InlineKeyboardButton("📖 Help Guide", callback_data="fb_help_home")]
     ])
 
 
-"""
-def main_menu():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🏆 Standings", callback_data="fb_menu_standings"), InlineKeyboardButton("📅 Fixtures", callback_data="fb_menu_fixtures")],
-        [InlineKeyboardButton("⚽ Results (Spoilers)", callback_data="fb_menu_results"), InlineKeyboardButton("⭐ My Team", callback_data="fb_myteam")],
-        [InlineKeyboardButton("⚙️ Group Settings", callback_data="cfg_menu")]
-    ])
-"""
 def league_selector_menu(action_prefix: str):
     buttons = []
     row = []
@@ -69,27 +60,24 @@ def modules_menu(modules: dict):
         [InlineKeyboardButton("⬅️ Back to Settings", callback_data="cfg_menu")]
     ])
 
-#====================================================
 
-
-# --- COMMAND HANDLERS ---
+# ==================================================================
+# COMMAND HANDLERS
+# ==================================================================
 
 @Client.on_message(filters.command("scorers"))
 async def scorers_command(client: Client, message: Message):
-    """Command: /scorers PL"""
     code = message.command[1].upper() if len(message.command) > 1 else "PL"
     text = await format_scorers(code)
     await send_managed_message(client, message.chat.id, text)
 
 @Client.on_message(filters.command("today"))
 async def today_matches_command(client: Client, message: Message):
-    """Command: /today"""
     text = await format_today_matches()
     await send_managed_message(client, message.chat.id, text)
 
 @Client.on_message(filters.command("squad"))
 async def squad_command(client: Client, message: Message):
-    """Command: /squad 65 (65 is Manchester City's ID)"""
     if len(message.command) < 2:
         return await message.reply("⚠️ Usage: `/squad <team_id>` (e.g., `/squad 65` for Man City)")
     try:
@@ -137,16 +125,24 @@ async def set_myteam_command(client: Client, message: Message):
     await set_user_favorite_team(message.from_user.id, 57, team_name)
     await message.reply(f"✅ Saved **{team_name}** as your favorite team!")
 
-# --- REGEX CALLBACK QUERY HANDLERS ---
-@Client.on_callback_query(filters.regex(r"^fb_(main|menu_.*|stand_.*|fix_.*|res_.*|myteam)$"))
+
+# ==================================================================
+# REGEX CALLBACK QUERY HANDLERS (FOOTBALL DATA)
+# ==================================================================
+
+@Client.on_callback_query(filters.regex(r"^fb_(main|menu_.*|stand_.*|fix_.*|res_.*|sco_.*|today|myteam|help_.*)$"))
 async def sports_callbacks(client: Client, query: CallbackQuery):
     await query.answer()
     data = query.matches[0].group(1)
     chat_id = query.message.chat.id
     
-    settings = await get_group_settings(chat_id)
-    if not settings.get("modules", {}).get("football", True):
-        return await query.answer("🚫 Football module is disabled in this group.", show_alert=True)
+    # Skip module check for help callbacks
+    if not data.startswith("help_"):
+        settings = await get_group_settings(chat_id)
+        if not settings.get("modules", {}).get("football", True):
+            return await query.answer("🚫 Football module is disabled in this group.", show_alert=True)
+
+    keyboard_back = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Help", callback_data="fb_help_home", style=ButtonStyle.PRIMARY)]])
 
     if data == "main":
         await query.message.edit_text("⚽ **Football-Data.org Sports Bot**", reply_markup=main_menu())
@@ -159,6 +155,9 @@ async def sports_callbacks(client: Client, query: CallbackQuery):
 
     elif data == "menu_results":
         await query.message.edit_text("⚽ Select a Competition:", reply_markup=league_selector_menu("res"))
+
+    elif data == "menu_scorers":
+        await query.message.edit_text("🎯 Select a Competition:", reply_markup=league_selector_menu("sco"))
 
     elif data.startswith("stand_"):
         code = data.replace("stand_", "")
@@ -178,6 +177,18 @@ async def sports_callbacks(client: Client, query: CallbackQuery):
         text = await format_recent_results_with_spoilers(code)
         await query.message.edit_text(text, reply_markup=league_selector_menu("res"))
 
+    elif data.startswith("sco_"):
+        code = data.replace("sco_", "")
+        await query.message.edit_text("⏳ Fetching Golden Boot data...")
+        text = await format_scorers(code)
+        await query.message.edit_text(text, reply_markup=league_selector_menu("sco"))
+
+    elif data == "today":
+        await query.message.edit_text("⏳ Scanning global matches...")
+        text = await format_today_matches()
+        kb = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="fb_main")]])
+        await query.message.edit_text(text, reply_markup=kb)
+
     elif data == "myteam":
         fav = await get_user_favorite_team(query.from_user.id)
         if not fav:
@@ -185,13 +196,17 @@ async def sports_callbacks(client: Client, query: CallbackQuery):
         else:
             await query.message.edit_text(f"⭐ **Watchlist:** {fav['team_name']}", reply_markup=main_menu())
 
-#====================================================
 
+
+
+# ==================================================================
+# TARGET & CONFIGURATION COMMANDS
+# ==================================================================
 
 @Client.on_message(filters.command("ftarget"))
 async def set_target_command(client: Client, message: Message):
     if len(message.command) < 2:
-        return await message.reply("⚠️ Usage: `/settarget -1001234567890`")
+        return await message.reply("⚠️ Usage: `/ftarget -1001234567890`")
     try:
         target_id = int(message.command[1])
         await set_user_target(message.from_user.id, target_id)
@@ -204,8 +219,8 @@ async def clear_target_command(client: Client, message: Message):
     await clear_user_target(message.from_user.id)
     await message.reply("✅ **Target Chat Cleared.** Controls returned to PM.")
 
-# --- REGEX CALLBACK QUERY HANDLERS ---
-@Client.on_callback_query(filters.regex(r"^cfg_(menu|target_info|clear_target|cycle_autodel|toggle_pin|cycle_sched|modules|mod_.*|main|menu_.*|stand_.*|fix_.*|res_.*|sco_.*|today|myteam)$"))
+
+@Client.on_callback_query(filters.regex(r"^cfg_(menu|target_info|clear_target|cycle_autodel|toggle_pin|cycle_sched|modules|mod_.*)$"))
 async def settings_callbacks(client: Client, query: CallbackQuery):
     await query.answer()
     uid = query.from_user.id
@@ -222,7 +237,7 @@ async def settings_callbacks(client: Client, query: CallbackQuery):
     elif action == "target_info":
         kb = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="cfg_menu")]])
         await query.message.edit_text(
-            "🎯 **Target Chat Controls**\n\nSend `/settarget <group_id>` in PM to manage group options remotely.",
+            "🎯 **Target Chat Controls**\n\nSend `/ftarget <group_id>` in PM to manage group options remotely.",
             reply_markup=kb
         )
 
@@ -259,22 +274,3 @@ async def settings_callbacks(client: Client, query: CallbackQuery):
         await toggle_group_module(chat_id, mod_name)
         settings = await get_group_settings(chat_id)
         await query.message.edit_reply_markup(reply_markup=modules_menu(settings.get("modules", {})))
-
-    #up
-    elif data == "menu_scorers":
-        await query.message.edit_text("🎯 Select a Competition:", reply_markup=league_selector_menu("sco"))
-
-    elif data.startswith("sco_"):
-        code = data.replace("sco_", "")
-        await query.message.edit_text("⏳ Fetching Golden Boot data...")
-        text = await format_scorers(code)
-        await query.message.edit_text(text, reply_markup=league_selector_menu("sco"))
-
-    elif data == "today":
-        await query.message.edit_text("⏳ Scanning global matches...")
-        text = await format_today_matches()
-        # Add a back button to return to the main menu
-        kb = InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Back", callback_data="fb_main")]])
-        await query.message.edit_text(text, reply_markup=kb)
-
-    
