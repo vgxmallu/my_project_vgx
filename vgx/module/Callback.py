@@ -78,11 +78,9 @@ async def help_navigation_callbacks(c, q):
             ],[
                 InlineKeyboardButton("📢 RSS Menu", callback_data="rss_home", style=ButtonStyle.SUCCESS)
             ],[
-                InlineKeyboardButton("🐉 Anime Menu", callback_data="anime_home", style=ButtonStyle.SUCCESS)
+                InlineKeyboardButton("🧝🏻‍♀️ Anime Menu", callback_data="anime_home", style=ButtonStyle.SUCCESS)
             ],[
                 InlineKeyboardButton("📊 Analytics Menu", callback_data="anlyz_home", style=ButtonStyle.SUCCESS)
-            ],[
-                InlineKeyboardButton("🧝🏻‍♀️ Anilist Menu", callback_data="anime_home", style=ButtonStyle.SUCCESS)
             ],[
                 InlineKeyboardButton("⚽ Football Menu", callback_data="fb_home", style=ButtonStyle.SUCCESS)
             ],[
