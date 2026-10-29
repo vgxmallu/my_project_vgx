@@ -43,7 +43,7 @@ async def colce_callback(client, query):
     await query.answer("Closed ❌")
     await asyncio.sleep(2)
     await query.message.delete()
-    await start_handler.message.delete()
+    
     
 @Client.on_callback_query(filters.regex(r"^help_"))
 async def help_navigation_callbacks(c, q):
