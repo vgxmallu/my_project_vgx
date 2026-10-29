@@ -43,6 +43,7 @@ async def colce_callback(client, query):
     await query.answer("Closed ❌")
     await asyncio.sleep(2)
     await query.message.delete()
+    await start_handler.message.delete()
     
 @Client.on_callback_query(filters.regex(r"^help_"))
 async def help_navigation_callbacks(c, q):
@@ -449,12 +450,12 @@ async def anime_help_callbacks(client, query):
 # DEEZER MUSIC BOT - HELP MENU & INTERACTIVE GUIDE (/deezerhelp)
 # ==================================================================
 
-@Client.on_callback_query(filters.regex(r"^dz_(?P<section>[a-z]+)$"))
+@Client.on_callback_query(filters.regex(r"^deez_(?P<section>[a-z]+)$"))
 async def deezer_help_callbacks(client, query):
     section = query.matches[0].group("section")
     
     keyboard_back = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="dz_home", style=ButtonStyle.PRIMARY)]
+        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="deez_home", style=ButtonStyle.PRIMARY)]
     ])
     
     if section == "home":
@@ -465,12 +466,12 @@ async def deezer_help_callbacks(client, query):
         )
         keyboard = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("🚀 Quick Start", callback_data="dz_quick", style=ButtonStyle.PRIMARY),
-                InlineKeyboardButton("📋 Commands", callback_data="dz_cmds", style=ButtonStyle.PRIMARY)
+                InlineKeyboardButton("🚀 Quick Start", callback_data="deez_quick", style=ButtonStyle.PRIMARY),
+                InlineKeyboardButton("📋 Commands", callback_data="deez_cmds", style=ButtonStyle.PRIMARY)
             ],
             [
-                InlineKeyboardButton("⚙️ Settings Guide", callback_data="dz_set", style=ButtonStyle.PRIMARY),
-                InlineKeyboardButton("⏱️ Intervals & Pin", callback_data="dz_timers", style=ButtonStyle.PRIMARY)
+                InlineKeyboardButton("⚙️ Settings Guide", callback_data="deez_set", style=ButtonStyle.PRIMARY),
+                InlineKeyboardButton("⏱️ Intervals & Pin", callback_data="deez_timers", style=ButtonStyle.PRIMARY)
             ],
             [
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
@@ -518,7 +519,7 @@ async def deezer_help_callbacks(client, query):
 #Footbaoll
 #====================================================
 @Client.on_callback_query(filters.regex(r"^fb_(?P<section>[a-z]+)$"))
-async def deezer_help_callbacks(client, query):
+async def food_help_callbacks(client, query):
     section = query.matches[0].group("section")
     
     keyboard_back = InlineKeyboardMarkup([
