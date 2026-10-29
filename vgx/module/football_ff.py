@@ -5,7 +5,7 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
 from pyrogram.enums import ParseMode
 from vgx import app
-from comfig import Config
+from config import Config
 
 
 
