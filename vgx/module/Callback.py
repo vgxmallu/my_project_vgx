@@ -90,6 +90,8 @@ async def help_navigation_callbacks(c, q):
             ],[
                 InlineKeyboardButton("📡 IPTV Menu", callback_data="iptv_home", style=ButtonStyle.SUCCESS)
             ],[
+                InlineKeyboardButton("🎋 Quotes Menu", callback_data="quote_home", style=ButtonStyle.SUCCESS)
+            ],[
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
             ]
         ])
@@ -669,5 +671,78 @@ async def cb_iptv_help_navigation(client: Client, query: CallbackQuery):
             "📡 **Database Sync & Stream Health Monitor**\n\n"
             "• **Database Sync (`/sync`):** Fetches the latest JSON dumps directly from GitHub repository endpoints.\n"
             "• **Health Check Worker:** An automated background scheduler checks stream availability every 2 hours and updates health logs in MongoDB."
+        )
+        await query.message.edit_text(text, reply_markup=back_keyboard)
+
+# ==================================================================
+# GOLDEN QUOTES HELP MENU & KEYBOARD BUILDERS
+# ==================================================================
+
+def get_quote_help_keyboard():
+    """Generates the main category selector keyboard for Quotes Help."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🚀 Quick Start", callback_data="quote_quick", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton("📋 Commands", callback_data="quote_cmds", style=ButtonStyle.PRIMARY)
+        ],
+        [
+            InlineKeyboardButton("⚙️ Settings Guide", callback_data="quote_settings", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton("⏱️ Intervals & Cleanup", callback_data="quote_timers", style=ButtonStyle.PRIMARY)
+        ],
+        [
+            InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
+            InlineKeyboardButton("🏠 Main Help Hub", callback_data="home_menu", style=ButtonStyle.PRIMARY)
+        ]
+    ])
+
+@Client.on_callback_query(filters.regex(r"^quote_(?P<section>[a-z]+)$"))
+async def cb_quote_help_navigation(client: Client, query: CallbackQuery):
+    section = query.matches[0].group("section")
+    await query.answer()
+
+    back_keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="quote_home", style=ButtonStyle.PRIMARY)]
+    ])
+
+    if section == "home":
+        help_text = (
+            "🌟 **Golden Quotes Bot - Help Center**\n\n"
+            "Welcome! This bot keeps your groups positive, active, and inspired by sending beautifully scheduled motivation quotes! ✨\n\n"
+            "👇 **Select a category below to learn more:**"
+        )
+        await query.message.edit_text(help_text, reply_markup=get_quote_help_keyboard())
+
+    elif section == "quick":
+        text = (
+            "🚀 **Quick Start Guide**\n\n"
+            "1. Add the bot to your Telegram group.\n"
+            "2. Promote the bot to **Admin** (Permissions required: send messages, pin messages, and delete messages).\n"
+            "3. Type `/setquote` in the group chat to open the control panel and turn the module **🟢 ON**!"
+        )
+        await query.message.edit_text(text, reply_markup=back_keyboard)
+
+    elif section == "cmds":
+        text = (
+            "📋 **Available Commands Reference**\n\n"
+            "• `/setquote` — Opens the interactive settings control panel for the current chat.\n"
+            "• `/setquote <chat_id>` — Allows group admins to manage their group settings remotely from PMs.\n"
+            "• `/quotehelp` (or `/quoteshelp`) — Opens this interactive help center."
+        )
+        await query.message.edit_text(text, reply_markup=back_keyboard)
+
+    elif section == "settings":
+        text = (
+            "⚙️ **Control Panel Settings Explained**\n\n"
+            "• 🟢/🔴 **Status Toggle:** Master switch to enable or pause automated quote delivery.\n"
+            "• 📌 **Auto-Pin:** Automatically pins the newly sent quote to the top of the group chat.\n"
+            "• 🗑 **Delete Last Sent Quote:** Instantly deletes the most recent quote sent by the bot on demand."
+        )
+        await query.message.edit_text(text, reply_markup=back_keyboard)
+
+    elif section == "timers":
+        text = (
+            "⏱️ **Intervals & Auto-Cleanup Guide**\n\n"
+            "• **Frequency Intervals:** Choose how often a fresh quote drops (`1m`, `5m`, `20m`, `30m`, or `1h`).\n"
+            "• **Auto-Delete / Cleanup:** Keep chat clean by setting a self-destruction timer (`30s`, `300s`, `400s`, `2400s`, or Disable)."
         )
         await query.message.edit_text(text, reply_markup=back_keyboard)
