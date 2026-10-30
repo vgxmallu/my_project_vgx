@@ -7,28 +7,30 @@ from pyrogram.enums import ButtonStyle
 # 1. HELP COMMAND HANDLER (/help)
 # ==================================================================
 
-keyboard = InlineKeyboardMarkup(
-    [[
-        InlineKeyboardButton("🚀 Quick Start", callback_data="help_quick", style=ButtonStyle.PRIMARY),
-        InlineKeyboardButton("📋 Commands", callback_data="help_cmds", style=ButtonStyle.PRIMARY)
-    ],
+keyboard = InlineKeyboardMarkup([
     [
-        InlineKeyboardButton("⚙️ Job Settings", callback_data="help_settings", style=ButtonStyle.PRIMARY),
-        InlineKeyboardButton("🛠️ Managing Jobs", callback_data="help_manage", style=ButtonStyle.PRIMARY)
-    ],
-    [
-        InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
-        InlineKeyboardButton("🔙", callback_data="help_menu", style=ButtonStyle.PRIMARY)
-    ]]
-)
+           InlineKeyboardButton("Group Menu", callback_data="help_gp", style=ButtonStyle.SUCCESS)
+    ],[
+           InlineKeyboardButton("📨 Scheduler Menu", callback_data="help_home", style=ButtonStyle.SUCCESS)
+    ],[
+           InlineKeyboardButton("📢 RSS Menu", callback_data="rss_home", style=ButtonStyle.SUCCESS)
+    ],[
+           InlineKeyboardButton("🧝🏻‍♀️ Anime Menu", callback_data="anime_home", style=ButtonStyle.SUCCESS)
+    ],[
+           InlineKeyboardButton("📊 Analytics Menu", callback_data="anlyz_home", style=ButtonStyle.SUCCESS)
+    ],[
+           InlineKeyboardButton("⚽ Football Menu", callback_data="fob_home", style=ButtonStyle.SUCCESS)
+    ],[
+           InlineKeyboardButton("💜 Deezer Menu", callback_data="deez_home", style=ButtonStyle.SUCCESS)
+    ],[
+           InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
+   ] 
+])
 
 @Client.on_message(filters.private & filters.command("help"))
 async def help_command(c, m):
     help_text = (
-        "🤖 **Bot Scheduler - Master Help Menu**\n\n"
-        "Welcome! This bot allows you to automate recurring messages, "
-        "manage posts, and configure advanced delivery options.\n\n"
-        "👇 **Select a category below to learn more:**"
+        "Select your catagory:\n/start me again?"
     )
     
     await m.reply(help_text, reply_markup=keyboard)
@@ -557,8 +559,8 @@ async def food_help_callbacks(client, query):
             "🚀 **Quick Start Guide**\n\n"
             "1. Run `/fmatches` to open the interactive dashboard.\n"
             "2. Use the **Date**, **League**, and **Status** selector buttons to filter fixtures instantly.\n"
-            "3. Click any **Match #N** button to view deep technical metadata, team crests, half-time scores, and assigned match officials."
-            "Another football cmd\n"
+            "3. Click any **Match #N** button to view deep technical metadata, team crests, half-time scores, and assigned match officials.\n"
+            "**Another football cmds**\n"
             "1. Run `/ftball` to open the main interactive football panel.\n"
             "2. Select Standings, Fixtures, or Results to check live football data.\n"
             "3. Use `/setmyteam` to register your favorite watchlist club.",
