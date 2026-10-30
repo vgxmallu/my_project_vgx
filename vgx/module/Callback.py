@@ -699,7 +699,7 @@ def get_quote_help_keyboard():
         ],
         [
             InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
-            InlineKeyboardButton("🏠 Main Help Hub", callback_data="home_menu", style=ButtonStyle.PRIMARY)
+            InlineKeyboardButton("🔙", callback_data="home_menu", style=ButtonStyle.PRIMARY)
         ]
     ])
 
@@ -772,7 +772,7 @@ def get_weather_help_keyboard():
         ],
         [
             InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
-            InlineKeyboardButton("🏠 Main Help Hub", callback_data="weather_home", style=ButtonStyle.PRIMARY)
+            InlineKeyboardButton("🔙", callback_data="home_menu", style=ButtonStyle.PRIMARY)
         ]
     ])
 
