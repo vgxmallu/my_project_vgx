@@ -127,7 +127,7 @@ async def matcheufs_command(client: Client, message: Message):
 def format_matches_list(matches, date, comp, status):
     text = f"⚽ **Football Matches Control Center**\n"
     text += f"📅 Filter: `{date}` | 🏆 League: `{comp}` | 📌 Status: `{status}`\n"
-    text += "━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+    text += "━━━━━━━━━━━━━━━━━\n\n"
     
     if not matches:
         return text + "❌ No matches found matching your filters."
@@ -341,7 +341,7 @@ async def cb_match_detail(client: Client, query: CallbackQuery):
     # Construct Detailed Message Layout
     detail_msg = (
         f"📊 **Match Deep Analysis & Metadata**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"━━━━━━━━━━━━━━━━━\n"
         f"🏆 **Competition:** {comp_name} (`{comp_code}`) | 🌐 Area: {area}\n"
         f"📌 **Stage/Group:** {stage} {f'({group_stage})' if group_stage else ''} | Matchday: {matchday}\n"
         f"⏰ **Kickoff (UTC):** `{utc_date}`\n"
@@ -355,7 +355,7 @@ async def cb_match_detail(client: Client, query: CallbackQuery):
         f"• Match Duration: `{duration}` | Result Winner: `{winner}`\n\n"
         f"⚖️ **Match Officials & Referees:**\n"
         f"{ref_text}"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"━━━━━━━━━━━━━━━━━\n"
         f"🆔 `Match Database ID: {match_id}`"
     )
     
