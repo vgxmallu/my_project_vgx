@@ -555,6 +555,10 @@ async def food_help_callbacks(client, query):
     elif section == "quick":
         await query.message.edit_text(
             "🚀 **Quick Start Guide**\n\n"
+            "1. Run `/fmatches` to open the interactive dashboard.\n"
+            "2. Use the **Date**, **League**, and **Status** selector buttons to filter fixtures instantly.\n"
+            "3. Click any **Match #N** button to view deep technical metadata, team crests, half-time scores, and assigned match officials."
+            "Another football cmd\n"
             "1. Run `/ftball` to open the main interactive football panel.\n"
             "2. Select Standings, Fixtures, or Results to check live football data.\n"
             "3. Use `/setmyteam` to register your favorite watchlist club.",
@@ -564,6 +568,7 @@ async def food_help_callbacks(client, query):
     elif section == "cmds":
         await query.message.edit_text(
             "📋 **Commands Reference**\n\n"
+            "• `/fmatches` — Opens the main interactive football matches dashboard.\n"
             "• `/ftball` — Open the main football dashboard.\n"
             "• `/standings [league]` — View league tables (e.g., PL, CL).\n"
             "• `/fixtures [league]` — View upcoming fixtures.\n"
