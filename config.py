@@ -33,11 +33,7 @@ class Config:
     # Directory to temporarily store downloads
     DOWNLOAD_DIR = "downloads"
 
-    #API's
-    # TheSportsDB API (Using "3" for free testing tier)
-    SPORTS_DB_KEY = os.getenv("SPORTS_DB_KEY", "3")
-    BASE_URL = f"https://www.thesportsdb.com/api/v1/json/{SPORTS_DB_KEY}"
-
+    #API'
 
     FOOTBALL_API_KEY = os.getenv("FOOTBALL_API_KEY")
     FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4"
