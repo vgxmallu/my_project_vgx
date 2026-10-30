@@ -88,6 +88,8 @@ async def help_navigation_callbacks(c, q):
             ],[
                 InlineKeyboardButton("💜 Deezer Menu", callback_data="deez_home", style=ButtonStyle.SUCCESS)
             ],[
+                InlineKeyboardButton("📡 IPTV Menu", callback_data="iptv_home", style=ButtonStyle.SUCCESS)
+            ],[
                 InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
             ]
         ])
@@ -594,3 +596,78 @@ async def food_help_callbacks(client, query):
             "• Use `/ftarget <group_id>` in PM to direct your personal control panel changes to a group chat remotely.",
             reply_markup=keyboard_back
         )
+
+# =================================================================
+# IPTV HELP MENU COMMAND & KEYBOARD BUILDERS
+# ==================================================================
+
+def get_iptv_help_keyboard():
+    """Generates the main category selector keyboard for IPTV Help."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🚀 Quick Start", callback_data="iptv_quick", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton("📋 Commands", callback_data="iptv_cmds", style=ButtonStyle.PRIMARY)
+        ],
+        [
+            InlineKeyboardButton("📂 Browsing & Streams", callback_data="iptv_browse", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton("📡 Sync & Health", callback_data="iptv_health", style=ButtonStyle.PRIMARY)
+        ],
+        [
+            InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
+            InlineKeyboardButton("🔙", callback_data="help_menu", style=ButtonStyle.PRIMARY)
+        ]
+    ])
+
+@Client.on_callback_query(filters.regex(r"^iptv_(home|quick|cmds|browse|health)$"))
+async def cb_iptv_help_navigation(client: Client, query: CallbackQuery):
+    section = query.matches[0].group(1)
+    await query.answer()
+
+    back_keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back to Help Menu", callback_data="iptv_home", style=ButtonStyle.PRIMARY)]
+    ])
+
+    if section == "home":
+        help_text = (
+            "📺 **IPTV-Org Global Hub - Help Center**\n\n"
+            "Welcome! This module connects directly to official `iptv-org` repositories to fetch "
+            "thousands of free public television streams, regional channels, categories, and EPG guides.\n\n"
+            "👇 **Select a section below to explore usage instructions:**"
+        )
+        await query.message.edit_text(help_text, reply_markup=get_iptv_help_keyboard())
+
+    elif section == "quick":
+        text = (
+            "🚀 **Quick Start Guide**\n\n"
+            "1. Run `/sync` first to populate your MongoDB cache with the latest channel and stream data.\n"
+            "2. Send `/iptv` to launch the main interactive dashboard.\n"
+            "3. Select **🌍 Browse Countries** or **📂 Browse Categories** to discover live broadcasts.\n"
+            "4. Click on any channel item to view direct stream URLs and EPG guide sources."
+        )
+        await query.message.edit_text(text, reply_markup=back_keyboard)
+
+    elif section == "cmds":
+        text = (
+            "📋 **IPTV Commands Reference**\n\n"
+            "• `/iptv` — Opens the main interactive IPTV exploration hub.\n"
+            "• `/sync` — Synchronizes channels, stream links, and EPG metadata into local MongoDB.\n"
+            "• `/iptvhelp` — Opens this interactive help center."
+        )
+        await query.message.edit_text(text, reply_markup=back_keyboard)
+
+    elif section == "browse":
+        text = (
+            "📂 **Browsing Channels & Streams**\n\n"
+            "• **By Country:** Select a country flag to list up to 30 active public broadcasts in that region.\n"
+            "• **By Category:** Filter channels by genres such as News, Sports, Music, Entertainment, or Movies.\n"
+            "• **Stream Links:** Selecting a channel displays direct `.m3u8` or stream URLs that can be played in VLC, MPV, or Telegram video players."
+        )
+        await query.message.edit_text(text, reply_markup=back_keyboard)
+
+    elif section == "health":
+        text = (
+            "📡 **Database Sync & Stream Health Monitor**\n\n"
+            "• **Database Sync (`/sync`):** Fetches the latest JSON dumps directly from GitHub repository endpoints.\n"
+            "• **Health Check Worker:** An automated background scheduler checks stream availability every 2 hours and updates health logs in MongoDB."
+        )
+        await query.message.edit_text(text, reply_markup=back_keyboard)
