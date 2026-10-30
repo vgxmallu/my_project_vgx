@@ -39,8 +39,8 @@ async def format_standings(competition_code: str) -> str:
     standings_table = data["standings"][0].get("table", [])
     
     text = f"🏆 **{comp_name} Standings**\n\n"
-    text += "`Pos  Team               P   GD  Pts`\n"
-    text += "`-----------------------------------`\n"
+    text += "`Pos Team               P GD Pts`\n"
+    text += "`--------------------------------`\n"
     
     for row in standings_table[:12]:
         pos = str(row['position']).ljust(3)
@@ -99,8 +99,8 @@ async def format_scorers(competition_code: str) -> str:
 
     comp_name = data.get("competition", {}).get("name", competition_code)
     text = f"🎯 **Top Scorers — {comp_name}**\n\n"
-    text += "`Pos  Player             Team         Gls`\n"
-    text += "`----------------------------------------`\n"
+    text += "`Pos Player           Team       Gls`\n"
+    text += "`-------------------------------------`\n"
     
     for idx, s in enumerate(scorers[:10], start=1):
         pos = str(idx).ljust(3)
@@ -149,8 +149,8 @@ async def format_squad(team_id: int) -> str:
     
     text = f"🛡️ **{team_name} — Current Squad**\n"
     text += f"👔 **Coach:** {coach}\n\n"
-    text += "`Pos  Name                  Nationality`\n"
-    text += "`--------------------------------------`\n"
+    text += "`Pos Name                 Nationality`\n"
+    text += "`-----------------------------------`\n"
     
     for p in squad:
         pos = (p.get('position') or 'N/A')[:3].upper().ljust(4)
