@@ -19,7 +19,7 @@ from vgx.database.iptv_db import db
 
 from pyrogram import Client, filters
 from pyrogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-
+from config import Config
 
 @Client.on_message(filters.command("iptv") & filters.private)
 async def iptv_home(client: Client, message: Message):
@@ -39,7 +39,7 @@ async def iptv_home(client: Client, message: Message):
     ])
     await message.reply_text(text, reply_markup=keyboard)
 
-@Client.on_message(filters.command("sync") & filters.private)
+@Client.on_message(filters.command("sync") & filters.private & filters.user(Config.ADMIN_ID))
 async def sync_database(client: Client, message: Message):
     msg = await message.reply_text("🔄 Syncing core data from iptv-org APIs...")
     
