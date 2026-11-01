@@ -17,7 +17,7 @@ async def fetch_world_news(category: str = "general"):
     """Fetches top world headlines from NewsAPI.org asynchronously using httpx."""
     url = f"{BASE_URL}/top-headlines"
     params = {
-        "apiKey": Comfig.NEWS_API_KEY,
+        "apiKey": Config.NEWS_API_KEY,
         "language": "en",
         "category": category,
         "pageSize": 10
