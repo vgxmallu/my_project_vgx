@@ -34,7 +34,7 @@ class Config:
     DOWNLOAD_DIR = "downloads"
 
     #API'
-    NEWS_API_KEY = os.getenv("NEWS_API_KEY"))
+    NEWS_API_KEY = os.getenv("NEWS_API_KEY")
     
     FOOTBALL_API_KEY = os.getenv("FOOTBALL_API_KEY")
     FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4"
