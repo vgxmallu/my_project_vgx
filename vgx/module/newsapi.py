@@ -102,11 +102,6 @@ async def cb_news_home(client: Client, query: CallbackQuery):
     )
     await query.message.edit_text(welcome_text, reply_markup=get_news_main_menu(), parse_mode=ParseMode.MARKDOWN)
 
-@app.on_callback_query(filters.regex(r"^news_close$"))
-async def cb_news_close(client: Client, query: CallbackQuery):
-    await query.answer("Closed ❌")
-    await query.message.delete()
-
 @app.on_callback_query(filters.regex(r"^news_noop$"))
 async def cb_news_noop(client: Client, query: CallbackQuery):
     await query.answer("📌 Current Article Position", show_alert=False)
