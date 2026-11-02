@@ -136,7 +136,7 @@ async def cb_news_category(client: Client, query: CallbackQuery):
     text = (
         f"🌐 **World News | Category: `{category.upper()}`**\n"
         f"📌 **Source:** `{source}` | 📅 `{published}`\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"━━━━━━━━━━━━━━━━━━\n\n"
         f"**{title}**\n\n"
         f"{desc if desc else ''}"
     )
@@ -170,7 +170,7 @@ async def cb_news_navigation(client: Client, query: CallbackQuery):
     text = (
         f"🌐 **World News | Category: `{category.upper()}`**\n"
         f"📌 **Source:** `{source}` | 📅 `{published}`\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"━━━━━━━━━━━━━━━━━━\n\n"
         f"**{title}**\n\n"
         f"{desc if desc else ''}"
     )
@@ -205,7 +205,7 @@ async def cb_news_read_full(client: Client, query: CallbackQuery):
     text = (
         f"📖 **In-Bot Article Reader**\n"
         f"📌 **Source:** `{source}` | ✍️ **Author:** `{author}`\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"━━━━━━━━━━━━━━━━━━\n\n"
         f"**{title}**\n\n"
         f"{content}\n\n"
         f"*(Fetched securely via NewsAPI)*"
@@ -238,7 +238,7 @@ async def cb_read_with_group(client: Client, query: CallbackQuery):
     group_session_card = (
         f"👥 **Community Group Reading Session**\n"
         f"📢 *Started by @{user.username or user.first_name}*\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"━━━━━━━━━━━━━━━━━━\n\n"
         f"📰 **{title}**\n"
         f"📌 **Source:** `{source}`\n\n"
         f"💬 *Group members: Discuss your thoughts on this story below!* 👇"
