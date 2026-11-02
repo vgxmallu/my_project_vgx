@@ -50,7 +50,7 @@ def get_news_main_menu():
         ],
         [
             InlineKeyboardButton("🎬 Entertainment", callback_data="news_cat_entertainment"),
-            InlineKeyboardButton("❌ Close", callback_data="news_close")
+            InlineKeyboardButton("❌", callback_data="close")
         ]
     ])
 
@@ -73,7 +73,7 @@ def get_article_keyboard(category: str, index: int, total: int):
         ],
         [
             InlineKeyboardButton("🏠 Main Menu", callback_data="news_home"),
-            InlineKeyboardButton("❌ Close", callback_data="news_close")
+            InlineKeyboardButton("❌", callback_data="close")
         ]
     ])
 
