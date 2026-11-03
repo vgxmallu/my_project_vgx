@@ -15,23 +15,22 @@ USER_STATE = {}  # Stores user customization settings (filter, size, type, etc.)
 BASE_CATAAS = "https://cataas.com/cat"
 
 
-# --- API HELPERS ---
+
+# --- SAFE API FETCH WITH FALLBACK ---
 async def fetch_cat_records():
-    """Fetches a list of cat records from Cataas JSON API for pagination."""
     global CAT_CACHE
     if CAT_CACHE:
         return CAT_CACHE
-
     url = "https://cataas.com/api/cats?limit=50"
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(url, timeout=10.0)
-            response.raise_for_status()
-            CAT_CACHE = response.json()
-            return CAT_CACHE
-        except Exception as e:
-            print(f"Cataas API Error: {e}")
-            return []
+            resp = await client.get(url, timeout=10.0)
+            if resp.status_code == 200:
+                CAT_CACHE = resp.json()
+                return CAT_CACHE
+        except Exception:
+            pass
+        return []
 
 async def fetch_available_tags():
     """Fetches popular cat tags from Cataas."""
@@ -83,17 +82,19 @@ def build_cat_url(cat_id: str = None, tag: str = None, says: str = None, user_se
     return url
 
 
-# --- FIXED RANDOM CAT HANDLER (Using BytesIO to bypass Telegram cache) ---
+# --- SAFE RANDOM CAT HANDLER WITH 502 ERROR FALLBACK ---
 @app.on_callback_query(filters.regex(r"^cat_random$"))
 async def cb_cat_random(client: Client, query: CallbackQuery):
     await query.answer("Fetching a fresh random cat...")
     user_id = query.from_user.id
     settings = USER_STATE.get(user_id, {})
     
-    url = build_cat_url(user_settings=settings)
+    # Try direct endpoint first with cache buster
+    url = f"https://cataas.com/cat?t={int(time.time() * 1000)}"
+    
     kb = InlineKeyboardMarkup([
         [InlineKeyboardButton("🎲 Another Random", callback_data="cat_random")],
-        [InlineKeyboardButton("🏠 Main Menu", callback_data="cat_home"), InlineKeyboardButton("❌", callback_data="close")]
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="cat_home"), InlineKeyboardButton("❌ Close", callback_data="cat_close")]
     ])
     
     async with httpx.AsyncClient() as client_http:
@@ -110,24 +111,45 @@ async def cb_cat_random(client: Client, query: CallbackQuery):
                     reply_markup=kb,
                     parse_mode=ParseMode.MARKDOWN
                 )
-            else:
-                await query.answer("❌ Failed to fetch cat image.", show_alert=True)
-        except Exception as e:
-            await query.answer(f"⚠️ Error: {str(e)}", show_alert=True)
+                return
+        except Exception:
+            pass
+            
+    # Fallback: If Cataas server returns 502, pull from cached gallery records instead!
+    cats = await fetch_cat_records()
+    if cats:
+        import random
+        cat = random.choice(cats)
+        fallback_url = f"https://cataas.com/cat/{cat.get('_id')}?t={int(time.time() * 1000)}"
+        try:
+            async with httpx.AsyncClient() as client_http:
+                resp = await client_http.get(fallback_url, timeout=15.0)
+                if resp.status_code == 200:
+                    photo_bytes = io.BytesIO(resp.content)
+                    photo_bytes.name = "cat.jpg"
+                    await query.message.delete()
+                    await query.message.reply_photo(
+                        photo=photo_bytes,
+                        caption="🐱 **Random Cat Image (From Cache)**\n_Cataas server was busy, loaded from backup!_",
+                        reply_markup=kb,
+                        parse_mode=ParseMode.MARKDOWN
+                    )
+                    return
+        except Exception:
+            pass
+
+    await query.answer("⚠️ Cataas servers are currently experiencing heavy traffic (502 Gateway). Please try again in a moment!", show_alert=True)
 
 
-# --- FIXED ANIMATED GIF HANDLER (Using BytesIO) ---
+# --- SAFE ANIMATED GIF HANDLER WITH FALLBACK ---
 @app.on_callback_query(filters.regex(r"^cat_gif$"))
 async def cb_cat_gif(client: Client, query: CallbackQuery):
-    await query.answer("Fetching a fresh animated cat GIF...")
-    user_id = query.from_user.id
-    settings = USER_STATE.get(user_id, {})
-    
-    url = build_cat_url(user_settings=settings, is_gif=True)
+    await query.answer("Fetching an animated cat GIF...")
+    url = f"https://cataas.com/cat/gif?t={int(time.time() * 1000)}"
     
     kb = InlineKeyboardMarkup([
         [InlineKeyboardButton("🎬 Another GIF", callback_data="cat_gif")],
-        [InlineKeyboardButton("🏠 Main Menu", callback_data="cat_home"), InlineKeyboardButton("❌", callback_data="close")]
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="cat_home"), InlineKeyboardButton("❌ Close", callback_data="cat_close")]
     ])
     
     async with httpx.AsyncClient() as client_http:
@@ -144,12 +166,12 @@ async def cb_cat_gif(client: Client, query: CallbackQuery):
                     reply_markup=kb,
                     parse_mode=ParseMode.MARKDOWN
                 )
-            else:
-                await query.answer("❌ Failed to fetch cat GIF.", show_alert=True)
-        except Exception as e:
-            await query.answer(f"⚠️ Error: {str(e)}", show_alert=True)
+                return
+        except Exception:
+            pass
 
-    
+    await query.answer("⚠️ Cataas GIF server is temporarily busy (502 Gateway). Please try again shortly!", show_alert=True)
+
 
 # --- UI KEYBOARD BUILDERS ---
 def get_main_menu():
