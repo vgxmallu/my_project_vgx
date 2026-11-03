@@ -16,7 +16,7 @@ BREED_CACHE = []
 # --- API HELPER ---
 async def call_cat_api(endpoint: str, params: dict = None, method: str = "GET", payload: dict = None):
     """Executes requests against The Cat API asynchronously using httpx."""
-    headers = {"x-api-key": CAT_API_KEY}
+    headers = {"x-api-key": Config.CAT_API_KEY}
     url = f"{BASE_URL}/{endpoint}"
     async with httpx.AsyncClient() as client:
         try:
