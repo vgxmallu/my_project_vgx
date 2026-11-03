@@ -1,3 +1,5 @@
+import io
+import time
 import os
 import httpx
 import random
@@ -43,20 +45,20 @@ async def fetch_available_tags():
             return ["cute", "sleepy", "fluffy", "kitten", "White", "orange"]
 
 
-# --- URL BUILDER WITH CUSTOMIZATION ---
-def build_cat_url(cat_id: str = None, tag: str = None, says: str = None, user_settings: dict = None) -> str:
-    """Builds a Cataas URL incorporating endpoints, tags, text overlays, and query parameters."""
+# --- HELPER TO BUILD URL WITH CACHE-BUSTING ---
+def build_cat_url(cat_id: str = None, tag: str = None, says: str = None, user_settings: dict = None, is_gif: bool = False) -> str:
     url = "https://cataas.com/cat"
     
-    if tag:
+    if is_gif:
+        url += "/gif"
+    elif tag:
         url += f"/{tag}"
     if says:
         formatted_text = says.replace(" ", "%20")
         url += f"/says/{formatted_text}"
-    elif cat_id and not tag:
+    elif cat_id and not tag and not is_gif:
         url += f"/{cat_id}"
 
-    # Query parameters customization
     params = []
     if user_settings:
         if user_settings.get("width"):
@@ -71,16 +73,83 @@ def build_cat_url(cat_id: str = None, tag: str = None, says: str = None, user_se
                 params.append("filter=custom&r=255&g=100&b=50")
             else:
                 params.append(f"filter={f_val}")
-        if user_settings.get("font_size"):
-            params.append(f"fontSize={user_settings['font_size']}")
-        if user_settings.get("font_color"):
-            params.append(f"fontColor={user_settings['font_color']}")
+
+    # Unique timestamp cache-buster
+    params.append(f"t={int(time.time() * 1000)}")
 
     if params:
         url += "?" + "&".join(params)
 
     return url
 
+
+# --- FIXED RANDOM CAT HANDLER (Using BytesIO to bypass Telegram cache) ---
+@app.on_callback_query(filters.regex(r"^cat_random$"))
+async def cb_cat_random(client: Client, query: CallbackQuery):
+    await query.answer("Fetching a fresh random cat...")
+    user_id = query.from_user.id
+    settings = USER_STATE.get(user_id, {})
+    
+    url = build_cat_url(user_settings=settings)
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🎲 Another Random", callback_data="cat_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="cat_home"), InlineKeyboardButton("❌", callback_data="close")]
+    ])
+    
+    async with httpx.AsyncClient() as client_http:
+        try:
+            resp = await client_http.get(url, timeout=15.0)
+            if resp.status_code == 200:
+                photo_bytes = io.BytesIO(resp.content)
+                photo_bytes.name = "cat.jpg"
+                
+                await query.message.delete()
+                await query.message.reply_photo(
+                    photo=photo_bytes,
+                    caption="🐱 **Random Cat Image**\n_One link, one cat. That's it._",
+                    reply_markup=kb,
+                    parse_mode=ParseMode.MARKDOWN
+                )
+            else:
+                await query.answer("❌ Failed to fetch cat image.", show_alert=True)
+        except Exception as e:
+            await query.answer(f"⚠️ Error: {str(e)}", show_alert=True)
+
+
+# --- FIXED ANIMATED GIF HANDLER (Using BytesIO) ---
+@app.on_callback_query(filters.regex(r"^cat_gif$"))
+async def cb_cat_gif(client: Client, query: CallbackQuery):
+    await query.answer("Fetching a fresh animated cat GIF...")
+    user_id = query.from_user.id
+    settings = USER_STATE.get(user_id, {})
+    
+    url = build_cat_url(user_settings=settings, is_gif=True)
+    
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🎬 Another GIF", callback_data="cat_gif")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="cat_home"), InlineKeyboardButton("❌", callback_data="close")]
+    ])
+    
+    async with httpx.AsyncClient() as client_http:
+        try:
+            resp = await client_http.get(url, timeout=20.0)
+            if resp.status_code == 200:
+                gif_bytes = io.BytesIO(resp.content)
+                gif_bytes.name = "cat.gif"
+                
+                await query.message.delete()
+                await query.message.reply_animation(
+                    animation=gif_bytes,
+                    caption="🎬 **Animated Cat GIF**\n_One link, one cat. That's it._",
+                    reply_markup=kb,
+                    parse_mode=ParseMode.MARKDOWN
+                )
+            else:
+                await query.answer("❌ Failed to fetch cat GIF.", show_alert=True)
+        except Exception as e:
+            await query.answer(f"⚠️ Error: {str(e)}", show_alert=True)
+
+    
 
 # --- UI KEYBOARD BUILDERS ---
 def get_main_menu():
@@ -100,7 +169,7 @@ def get_main_menu():
         ],
         [
             InlineKeyboardButton("📖 Help & Info", callback_data="cat_help_menu"),
-            InlineKeyboardButton("❌ Close", callback_data="cat_close")
+            InlineKeyboardButton("❌", callback_data="close")
         ]
     ])
 
@@ -122,7 +191,7 @@ def get_pagination_keyboard(index: int, total: int, mode: str = "gallery", targe
             InlineKeyboardButton("🏠 Main Menu", callback_data="cat_home")
         ],
         [
-            InlineKeyboardButton("❌ Close", callback_data="cat_close")
+            InlineKeyboardButton("❌", callback_data="close")
         ]
     ])
 
@@ -209,42 +278,10 @@ async def cb_cat_help(client: Client, query: CallbackQuery):
     kb = InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Main Menu", callback_data="cat_home")]])
     await query.message.edit_text(help_text, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
 
-@app.on_callback_query(filters.regex(r"^cat_close$"))
-async def cb_cat_close(client: Client, query: CallbackQuery):
-    await query.answer("Closed ❌")
-    await query.message.delete()
 
 @app.on_callback_query(filters.regex(r"^cat_noop$"))
 async def cb_cat_noop(client: Client, query: CallbackQuery):
     await query.answer("📌 Cataas Gallery Index", show_alert=False)
-
-@app.on_callback_query(filters.regex(r"^cat_random$"))
-async def cb_cat_random(client: Client, query: CallbackQuery):
-    await query.answer("Fetching random cat...")
-    user_id = query.from_user.id
-    settings = USER_STATE.get(user_id, {})
-    
-    url = build_cat_url(user_settings=settings)
-    kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🎲 Another Random", callback_data="cat_random")],
-        [InlineKeyboardButton("🏠 Main Menu", callback_data="cat_home"), InlineKeyboardButton("❌ Close", callback_data="cat_close")]
-    ])
-    
-    await query.message.delete()
-    await query.message.reply_photo(photo=url, caption="🐱 **Random Cat Image**\n_One link, one cat. That's it._", reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
-
-@app.on_callback_query(filters.regex(r"^cat_gif$"))
-async def cb_cat_gif(client: Client, query: CallbackQuery):
-    await query.answer("Fetching animated cat GIF...")
-    url = "https://cataas.com/cat/gif"
-    
-    kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🎬 Another GIF", callback_data="cat_gif")],
-        [InlineKeyboardButton("🏠 Main Menu", callback_data="cat_home"), InlineKeyboardButton("❌ Close", callback_data="cat_close")]
-    ])
-    
-    await query.message.delete()
-    await query.message.reply_animation(animation=url, caption="🎬 **Animated Cat GIF**\n_One link, one cat. That's it._", reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
 
 @app.on_callback_query(filters.regex(r"^cat_gallery_(?P<idx>\d+)$"))
 async def cb_cat_gallery(client: Client, query: CallbackQuery):
