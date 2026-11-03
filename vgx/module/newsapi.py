@@ -20,7 +20,7 @@ async def fetch_world_news(category: str = "general"):
         "apiKey": Config.NEWS_API_KEY,
         "language": "en",
         "category": category,
-        "pageSize": 50
+        "pageSize": 100
     }
     async with httpx.AsyncClient() as client:
         try:
