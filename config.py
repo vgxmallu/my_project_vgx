@@ -35,6 +35,9 @@ class Config:
 
     #API'
     NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+
+    
+    CAT_API_KEY = os.getenv("CAT_API_KEY")
     
     FOOTBALL_API_KEY = os.getenv("FOOTBALL_API_KEY")
     FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4"
