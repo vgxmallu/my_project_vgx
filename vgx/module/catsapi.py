@@ -46,12 +46,11 @@ async def fetch_available_tags():
 # --- URL BUILDER WITH CUSTOMIZATION ---
 def build_cat_url(cat_id: str = None, tag: str = None, says: str = None, user_settings: dict = None) -> str:
     """Builds a Cataas URL incorporating endpoints, tags, text overlays, and query parameters."""
-    url = BASE_URL_PATH = "https://cataas.com/cat"
+    url = "https://cataas.com/cat"
     
     if tag:
         url += f"/{tag}"
     if says:
-        # URL encode text spaces
         formatted_text = says.replace(" ", "%20")
         url += f"/says/{formatted_text}"
     elif cat_id and not tag:
@@ -100,6 +99,7 @@ def get_main_menu():
             InlineKeyboardButton("⚙️ Custom Filters & Layout", callback_data="cat_settings_menu")
         ],
         [
+            InlineKeyboardButton("📖 Help & Info", callback_data="cat_help_menu"),
             InlineKeyboardButton("❌ Close", callback_data="cat_close")
         ]
     ])
@@ -134,8 +134,8 @@ def get_settings_keyboard(settings: dict):
 
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton(f"🎨 Filter: {cur_filter.capitalize()}", callback_data="cat_set_filter_toggle"),
-            InlineKeyboardButton(f"📐 Type: {cur_type.capitalize()}", callback_data="cat_set_type_toggle")
+            InlineKeyboardButton(f"🎨 Filter: {str(cur_filter).capitalize()}", callback_data="cat_set_filter_toggle"),
+            InlineKeyboardButton(f"📐 Type: {str(cur_type).capitalize()}", callback_data="cat_set_type_toggle")
         ],
         [
             InlineKeyboardButton(f"📏 Size: {cur_size}", callback_data="cat_set_size_toggle"),
@@ -155,11 +155,29 @@ async def cats_command(client: Client, message: Message):
     USER_STATE[user_id] = {"filter": None, "type": None, "size": "Default", "width": None, "height": None}
 
     welcome_text = (
-        "🐱 **Cataas (Cat as a Service) Hub**\n\n"
+        "🐱 **CATAAS — Cat as a Service**\n"
+        "_Serves random cat images and GIFs, with text, filters and tags. One link, one cat. That's it._ 🐾\n\n"
         "Welcome! Explore endless cat photos, GIFs, tag filters, custom text memes, and visual effects.\n\n"
         "👇 **Select an option below to begin:**"
     )
     await message.reply_text(welcome_text, reply_markup=get_main_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_message(filters.command("catshelp"))
+async def cats_help_command(client: Client, message: Message):
+    """Command: /catshelp - Displays official Cataas information."""
+    help_text = (
+        "📖 **CATAAS — Help & Documentation**\n\n"
+        "_“CATAAS — Cat as a Service — serves random cat images and GIFs, with text, filters and tags. One link, one cat. That's it.”_\n\n"
+        "**Features Included:**\n"
+        "• **Random Cat / GIF:** Instant streaming via direct service endpoints.\n"
+        "• **Gallery Navigation:** Use `Next` and `Prev` buttons to browse cat records seamlessly.\n"
+        "• **Tag Filters:** Filter cats by keywords (`cute`, `sleepy`, `fluffy`, etc.).\n"
+        "• **Text Memes (`/catsays`):** Overlay custom messages directly onto cat photos.\n"
+        "• **Customization & Filters:** Apply blur, mono, negate, custom RGB, or adjust layout dimensions (`square`, `400x300`, etc.)."
+    )
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Main Menu", callback_data="cat_home")]])
+    await message.reply_text(help_text, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
 
 
 # --- STRICT REGEX CALLBACK ROUTERS ---
@@ -168,11 +186,28 @@ async def cats_command(client: Client, message: Message):
 async def cb_cat_home(client: Client, query: CallbackQuery):
     await query.answer()
     welcome_text = (
-        "🐱 **Cataas (Cat as a Service) Hub**\n\n"
+        "🐱 **CATAAS — Cat as a Service**\n"
+        "_Serves random cat images and GIFs, with text, filters and tags. One link, one cat. That's it._ 🐾\n\n"
         "Welcome! Explore endless cat photos, GIFs, tag filters, custom text memes, and visual effects.\n\n"
         "👇 **Select an option below to begin:**"
     )
     await query.message.edit_text(welcome_text, reply_markup=get_main_menu(), parse_mode=ParseMode.MARKDOWN)
+
+@app.on_callback_query(filters.regex(r"^cat_help_menu$"))
+async def cb_cat_help(client: Client, query: CallbackQuery):
+    await query.answer()
+    help_text = (
+        "📖 **CATAAS — Help & Documentation**\n\n"
+        "_“CATAAS — Cat as a Service — serves random cat images and GIFs, with text, filters and tags. One link, one cat. That's it.”_\n\n"
+        "**Features Included:**\n"
+        "• **Random Cat / GIF:** Instant streaming via direct service endpoints.\n"
+        "• **Gallery Navigation:** Use `Next` and `Prev` buttons to browse cat records seamlessly.\n"
+        "• **Tag Filters:** Filter cats by keywords (`cute`, `sleepy`, `fluffy`, etc.).\n"
+        "• **Text Memes (`/catsays`):** Overlay custom messages directly onto cat photos.\n"
+        "• **Customization & Filters:** Apply blur, mono, negate, custom RGB, or adjust layout dimensions."
+    )
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Main Menu", callback_data="cat_home")]])
+    await query.message.edit_text(help_text, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
 
 @app.on_callback_query(filters.regex(r"^cat_close$"))
 async def cb_cat_close(client: Client, query: CallbackQuery):
@@ -196,7 +231,7 @@ async def cb_cat_random(client: Client, query: CallbackQuery):
     ])
     
     await query.message.delete()
-    await query.message.reply_photo(photo=url, caption="🐱 **Random Cat Image**", reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
+    await query.message.reply_photo(photo=url, caption="🐱 **Random Cat Image**\n_One link, one cat. That's it._", reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
 
 @app.on_callback_query(filters.regex(r"^cat_gif$"))
 async def cb_cat_gif(client: Client, query: CallbackQuery):
@@ -209,7 +244,7 @@ async def cb_cat_gif(client: Client, query: CallbackQuery):
     ])
     
     await query.message.delete()
-    await query.message.reply_animation(animation=url, caption="🎬 **Animated Cat GIF**", reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
+    await query.message.reply_animation(animation=url, caption="🎬 **Animated Cat GIF**\n_One link, one cat. That's it._", reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
 
 @app.on_callback_query(filters.regex(r"^cat_gallery_(?P<idx>\d+)$"))
 async def cb_cat_gallery(client: Client, query: CallbackQuery):
@@ -233,7 +268,7 @@ async def cb_cat_gallery(client: Client, query: CallbackQuery):
         tags_str = ", ".join(cat.get("tags", ["cat"]))
         await query.message.reply_photo(
             photo=url,
-            caption=f"🖼️ **Cat Gallery Record**\n🏷️ **Tags:** `{tags_str}`",
+            caption=f"🖼️ **Cat Gallery Record**\n🏷️ **Tags:** `{tags_str}`\n_One link, one cat. That's it._",
             reply_markup=kb,
             parse_mode=ParseMode.MARKDOWN
         )
@@ -258,8 +293,9 @@ async def cb_cat_tags_menu(client: Client, query: CallbackQuery):
     keyboard.append([InlineKeyboardButton("🏠 Main Menu", callback_data="cat_home")])
 
     await query.message.edit_text(
-        "🏷️ **Select a Cat Tag Category:**",
-        reply_markup=InlineKeyboardMarkup(keyboard)
+        "🏷️ **Select a Cat Tag Category:**\n_Serves random cat images filtered by tags._",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode=ParseMode.MARKDOWN
     )
 
 @app.on_callback_query(filters.regex(r"^cat_tag_(?P<tag>[a-zA-Z]+)_(?P<idx>\d+)$"))
@@ -269,7 +305,6 @@ async def cb_cat_tag_pagination(client: Client, query: CallbackQuery):
     user_id = query.from_user.id
     settings = USER_STATE.get(user_id, {})
 
-    # Fetch cats filtered by tag
     url_api = f"https://cataas.com/api/cats?tags={tag}&limit=30"
     async with httpx.AsyncClient() as client:
         resp = await client.get(url_api)
@@ -326,7 +361,7 @@ async def catsays_command(client: Client, message: Message):
 
     await message.reply_photo(
         photo=url,
-        caption=f"💬 **Cat Meme Overlay:**\n`{text_msg}`",
+        caption=f"💬 **Cat Meme Overlay:**\n`{text_msg}`\n_One link, one cat. That's it._",
         reply_markup=kb,
         parse_mode=ParseMode.MARKDOWN
     )
