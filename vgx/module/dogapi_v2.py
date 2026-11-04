@@ -9,69 +9,6 @@ from datetime import datetime, timedelta
 
 
 
-BASE_URL = "https://dogapi.dog/api/v2/facts"
-
-# --- API HELPER ---
-async def fetch_dog_facts(limit: int = 1):
-    """Fetches random dog fact(s) asynchronously from Dog API v2."""
-    params = {"limit": limit}
-    async with httpx.AsyncClient() as client:
-        try:
-            resp = await client.get(BASE_URL, params=params, timeout=10.0)
-            resp.raise_for_status()
-            data = resp.json()
-            return [item["attributes"]["body"] for item in data.get("data", [])]
-        except Exception as e:
-            print(f"Dog Facts API Error: {e}")
-            return []
-
-
-# --- COMMAND HANDLERS ---
-
-@app.on_message(filters.command(["dogfact", "fact"]))
-async def cmd_single_dog_fact(client: Client, message: Message):
-    """Command: /dogfact or /fact - Fetches 1 random dog fact."""
-    facts = await fetch_dog_facts(limit=1)
-    
-    if not facts:
-        return await message.reply_text("❌ Failed to fetch a dog fact. Please try again!")
-
-    fact_text = f"🐶 **Did you know?**\n\n_{facts[0]}_"
-    await message.reply_text(fact_text, parse_mode=ParseMode.MARKDOWN)
-
-
-@app.on_message(filters.command(["dogfacts", "facts"]))
-async def cmd_multiple_dog_facts(client: Client, message: Message):
-    """Command: /dogfacts <count> - Fetches multiple dog facts (e.g., /dogfacts 3)."""
-    args = message.command
-    count = 3  # Default count if omitted
-    
-    if len(args) > 1 and args[1].isdigit():
-        count = min(max(int(args[1]), 1), 5)  # Constrain between 1 and 5 facts for readability
-
-    facts = await fetch_dog_facts(limit=count)
-    
-    if not facts:
-        return await message.reply_text("❌ Failed to fetch dog facts. Please try again!")
-
-    response_text = f"🐾 **Here are {len(facts)} Dog Facts:**\n\n"
-    for idx, fact in enumerate(facts, 1):
-        response_text += f"{idx}. _{fact}_\n\n"
-
-    await message.reply_text(response_text, parse_mode=ParseMode.MARKDOWN)
-
-
-@app.on_message(filters.command("facthelp"))
-async def cmd_fact_help(client: Client, message: Message):
-    """Command: /facthelp - Displays command guide for dog facts."""
-    help_text = (
-        "📖 **Dog Facts Bot — Command Guide**\n\n"
-        "• `/dogfact` or `/fact` — Get 1 random dog fact.\n"
-        "• `/dogfacts <number>` — Get multiple facts (e.g., `/dogfacts 3`).\n"
-        "• `/facthelp` — View this help guide.\n\n"
-        "_Powered by Dog API v2 — No API key required!_"
-    )
-    await message.reply_text(help_text, parse_mode=ParseMode.MARKDOWN)
 
 
 
