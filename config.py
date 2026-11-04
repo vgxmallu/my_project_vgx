@@ -36,6 +36,7 @@ class Config:
     #API'
     NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
+    GOFILE_API_TOKEN = os.getenv("GOFILE_API_TOKEN")
     
     CAT_API_KEY = os.getenv("CAT_API_KEY")
     
