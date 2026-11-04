@@ -8,56 +8,66 @@ from config import Config
 from datetime import datetime, timedelta
 
 
+
 BASE_URL = "https://random.dog/woof.json"
 
-# --- API HELPER ---
+# --- API & BULLETPROOF DOWNLOAD HELPER ---
 async def fetch_random_dog_media():
-    """Fetches a random dog item (image, GIF, or video URL) from Random.dog API."""
+    """Fetches a random dog item URL from Random.dog API and downloads its raw bytes."""
     async with httpx.AsyncClient() as client:
         try:
+            # Step 1: Get the JSON response containing the file URL
             resp = await client.get(BASE_URL, timeout=15.0)
             resp.raise_for_status()
             data = resp.json()
             file_path = data.get("url")
-            if file_path:
-                if file_path.startswith("http"):
-                    return file_path
-                return f"https://random.dog/{file_path}"
+            
+            if not file_path:
+                return None, None
+
+            media_url = file_path if file_path.startswith("http") else f"https://random.dog/{file_path}"
+            
+            # Step 2: Download the actual media bytes into memory (bypasses Telegram URL fetch limits)
+            media_resp = await client.get(media_url, timeout=30.0)
+            if media_resp.status_code == 200:
+                return media_resp.content, media_url
         except Exception as e:
-            print(f"RandomDog API Error: {e}")
-        return None
-
-
-# --- SMART MEDIA SENDER ---
-async def send_media_by_extension(client: Client, message: Message, media_url: str):
-    """Detects file extension (.jpg, .mp4, .gif) and calls correct Pyrogram method."""
-    lower_url = media_url.lower()
-    caption = "🐶 **Random Dog Media**\n_Powered by Random.dog_"
-    
-    try:
-        if lower_url.endswith((".mp4", ".webm", ".mov")):
-            await client.send_video(chat_id=message.chat.id, video=media_url, caption=caption, parse_mode=ParseMode.MARKDOWN)
-        elif lower_url.endswith(".gif"):
-            await client.send_animation(chat_id=message.chat.id, animation=media_url, caption=caption, parse_mode=ParseMode.MARKDOWN)
-        else:
-            await client.send_photo(chat_id=message.chat.id, photo=media_url, caption=caption, parse_mode=ParseMode.MARKDOWN)
-    except Exception as e:
-        await message.reply_text(f"❌ Error sending media file: {str(e)}")
+            print(f"RandomDog Error: {e}")
+            
+        return None, None
 
 
 # --- COMMAND HANDLERS ---
 
-@app.on_message(filters.command("randdog"))
+@app.on_message(filters.command(["woof", "randomdog", "randdog", "dog"]))
 async def cmd_random_dog(client: Client, message: Message):
     """Command: /woof, /randomdog, /randdog, or /dog - Fetches a random dog photo, GIF, or video."""
     msg = await message.reply_text("Fetching a random dog...")
     
-    media_url = await fetch_random_dog_media()
-    if not media_url:
+    media_bytes, media_url = await fetch_random_dog_media()
+    if not media_bytes or not media_url:
         return await msg.edit_text("❌ Failed to fetch random dog media. Please try again!")
 
     await msg.delete()
-    await send_media_by_extension(client, message, media_url)
+    
+    lower_url = media_url.lower()
+    caption = "🐶 **Random Dog Media**\n_Powered by Random.dog_"
+    
+    try:
+        file_io = io.BytesIO(media_bytes)
+        
+        if lower_url.endswith((".mp4", ".webm", ".mov")):
+            file_io.name = "dog.mp4"
+            await client.send_video(chat_id=message.chat.id, video=file_io, caption=caption, parse_mode=ParseMode.MARKDOWN)
+        elif lower_url.endswith(".gif"):
+            file_io.name = "dog.gif"
+            await client.send_animation(chat_id=message.chat.id, animation=file_io, caption=caption, parse_mode=ParseMode.MARKDOWN)
+        else:
+            file_io.name = "dog.jpg"
+            await client.send_photo(chat_id=message.chat.id, photo=file_io, caption=caption, parse_mode=ParseMode.MARKDOWN)
+            
+    except Exception as e:
+        await message.reply_text(f"❌ Error sending media file: {str(e)}")
 
 
 @app.on_message(filters.command("woofhelp"))
