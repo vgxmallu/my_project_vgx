@@ -7,6 +7,72 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from config import Config
 from datetime import datetime, timedelta
 
+
+BASE_URL = "https://random.dog/woof.json"
+
+# --- API HELPER ---
+async def fetch_random_dog_media():
+    """Fetches a random dog item (image, GIF, or video URL) from Random.dog API."""
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.get(BASE_URL, timeout=15.0)
+            resp.raise_for_status()
+            data = resp.json()
+            file_path = data.get("url")
+            if file_path:
+                if file_path.startswith("http"):
+                    return file_path
+                return f"https://random.dog/{file_path}"
+        except Exception as e:
+            print(f"RandomDog API Error: {e}")
+        return None
+
+
+# --- SMART MEDIA SENDER ---
+async def send_media_by_extension(client: Client, message: Message, media_url: str):
+    """Detects file extension (.jpg, .mp4, .gif) and calls correct Pyrogram method."""
+    lower_url = media_url.lower()
+    caption = "🐶 **Random Dog Media**\n_Powered by Random.dog_"
+    
+    try:
+        if lower_url.endswith((".mp4", ".webm", ".mov")):
+            await client.send_video(chat_id=message.chat.id, video=media_url, caption=caption, parse_mode=ParseMode.MARKDOWN)
+        elif lower_url.endswith(".gif"):
+            await client.send_animation(chat_id=message.chat.id, animation=media_url, caption=caption, parse_mode=ParseMode.MARKDOWN)
+        else:
+            await client.send_photo(chat_id=message.chat.id, photo=media_url, caption=caption, parse_mode=ParseMode.MARKDOWN)
+    except Exception as e:
+        await message.reply_text(f"❌ Error sending media file: {str(e)}")
+
+
+# --- COMMAND HANDLERS ---
+
+@app.on_message(filters.command("randdog"))
+async def cmd_random_dog(client: Client, message: Message):
+    """Command: /woof, /randomdog, /randdog, or /dog - Fetches a random dog photo, GIF, or video."""
+    msg = await message.reply_text("Fetching a random dog...")
+    
+    media_url = await fetch_random_dog_media()
+    if not media_url:
+        return await msg.edit_text("❌ Failed to fetch random dog media. Please try again!")
+
+    await msg.delete()
+    await send_media_by_extension(client, message, media_url)
+
+
+@app.on_message(filters.command("woofhelp"))
+async def cmd_woof_help(client: Client, message: Message):
+    """Command: /woofhelp - Displays simple command instructions."""
+    help_text = (
+        "📖 **Random.dog — Command Guide**\n\n"
+        "• `/woof` or `/randomdog` — Get a random dog photo, GIF, or video.\n"
+        "• `/randdog` or `/dog` — Alternative quick commands.\n"
+        "• `/woofhelp` — View this help guide.\n\n"
+        "_Powered by Random.dog (/woof.json) — No API key required!_"
+    )
+    await message.reply_text(help_text, parse_mode=ParseMode.MARKDOWN)
+
+
 db_client = AsyncIOMotorClient(Config.MONGO_URL)
 db = db_client["Dog_api_v2_db"]
 
