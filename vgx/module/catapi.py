@@ -5,13 +5,40 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, 
 from pyrogram.enums import ParseMode, ButtonStyle
 from vgx import app
 from config import Config
+from motor.motor_asyncio import AsyncIOMotorClient
+from datetime import datetime, timedelta
 
+db_client = AsyncIOMotorClient(Config.MONGO_URL)
+db = db_client["Cats_api_db"]
 # API Key Configuration (Free key from https://thecatapi.com)
 BASE_URL = "https://api.thecatapi.com/v1"
 
 # Session state caches
 USER_SESSIONS = {}
 BREED_CACHE = []
+
+# --- MONGODB DATABASE HELPERS ---
+async def add_cat_favorite(user_id: int, image_id: str, image_url: str):
+    """Saves a cat image to user's favorites in MongoDB."""
+    await db.cat_favorites.update_one(
+        {"user_id": user_id, "image_id": image_id},
+        {"$set": {"user_id": user_id, "image_id": image_id, "image_url": image_url}},
+        upsert=True
+    )
+
+async def get_cat_favorites(user_id: int):
+    """Retrieves all saved favorite cat records for a user from MongoDB."""
+    cursor = db.cat_favorites.find({"user_id": user_id}).sort("_id", -1).limit(20)
+    return await cursor.to_list(length=None)
+
+async def record_cat_vote(user_id: int, image_id: str, vote_value: int):
+    """Records a vote for a specific cat image in MongoDB."""
+    await db.cat_votes.update_one(
+        {"user_id": user_id, "image_id": image_id},
+        {"$set": {"vote": vote_value}},
+        upsert=True
+    )
+
 
 # --- API HELPER ---
 async def call_cat_api(endpoint: str, params: dict = None, method: str = "GET", payload: dict = None):
@@ -61,11 +88,11 @@ def get_main_menu():
         ],
         [
             InlineKeyboardButton("📖 Help & Info", callback_data="tc_help_menu", style=ButtonStyle.PRIMARY),
-            InlineKeyboardButton("❌ Close", callback_data="tc_close", style=ButtonStyle.DANGER)
+            InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
         ]
     ])
 
-def get_pagination_keyboard(index: int, total: int, mode: str, item_id: str = ""):
+def get_pagination_keyboard(index: int, total: int, mode: str, item_id: str = "", image_url: str = ""):
     """Strict callback-controlled navigation menu (Next/Prev)."""
     prev_idx = max(0, index - 1)
     next_idx = min(total - 1, index + 1)
@@ -80,6 +107,7 @@ def get_pagination_keyboard(index: int, total: int, mode: str, item_id: str = ""
     ]
 
     if item_id and mode in ["img", "gif"]:
+        # URL encoded/shortened callback payload if needed, or matched securely
         buttons.append([
             InlineKeyboardButton("👍 Vote Up", callback_data=f"tc_vote_{item_id}_1", style=ButtonStyle.PRIMARY),
             InlineKeyboardButton("❤️ Favourite", callback_data=f"tc_addfav_{item_id}", style=ButtonStyle.PRIMARY)
@@ -87,7 +115,7 @@ def get_pagination_keyboard(index: int, total: int, mode: str, item_id: str = ""
 
     buttons.append([
         InlineKeyboardButton("🏠 Main Hub", callback_data="tc_home", style=ButtonStyle.PRIMARY),
-        InlineKeyboardButton("❌ Close", callback_data="tc_close", style=ButtonStyle.DANGER)
+        InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
     ])
 
     return InlineKeyboardMarkup(buttons)
@@ -137,7 +165,6 @@ async def cb_public_images(client: Client, query: CallbackQuery):
     
     await query.answer(f"Fetching cat {mode.upper()}...")
     
-    # Session fetch or pagination state
     session_key = f"cats_{mode}"
     user_data = USER_SESSIONS.setdefault(user_id, {})
     
@@ -157,13 +184,16 @@ async def cb_public_images(client: Client, query: CallbackQuery):
     image_id = item.get("id")
     breeds = item.get("breeds", [])
     
+    # Store active item url in session for favorite mapping
+    user_data[f"active_{image_id}"] = image_url
+
     caption = f"🐱 **Public Cat Image ({idx + 1}/{len(items)})**\n"
     if breeds:
         b = breeds[0]
         caption += f"🧬 **Breed:** `{b.get('name')}`\n🌟 **Temperament:** `{b.get('temperament')}`\n"
     caption += f"📌 **ID:** `{image_id}`"
 
-    kb = get_pagination_keyboard(idx, len(items), mode, item_id=image_id)
+    kb = get_pagination_keyboard(idx, len(items), mode, item_id=image_id, image_url=image_url)
     
     try:
         await query.message.delete()
@@ -219,43 +249,59 @@ async def cb_breeds(client: Client, query: CallbackQuery):
     await query.message.edit_text(text, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
 
 
-# --- 3. VOTE & FAVOURITES SYSTEM ---
+# --- 3. MONGODB VOTE & FAVOURITES SYSTEM ---
 
 @app.on_callback_query(filters.regex(r"^tc_vote_(?P<img_id>[a-zA-Z0-9_-]+)_(?P<val>1|-1)$"))
 async def cb_vote(client: Client, query: CallbackQuery):
     img_id = query.matches[0].group("img_id")
     val = int(query.matches[0].group("val"))
+    user_id = query.from_user.id
     
-    res = await call_cat_api("votes", method="POST", payload={"image_id": img_id, "value": val})
-    if res and res.get("message") == "SUCCESS":
-        await query.answer("👍 Vote recorded successfully!", show_alert=True)
+    await record_cat_vote(user_id, img_id, val)
+    if val == 1:
+        await query.answer("👍 Vote Up recorded successfully in MongoDB!", show_alert=True)
     else:
-        await query.answer("❌ Vote failed or API key missing.", show_alert=True)
+        await query.answer("👎 Vote Down recorded in MongoDB.", show_alert=True)
 
 @app.on_callback_query(filters.regex(r"^tc_addfav_(?P<img_id>[a-zA-Z0-9_-]+)$"))
 async def cb_add_fav(client: Client, query: CallbackQuery):
     img_id = query.matches[0].group("img_id")
+    user_id = query.from_user.id
     
-    res = await call_cat_api("favourites", method="POST", payload={"image_id": img_id})
-    if res and res.get("message") == "SUCCESS":
-        await query.answer("❤️ Added to your API Favourites!", show_alert=True)
-    else:
-        await query.answer("❌ Failed to save favourite.", show_alert=True)
+    user_data = USER_SESSIONS.get(user_id, {})
+    image_url = user_data.get(f"active_{img_id}")
+
+    if not image_url:
+        # Fallback query if url not cached in session
+        image_url = f"https://cdn2.thecatapi.com/images/{img_id}.jpg"
+
+    await add_cat_favorite(user_id, img_id, image_url)
+    await query.answer("❤️ Added to your MongoDB Favourites!", show_alert=True)
 
 @app.on_callback_query(filters.regex(r"^tc_fav_menu$"))
 async def cb_fav_menu(client: Client, query: CallbackQuery):
-    await query.answer("Loading your favourites...")
-    favs = await call_cat_api("favourites")
+    await query.answer("Loading your favourites from MongoDB...")
+    user_id = query.from_user.id
+    favs = await get_cat_favorites(user_id)
     
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="tc_home", style=ButtonStyle.PRIMARY)],
+        [InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)]
+    ])
+
     if not favs:
         text = "⭐ **Your Favourites**\n\nNo favourite cats saved yet. Browse random photos and click **❤️ Favourite** to collect them!"
-    else:
-        text = f"⭐ **Your Favourites List**\n\nTotal saved cats: `{len(favs)}`\n"
-        for idx, f_item in enumerate(favs[:5], 1):
-            text += f"{idx}. Image ID: `{f_item.get('image_id')}`\n"
-            
-    kb = InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Main Menu", callback_data="tc_home", style=ButtonStyle.PRIMARY)]])
-    await query.message.edit_text(text, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
+        return await query.message.edit_text(text, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
+
+    # Display the first saved favourite photo
+    fav = favs[0]
+    caption = f"⭐ **Your Saved Favourites (1 / {len(favs)})**\n📌 ID: `{fav.get('image_id')}`\n_Stored securely in MongoDB_"
+    
+    try:
+        await query.message.delete()
+        await query.message.reply_photo(photo=fav.get("image_url"), caption=caption, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
+    except Exception:
+        await query.message.edit_text("⭐ Failed to load favourite photo.", reply_markup=kb)
 
 
 # --- 4. PET HEALTH, CALORIES & BODY CONDITION HUB ---
@@ -277,7 +323,8 @@ async def cb_health_menu(client: Client, query: CallbackQuery):
             InlineKeyboardButton("🐈 Body Condition Score", callback_data="tc_calc_bcs", style=ButtonStyle.PRIMARY)
         ],
         [
-            InlineKeyboardButton("🏠 Main Menu", callback_data="tc_home", style=ButtonStyle.PRIMARY)
+            InlineKeyboardButton("🏠 Main Menu", callback_data="tc_home", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER)
         ]
     ])
     await query.message.edit_text(text, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
@@ -305,7 +352,6 @@ async def cmd_cat_calories(client: Client, message: Message):
         weight = float(args[1])
         stage = args[2].lower()
         
-        # Vet Formula RER = 70 * (weight ^ 0.75)
         rer = 70 * (weight ** 0.75)
         factor = 1.2 if stage == "neutered" else 1.4 if stage == "adult" else 2.5 if stage == "kitten" else 1.1
         total_calories = round(rer * factor)
