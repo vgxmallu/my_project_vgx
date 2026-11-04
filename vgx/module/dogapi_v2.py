@@ -9,78 +9,70 @@ from datetime import datetime, timedelta
 
 
 
-BASE_URL = "https://random.dog/woof.json"
+BASE_URL = "https://dogapi.dog/api/v2/facts"
 
-# --- API & BULLETPROOF DOWNLOAD HELPER ---
-async def fetch_random_dog_media():
-    """Fetches a random dog item URL from Random.dog API and downloads its raw bytes."""
+# --- API HELPER ---
+async def fetch_dog_facts(limit: int = 1):
+    """Fetches random dog fact(s) asynchronously from Dog API v2."""
+    params = {"limit": limit}
     async with httpx.AsyncClient() as client:
         try:
-            # Step 1: Get the JSON response containing the file URL
-            resp = await client.get(BASE_URL, timeout=15.0)
+            resp = await client.get(BASE_URL, params=params, timeout=10.0)
             resp.raise_for_status()
             data = resp.json()
-            file_path = data.get("url")
-            
-            if not file_path:
-                return None, None
-
-            media_url = file_path if file_path.startswith("http") else f"https://random.dog/{file_path}"
-            
-            # Step 2: Download the actual media bytes into memory (bypasses Telegram URL fetch limits)
-            media_resp = await client.get(media_url, timeout=30.0)
-            if media_resp.status_code == 200:
-                return media_resp.content, media_url
+            return [item["attributes"]["body"] for item in data.get("data", [])]
         except Exception as e:
-            print(f"RandomDog Error: {e}")
-            
-        return None, None
+            print(f"Dog Facts API Error: {e}")
+            return []
 
 
 # --- COMMAND HANDLERS ---
 
-@app.on_message(filters.command(["woof", "randomdog", "randdog", "dog"]))
-async def cmd_random_dog(client: Client, message: Message):
-    """Command: /woof, /randomdog, /randdog, or /dog - Fetches a random dog photo, GIF, or video."""
-    msg = await message.reply_text("Fetching a random dog...")
+@app.on_message(filters.command(["dogfact", "fact"]))
+async def cmd_single_dog_fact(client: Client, message: Message):
+    """Command: /dogfact or /fact - Fetches 1 random dog fact."""
+    facts = await fetch_dog_facts(limit=1)
     
-    media_bytes, media_url = await fetch_random_dog_media()
-    if not media_bytes or not media_url:
-        return await msg.edit_text("❌ Failed to fetch random dog media. Please try again!")
+    if not facts:
+        return await message.reply_text("❌ Failed to fetch a dog fact. Please try again!")
 
-    await msg.delete()
-    
-    lower_url = media_url.lower()
-    caption = "🐶 **Random Dog Media**\n_Powered by Random.dog_"
-    
-    try:
-        file_io = io.BytesIO(media_bytes)
-        
-        if lower_url.endswith((".mp4", ".webm", ".mov")):
-            file_io.name = "dog.mp4"
-            await client.send_video(chat_id=message.chat.id, video=file_io, caption=caption, parse_mode=ParseMode.MARKDOWN)
-        elif lower_url.endswith(".gif"):
-            file_io.name = "dog.gif"
-            await client.send_animation(chat_id=message.chat.id, animation=file_io, caption=caption, parse_mode=ParseMode.MARKDOWN)
-        else:
-            file_io.name = "dog.jpg"
-            await client.send_photo(chat_id=message.chat.id, photo=file_io, caption=caption, parse_mode=ParseMode.MARKDOWN)
-            
-    except Exception as e:
-        await message.reply_text(f"❌ Error sending media file: {str(e)}")
+    fact_text = f"🐶 **Did you know?**\n\n_{facts[0]}_"
+    await message.reply_text(fact_text, parse_mode=ParseMode.MARKDOWN)
 
 
-@app.on_message(filters.command("woofhelp"))
-async def cmd_woof_help(client: Client, message: Message):
-    """Command: /woofhelp - Displays simple command instructions."""
+@app.on_message(filters.command(["dogfacts", "facts"]))
+async def cmd_multiple_dog_facts(client: Client, message: Message):
+    """Command: /dogfacts <count> - Fetches multiple dog facts (e.g., /dogfacts 3)."""
+    args = message.command
+    count = 3  # Default count if omitted
+    
+    if len(args) > 1 and args[1].isdigit():
+        count = min(max(int(args[1]), 1), 5)  # Constrain between 1 and 5 facts for readability
+
+    facts = await fetch_dog_facts(limit=count)
+    
+    if not facts:
+        return await message.reply_text("❌ Failed to fetch dog facts. Please try again!")
+
+    response_text = f"🐾 **Here are {len(facts)} Dog Facts:**\n\n"
+    for idx, fact in enumerate(facts, 1):
+        response_text += f"{idx}. _{fact}_\n\n"
+
+    await message.reply_text(response_text, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_message(filters.command("facthelp"))
+async def cmd_fact_help(client: Client, message: Message):
+    """Command: /facthelp - Displays command guide for dog facts."""
     help_text = (
-        "📖 **Random.dog — Command Guide**\n\n"
-        "• `/woof` or `/randomdog` — Get a random dog photo, GIF, or video.\n"
-        "• `/randdog` or `/dog` — Alternative quick commands.\n"
-        "• `/woofhelp` — View this help guide.\n\n"
-        "_Powered by Random.dog (/woof.json) — No API key required!_"
+        "📖 **Dog Facts Bot — Command Guide**\n\n"
+        "• `/dogfact` or `/fact` — Get 1 random dog fact.\n"
+        "• `/dogfacts <number>` — Get multiple facts (e.g., `/dogfacts 3`).\n"
+        "• `/facthelp` — View this help guide.\n\n"
+        "_Powered by Dog API v2 — No API key required!_"
     )
     await message.reply_text(help_text, parse_mode=ParseMode.MARKDOWN)
+
 
 
 db_client = AsyncIOMotorClient(Config.MONGO_URL)
