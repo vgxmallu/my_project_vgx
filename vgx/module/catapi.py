@@ -8,6 +8,77 @@ from config import Config
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime, timedelta
 
+
+#====================================================
+
+BASE_URL = "https://meowfacts.herokuapp.com"
+
+# --- API HELPER ---
+async def fetch_cat_facts(count: int = 1, lang: str = "eng"):
+    """Fetches random cat fact(s) asynchronously from Meowfacts API."""
+    params = {"count": count, "lang": lang}
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(BASE_URL, params=params, timeout=10.0)
+            response.raise_for_status()
+            data = response.json()
+            return data.get("data", [])
+        except Exception as e:
+            print(f"Meowfacts API Error: {e}")
+            return []
+
+
+# --- COMMAND HANDLERS ---
+
+@app.on_message(filters.command(["meowfact", "catfact"]))
+async def cmd_single_fact(client: Client, message: Message):
+    """Command: /meowfact or /catfact - Fetches 1 random cat fact."""
+    facts = await fetch_cat_facts(count=1)
+    
+    if not facts:
+        return await message.reply_text("❌ Failed to fetch a cat fact from Meowfacts. Please try again!")
+
+    fact_text = f"🐱 **Random Cat Fact:**\n\n_{facts[0]}_"
+    await message.reply_text(fact_text, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_message(filters.command(["meowfacts", "catfacts"]))
+async def cmd_multiple_facts(client: Client, message: Message):
+    """Command: /meowfacts <count> - Fetches multiple cat facts (e.g., /catfacts 3)."""
+    args = message.command
+    count = 3  # Default to 3 facts if no number provided
+    
+    if len(args) > 1 and args[1].isdigit():
+        count = min(max(int(args[1]), 1), 5)  # Limit between 1 and 5 for readability
+
+    facts = await fetch_cat_facts(count=count)
+    
+    if not facts:
+        return await message.reply_text("❌ Failed to fetch cat facts. Please try again!")
+
+    response_text = f"🐾 **Here are {len(facts)} Cat Facts:**\n\n"
+    for idx, fact in enumerate(facts, 1):
+        response_text += f"{idx}. _{fact}_\n\n"
+
+    await message.reply_text(response_text, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_message(filters.command("meowfhelp"))
+async def cmd_mbeow_help(client: Client, message: Message):
+    """Command: /meowhelp - Displays command instructions."""
+    help_text = (
+        "📖 **Meowfacts Bot — Command Guide**\n\n"
+        "• `/meowfact` or `/catfact` — Get 1 random cat fact.\n"
+        "• `/meowfacts <number>` — Get multiple facts (e.g., `/catfacts 3`).\n"
+        "• `/meowhelp` — View this help guide.\n\n"
+        "_Powered by Meowfacts API (No API key required!)_"
+    )
+    await message.reply_text(help_text, parse_mode=ParseMode.MARKDOWN)
+
+
+#====================================================
+
+
 db_client = AsyncIOMotorClient(Config.MONGO_URL)
 db = db_client["Cats_api_db"]
 # API Key Configuration (Free key from https://thecatapi.com)
