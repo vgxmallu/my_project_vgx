@@ -36,7 +36,7 @@ async def cmd_sebarch_radio(client: Client, message: Message):
     """Command: /radiosearch <station_name> - Searches radio stations by name."""
     args = message.command
     if len(args) < 2:
-        return await message.reply_text("⚠️ **Usage:** `/radiosearch <station_name>`\n_Example:_ `/radiosearch BBC` or `/radiosearch Jazz`")
+        return await message.reply_text("⚠️ **Usage:** `/radiosearch station_name`\n_Example:_ `/radiosearch BBC` or `/radiosearch Jazz`")
 
     query = " ".join(args[1:])
     msg = await message.reply_text(f"🔍 Searching radio stations for `{query}`...")
@@ -68,7 +68,7 @@ async def cmd_radio_vby_country(client: Client, message: Message):
     """Command: /radiocountry <country_name> - Finds top-voted stations by country."""
     args = message.command
     if len(args) < 2:
-        return await message.reply_text("⚠️ **Usage:** `/radiocountry <country_name>`\n_Example:_ `/radiocountry United States` or `/radiocountry Germany`")
+        return await message.reply_text("⚠️ **Usage:** `/radiocountry country_name`\n_Example:_ `/radiocountry United States` or `/radiocountry Germany`")
 
     country = " ".join(args[1:])
     msg = await message.reply_text(f"🔍 Finding top radio stations in `{country}`...")
@@ -96,7 +96,7 @@ async def cmd_radio_by_tag(client: Client, message: Message):
     """Command: /radiotag <genre> - Finds stations by music genre or tag."""
     args = message.command
     if len(args) < 2:
-        return await message.reply_text("⚠️ **Usage:** `/radiotag <genre>`\n_Example:_ `/radiotag rock`, `/radiotag jazz`, or `/radiotag classical`")
+        return await message.reply_text("⚠️ **Usage:** `/radiotag genre`\n_Example:_ `/radiotag rock`, `/radiotag jazz`, or `/radiotag classical`")
 
     tag = args[1].lower()
     msg = await message.reply_text(f"🔍 Finding `{tag}` radio stations...")
@@ -120,12 +120,6 @@ async def cmd_radio_by_tag(client: Client, message: Message):
 
 #====================================================
 
-import httpx
-from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
-from pyrogram.enums import ParseMode, ButtonStyle
-from vgx import app
-
 # Radio Browser stable mirror base URL
 
 
@@ -142,7 +136,7 @@ def get_main_radio_menu():
             InlineKeyboardButton("🔍 Search Guide", callback_data="rd_help", style=ButtonStyle.PRIMARY)
         ],
         [
-            InlineKeyboardButton("❌ Close Menu", callback_data="rd_close", style=ButtonStyle.DANGER)
+            InlineKeyboardButton("❌ Close Menu", callback_data="close", style=ButtonStyle.DANGER)
         ]
     ])
 
@@ -203,7 +197,7 @@ def get_station_card_keyboard(index: int, total: int, stream_url: str):
         ],
         [
             InlineKeyboardButton("🏠 Main Hub", callback_data="rd_home", style=ButtonStyle.PRIMARY),
-            InlineKeyboardButton("❌ Close", callback_data="rd_close", style=ButtonStyle.DANGER)
+            InlineKeyboardButton("❌ Close", callback_data="close", style=ButtonStyle.DANGER)
         ]
     ])
 
@@ -217,9 +211,9 @@ async def cmd_radio_hub(client: Client, message: Message):
         "📻 **Radio Browser — Control Center**\n\n"
         "Welcome! Stream over 45,000+ live global radio stations instantly.\n\n"
         "👇 **Select an option below or use search commands:**\n"
-        "• `/radiosearch <name>`\n"
-        "• `/radiocountry <country>`\n"
-        "• `/radiotag <genre>`"
+        "• `/radiosearch name`\n"
+        "• `/radiocountry country`\n"
+        "• `/radiotag genre`"
     )
     await message.reply_text(text, reply_markup=get_main_radio_menu(), parse_mode=ParseMode.MARKDOWN)
 
@@ -229,7 +223,7 @@ async def cmd_search_radio(client: Client, message: Message):
     """Command: /radiosearch <name> - Interactive text search."""
     args = message.command
     if len(args) < 2:
-        return await message.reply_text("⚠️ **Usage:** `/radiosearch <station_name>`\n_Example:_ `/radiosearch BBC`")
+        return await message.reply_text("⚠️ **Usage:** `/radiosearch station_name`\n_Example:_ `/radiosearch BBC`")
 
     query = " ".join(args[1:])
     msg = await message.reply_text(f"🔍 Searching radio stations for `{query}`...")
@@ -298,10 +292,6 @@ async def cb_rd_home(client: Client, query: CallbackQuery):
     )
     await query.message.edit_text(text, reply_markup=get_main_radio_menu(), parse_mode=ParseMode.MARKDOWN)
 
-@app.on_callback_query(filters.regex(r"^rd_close$"))
-async def cb_rd_close(client: Client, query: CallbackQuery):
-    await query.answer("Closed ❌")
-    await query.message.delete()
 
 @app.on_callback_query(filters.regex(r"^rd_noop$"))
 async def cb_rd_noop(client: Client, query: CallbackQuery):
