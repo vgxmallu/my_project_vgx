@@ -77,7 +77,7 @@ async def start_handler(client: Client, message: Message):
 
     # Welcome response to user with button ln
     await message.reply_photo(
-    photo="https://ibb.co/svmCPTDJ",
+    photo="https://telegra.ph/file/38b0884898f610b41fc4a-0126a362bf2e711f05.jpg",
     caption=(
         f"Hi **{user.first_name}**! 👋\n\n"
         f"Welcome to advanced schedule & management bot. You have successfully logged in!\n\n"
