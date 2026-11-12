@@ -11,8 +11,8 @@ from config import Config  # Must contain APY_TOKEN
 BASE_URL = "https://api.eu.apyhub.com/apyhub/convert-markdown-to-pdf"
 
 def get_apy_token() -> str:
-    """Retrieves the ApyHub token from config."""
-    return getattr(Config.APY_HUB_TOKEN, None)
+    """Retrieves the ApyHub token from config safely."""
+    return getattr(Config, "APY_HUB_TOKEN", None)
 
 
 # --- API CONVERSION HELPERS ---
