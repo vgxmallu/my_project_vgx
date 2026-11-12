@@ -139,7 +139,7 @@ async def cmd_convert_to_pdf(client: Client, message: Message):
 
 
 # ApyHub API Base URLs
-APY_BASE = "https://api.eu.apyhub.com/apyhub"
+APY_BASE = "https://api.eu.apyhub.com/apyhub/convert-image-to-pdf/file/download"
 
 def get_apy() -> str:
     """Retrieves the ApyHub token from config safely."""
