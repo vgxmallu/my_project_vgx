@@ -137,20 +137,6 @@ async def cmd_convert_to_pdf(client: Client, message: Message):
         await status_msg.edit_text(f"❌ Error during PDF conversion: {str(e)}")
 
 
-@app.on_message(filters.command("pdfhelp"))
-async def cmd_pdf_help(client: Client, message: Message):
-    """Command: /pdfhelp - Displays helper guide."""
-    help_text = (
-        "📖 **ApyHub PDF Bot — Guide**\n\n"
-        "• `/convertpdf <markdown text>` — Convert raw markdown text into a PDF.\n"
-        "• **Reply to File:** Send or reply to any `.md` or `.txt` file with `/convertpdf`.\n"
-        "• `/pdfhelp` — View this instructions guide.\n\n"
-        "_Powered by ApyHub Document Intelligence Suite_"
-    )
-    await message.reply_text(help_text, parse_mode=ParseMode.MARKDOWN)
-
-
-
 
 
 # --- APYHUB API ASYNC HELPERS ---
