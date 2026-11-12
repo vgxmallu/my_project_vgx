@@ -40,7 +40,8 @@ class Config:
 
     APY_HUB_TOKEN = os.getenv("APY_HUB_TOKEN")
 
-    BITLY_TOKEN = os.getenv("BITLY_TOKEN")
+    BITLY_CLIENT_ID = os.getenv("BITLY_CLIENT_ID")
+    BITLY_CLIENT_SECRET = os.getenv("BITLY_CLIENT_SECRET")
     
     CAT_API_KEY = os.getenv("CAT_API_KEY")
     
