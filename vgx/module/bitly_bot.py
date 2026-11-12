@@ -3,27 +3,57 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram.enums import ParseMode
 from vgx import app
-from config import Config  # Must contain BITLY_TOKEN
+from config import Config  # Must contain BITLY_CLIENT_ID & BITLY_CLIENT_SECRET
 
-# --- CONFIGURATION ---
-BITLY_BASE = "https://api-ssl.bitly.com/v4"
+# --- CONFIGURATION & ENDPOINTS ---
+AUTH_URL = "https://bitly.com/oauth/authorize"
+TOKEN_URL = "https://api-ssl.bitly.com/oauth/access_token"
+API_BASE = "https://api-ssl.bitly.com/v4"
 
-def get_bitly_token() -> str:
-    """Retrieves the Bitly Access Token from config safely."""
-    return getattr(Config, "BITLY_TOKEN", None)
+# In-memory session store for runtime tokens (can be replaced with MongoDB if needed)
+SESSION_TOKENS = {}
+
+def get_client_credentials() -> tuple:
+    """Retrieves Client ID, Client Secret, and Redirect URI from config safely."""
+    client_id = getattr(Config, "BITLY_CLIENT_ID", None)
+    client_secret = getattr(Config, "BITLY_CLIENT_SECRET", None)
+    redirect_uri = getattr(Config, "BITLY_REDIRECT_URI", "http://localhost/")
+    return client_id, client_secret, redirect_uri
 
 
-# --- BITLY API HELPER ---
+# --- OAUTH & API HELPERS ---
 
-async def shorten_url_via_bitly(long_url: str) -> str:
-    """Sends a POST request to Bitly v4 API to shorten a long URL."""
-    token = get_bitly_token()
-    if not token:
+async def exchange_code_for_token(code: str) -> str:
+    """Exchanges Bitly OAuth authorization code for an access token using Client ID & Secret."""
+    client_id, client_secret, redirect_uri = get_client_credentials()
+    if not client_id or not client_secret:
         return None
 
-    endpoint = f"{BITLY_BASE}/shorten"
+    payload = {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": code.strip(),
+        "redirect_uri": redirect_uri
+    }
+    headers = {"Accept": "application/json"}
+
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.post(TOKEN_URL, data=payload, headers=headers, timeout=15.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get("access_token")
+            print(f"Bitly Token Exchange Error [{resp.status_code}]: {resp.text}")
+        except Exception as e:
+            print(f"Bitly Token Exchange Exception: {e}")
+        return None
+
+
+async def shorten_url(long_url: str, access_token: str) -> str:
+    """Shortens a URL using Bitly v4 API with the dynamic OAuth access token."""
+    endpoint = f"{API_BASE}/shorten"
     headers = {
-        "Authorization": f"Bearer {token}",
+        "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
     }
     payload = {"long_url": long_url.strip()}
@@ -32,43 +62,100 @@ async def shorten_url_via_bitly(long_url: str) -> str:
         try:
             resp = await client.post(endpoint, json=payload, headers=headers, timeout=15.0)
             if resp.status_code in [200, 201]:
-                data = resp.json()
-                return data.get("link")
-            print(f"Bitly API Error [{resp.status_code}]: {resp.text}")
+                return resp.json().get("link")
+            print(f"Bitly Shorten Error [{resp.status_code}]: {resp.text}")
         except Exception as e:
-            print(f"Bitly API Exception: {e}")
+            print(f"Bitly Shorten Exception: {e}")
         return None
 
 
-# --- COMMAND HANDLER ---
+# --- COMMAND HANDLERS ---
 
-@app.on_message(filters.command(["shorten", "bitly", "short"]))
-async def cmd_shorten_url(client: Client, message: Message):
-    """Command: /shorten <url> - Shortens a long URL using Bitly API."""
+@app.on_message(filters.command(["bitlyauth", "bitlylogin"]))
+async def cmd_bitly_auth(client: Client, message: Message):
+    """Step 1: Generates the Bitly OAuth Authorization URL using Client ID."""
+    client_id, _, redirect_uri = get_client_credentials()
+    if not client_id:
+        return await message.reply_text("❌ `BITLY_CLIENT_ID` is missing in `config.py`.", parse_mode=ParseMode.MARKDOWN)
+
+    auth_link = f"{AUTH_URL}?client_id={client_id}&redirect_uri={redirect_uri}"
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔗 Authorize App on Bitly", url=auth_link)],
+        [InlineKeyboardButton("❌ Close", callback_data="bitly_auth_close")]
+    ])
+
+    await message.reply_text(
+        "🔐 **Bitly OAuth Authentication**\n\n"
+        "1. Click the button below to log in and authorize your app.\n"
+        "2. Bitly will redirect your browser to your `redirect_uri` with a `code=` parameter.\n"
+        "3. Copy that code and send it to the bot using:\n`/bitlycode <your_code>`",
+        reply_markup=keyboard,
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+
+@app.on_message(filters.command(["bitlycode", "bitlyexchange"]))
+async def cmd_bitly_exchange(client: Client, message: Message):
+    """Step 2: Exchanges the authorization code for an access token."""
     args = message.command
     if len(args) < 2:
         return await message.reply_text(
-            "⚠️ **Usage:** `/shorten https://example.com/very-long-url`\n\n"
-            "_Please provide a valid URL to shorten._",
+            "⚠️ **Usage:** `/bitlycode <authorization_code>`\n\n"
+            "_Paste the `code` parameter received from Bitly after authorization._",
             parse_mode=ParseMode.MARKDOWN
         )
 
+    code = args[1].strip()
+    msg = await message.reply_text("🔄 Exchanging OAuth code for Bitly access token...")
+
+    access_token = await exchange_code_for_token(code)
+    if not access_token:
+        return await msg.edit_text("❌ Failed to exchange code. Ensure your `client_secret` and `redirect_uri` match your Bitly app developer settings.")
+
+    # Cache token in memory session for this user
+    user_id = message.from_user.id
+    SESSION_TOKENS[user_id] = access_token
+
+    await msg.edit_text(
+        "✅ **Bitly Authentication Successful!**\n\n"
+        "Your OAuth access token has been generated using your app credentials and cached for your session.\n\n"
+        "🚀 You can now shorten links using:\n`/shorten https://example.com`",
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+
+@app.on_message(filters.command(["shorten", "bitly", "short"]))
+async def cmd_shorten(client: Client, message: Message):
+    """Step 3: Shortens a URL using the authenticated Bitly session."""
+    user_id = message.from_user.id
+    token = SESSION_TOKENS.get(user_id)
+
+    if not token:
+        return await message.reply_text(
+            "⚠️ **Authentication Required!**\n\n"
+            "You haven't authenticated your Bitly application yet.\n"
+            "Please run `/bitlyauth` first to link your account.",
+            parse_mode=ParseMode.MARKDOWN
+        )
+
+    args = message.command
+    if len(args) < 2:
+        return await message.reply_text("⚠️ **Usage:** `/shorten <url>`", parse_mode=ParseMode.MARKDOWN)
+
     long_url = args[1].strip()
-    
-    # Ensure URL has a scheme
     if not long_url.startswith(("http://", "https://")):
         long_url = "https://" + long_url
 
-    msg = await message.reply_text("🔗 Generating short link via Bitly...")
+    msg = await message.reply_text("🔗 Generating short link via Bitly API...")
 
-    short_link = await shorten_url_via_bitly(long_url)
+    short_link = await shorten_url(long_url, token)
     if not short_link:
-        return await msg.edit_text("❌ Failed to shorten URL. Check your `BITLY_TOKEN` in `config.py` or ensure the URL is valid.")
+        return await msg.edit_text("❌ Failed to shorten URL. Your session token may have expired. Run `/bitlyauth` again.")
 
-    # Inline keyboard action button
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("🌐 Open Short Link", url=short_link)],
-        [InlineKeyboardButton("❌ Close", callback_data="bitly_close")]
+        [InlineKeyboardButton("❌ Close", callback_data="bitly_auth_close")]
     ])
 
     await msg.edit_text(
@@ -80,9 +167,7 @@ async def cmd_shorten_url(client: Client, message: Message):
     )
 
 
-# --- INTERACTIVE CALLBACK ROUTER ---
-
-@app.on_callback_query(filters.regex(r"^bitly_close$"))
-async def cb_bitly_close(client: Client, query: CallbackQuery):
+@app.on_callback_query(filters.regex(r"^bitly_auth_close$"))
+async def cb_bitly_auth_close(client: Client, query: CallbackQuery):
     await query.answer("Closed ❌")
     await query.message.delete()
