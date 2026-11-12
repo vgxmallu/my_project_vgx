@@ -15,7 +15,6 @@ async def fetch_bobs_characters(limit: int = 12, skip: int = 572) -> list:
             resp = await client.get(url, timeout=15.0)
             if resp.status_code == 200:
                 data = resp.json()
-                # API returns a list directly
                 if isinstance(data, list):
                     return data
                 elif isinstance(data, dict) and "data" in data:
@@ -35,7 +34,6 @@ async def cmd_bobs_burgers(client: Client, message: Message):
     skip_val = 572  # Default to your requested skip value
     limit_val = 12   # Default limit
 
-    # Allow custom arguments if provided (e.g., /bobsburgers 100 10)
     if len(args) > 1:
         try:
             skip_val = int(args[1])
@@ -54,7 +52,6 @@ async def cmd_bobs_burgers(client: Client, message: Message):
     if not characters:
         return await msg.edit_text("❌ No characters found or API request failed.")
 
-    # Build formatted text output
     text = f"🍔 **Bob's Burgers Characters Database**\n📍 _Showing Skip: {skip_val} | Limit: {limit_val}_\n\n"
     
     for char in characters:
@@ -68,7 +65,6 @@ async def cmd_bobs_burgers(client: Client, message: Message):
         text += f"  - 💼 Occupation: `{occupation}`\n"
         text += f"  - ⚧ Gender: `{gender}`\n\n"
 
-    # Pagination controls
     next_skip = skip_val + limit_val
     prev_skip = max(0, skip_val - limit_val)
 
@@ -82,7 +78,8 @@ async def cmd_bobs_burgers(client: Client, message: Message):
         ]
     ])
 
-    await msg.edit_text(text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
+    # Fixed: Removed disable_web_page_preview parameter
+    await msg.edit_text(text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
 
 
 # --- INTERACTIVE PAGINATION CALLBACKS ---
@@ -124,5 +121,7 @@ async def cb_bb_pagination(client: Client, query: CallbackQuery):
         ]
     ])
 
-    await query.message.edit_text(text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
+    # Fixed: Removed disable_web_page_preview parameter here too
+    await query.message.edit_text(text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
 
