@@ -72,4 +72,61 @@ async def cb_btvs_chars(client: Client, query: CallbackQuery):
 
     # Display top 10 characters interactively
     chars = data[:10]
-    text = "👥 **Buffyverse Characters (Top 
+    text = "👥 **Buffyverse Characters (Top 10)**\n\n"
+    for idx, c in enumerate(chars, 1):
+        name = c.get("name", "Unknown")
+        role = c.get("role", "N/A")
+        species = c.get("species", "N/A")
+        text += f"{idx}. **{name}** — `{role}` ({species})\n"
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Refresh List", callback_data="btvs_menu_chars")],
+        [InlineKeyboardButton("🔙 Back to Main Menu", callback_data="btvs_menu_main")]
+    ])
+    await query.message.edit_text(text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^btvs_menu_quote$"))
+async def cb_btvs_quote(client: Client, query: CallbackQuery):
+    await query.answer("Fetching a random quote...")
+    data = await fetch_btvs("quotes/random")
+    
+    if not data:
+        quote_text = "I'm the thing that monsters have nightmares about."
+        source = "Buffy Summers"
+    else:
+        quote_item = data[0] if isinstance(data, list) and data else data
+        quote_text = quote_item.get("quote", "No quote found.")
+        source = quote_item.get("source", "Unknown character")
+
+    text = (
+        f"💬 **Buffyverse Quote Generator**\n\n"
+        f"> *\"{quote_text}\"*\n\n"
+        f"— **{source}**"
+    )
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔀 Another Quote", callback_data="btvs_menu_quote")],
+        [InlineKeyboardButton("🔙 Back to Main Menu", callback_data="btvs_menu_main")]
+    ])
+    await query.message.edit_text(text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^btvs_menu_about$"))
+async def cb_btvs_about(client: Client, query: CallbackQuery):
+    await query.answer()
+    text = (
+        "ℹ️ **About BTVS & Angel API**\n\n"
+        "A public API providing episode summaries, cast data, crew lists, and quotes from *Buffy the Vampire Slayer* and its spin-off *Angel*.\n\n"
+        "Repository: [Thatskat/btvs-angel-api](https://github.com/Thatskat/btvs-angel-api)"
+    )
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 Back to Main Menu", callback_data="btvs_menu_main")]
+    ])
+    await query.message.edit_text(text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^btvs_close$"))
+async def cb_btvs_close(client: Client, query: CallbackQuery):
+    await query.answer("Closed ❌")
+    await query.message.delete()
