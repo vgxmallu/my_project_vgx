@@ -39,6 +39,8 @@ class Config:
     GOFILE_API_TOKEN = os.getenv("GOFILE_API_TOKEN")
 
     APY_HUB_TOKEN = os.getenv("APY_HUB_TOKEN")
+
+    BITLY_TOKEN = os.getenv("BITLY_TOKEN")
     
     CAT_API_KEY = os.getenv("CAT_API_KEY")
     
