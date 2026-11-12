@@ -147,13 +147,15 @@ def get_apy() -> str:
     
 # --- APYHUB API ASYNC HELPERS ---
 
+
 async def convert_image_file_to_pdf(file_path: str, output_name: str = "document.pdf") -> bytes:
     """Converts an uploaded image (.png, .jpg, etc.) into PDF bytes using ApyHub."""
-    token = get_apy()
+    token = get_apy_token()
     if not token:
         return None
 
-    url = f"{APY_BASE}/convert-image-to-pdf/file/download"
+    # Use the absolute, direct endpoint URL to prevent any path duplication
+    url = "https://api.eu.apyhub.com/apyhub/convert-image-to-pdf/file/download"
     headers = {"apy-token": token}
     params = {"output": output_name}
 
