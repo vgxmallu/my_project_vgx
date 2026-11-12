@@ -772,7 +772,7 @@ def get_weather_help_keyboard():
         ],
         [
             InlineKeyboardButton("❌", callback_data="close", style=ButtonStyle.DANGER),
-            InlineKeyboardButton("🔙", callback_data="home_menu", style=ButtonStyle.PRIMARY)
+            InlineKeyboardButton("🔙", callback_data="help_menu", style=ButtonStyle.PRIMARY)
         ]
     ])
 
