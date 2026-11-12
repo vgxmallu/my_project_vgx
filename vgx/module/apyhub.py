@@ -138,12 +138,18 @@ async def cmd_convert_to_pdf(client: Client, message: Message):
 
 
 
+# ApyHub API Base URLs
+APY_BASE = "https://api.eu.apyhub.com/apyhub"
 
+def get_apy() -> str:
+    """Retrieves the ApyHub token from config safely."""
+    return getattr(Config, "APY_HUB_TOKEN", None)
+    
 # --- APYHUB API ASYNC HELPERS ---
 
 async def convert_image_file_to_pdf(file_path: str, output_name: str = "document.pdf") -> bytes:
     """Converts an uploaded image (.png, .jpg, etc.) into PDF bytes using ApyHub."""
-    token = get_apy_token()
+    token = get_apy()
     if not token:
         return None
 
@@ -166,7 +172,7 @@ async def convert_image_file_to_pdf(file_path: str, output_name: str = "document
 
 async def convert_markdown_url_to_pdf(md_url: str, output_name: str = "document.pdf") -> bytes:
     """Converts a public Markdown URL (e.g., GitHub README) into PDF bytes."""
-    token = get_apy_token()
+    token = get_apy()
     if not token:
         return None
 
@@ -187,7 +193,7 @@ async def convert_markdown_url_to_pdf(md_url: str, output_name: str = "document.
 
 async def convert_webpage_to_pdf(web_url: str, output_name: str = "webpage.pdf") -> bytes:
     """Renders a live webpage URL into PDF bytes."""
-    token = get_apy_token()
+    token = get_apy()
     if not token:
         return None
 
@@ -207,7 +213,7 @@ async def convert_webpage_to_pdf(web_url: str, output_name: str = "webpage.pdf")
 
 async def convert_office_file_to_pdf(file_path: str, output_name: str = "document.pdf") -> bytes:
     """Converts a Word (.docx) document into PDF bytes."""
-    token = get_apy_token()
+    token = get_apy()
     if not token:
         return None
 
