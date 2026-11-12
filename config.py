@@ -42,6 +42,8 @@ class Config:
 
     BITLY_CLIENT_ID = os.getenv("BITLY_CLIENT_ID")
     BITLY_CLIENT_SECRET = os.getenv("BITLY_CLIENT_SECRET")
+
+    BLY_API_KEY = os.getenv("BLY_API_KEY")
     
     CAT_API_KEY = os.getenv("CAT_API_KEY")
     
