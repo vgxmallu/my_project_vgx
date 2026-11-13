@@ -9,7 +9,7 @@ from config import Config  # Must contain GOFILE_API_TOKEN
 # --- AUTHENTICATION HELPER ---
 def get_api_token() -> str:
     """Retrieves and validates the strict API token from configuration."""
-    token = getattr(Config.GOFILE_API_TOKEN, None)
+    token = getattr(Config, "GOFILE_API_TOKEN", None)
     return token
 
 
