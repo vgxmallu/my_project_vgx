@@ -39,7 +39,9 @@ class Config:
     GOFILE_API_TOKEN = os.getenv("GOFILE_API_TOKEN")
 
     APY_HUB_TOKEN = os.getenv("APY_HUB_TOKEN")
-
+    #https://api.t.ly
+    TLY_TOKEN = os.getenv("TLY_TOKEN")
+    
     BITLY_CLIENT_ID = os.getenv("BITLY_CLIENT_ID")
     BITLY_CLIENT_SECRET = os.getenv("BITLY_CLIENT_SECRET")
 
