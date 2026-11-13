@@ -14,14 +14,13 @@ def get_spoome_token() -> str:
 
 
 async def spoome_request(method: str, endpoint: str, **kwargs) -> httpx.Response:
-    """Centralized HTTP request helper for Spoo.me API using Bearer Token authentication."""
+    """Centralized HTTP request helper for Spoo.me v1 API."""
     token = get_spoome_token()
-    if not token:
-        return None
-
     url = f"{SPOO_BASE}/{endpoint.lstrip('/')}"
     headers = kwargs.pop("headers", {})
-    headers["Authorization"] = f"Bearer {token}"
+    
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
     headers["Accept"] = "application/json"
     if "json" in kwargs:
         headers["Content-Type"] = "application/json"
@@ -33,13 +32,18 @@ async def spoome_request(method: str, endpoint: str, **kwargs) -> httpx.Response
                 return await client.post(url, headers=headers, **kwargs)
             elif m == "GET":
                 return await client.get(url, headers=headers, **kwargs)
-            elif m == "PUT" or m == "PATCH":
+            elif m in ("PUT", "PATCH"):
                 return await client.patch(url, headers=headers, **kwargs)
             elif m == "DELETE":
                 return await client.delete(url, headers=headers, **kwargs)
         except Exception as e:
             print(f"Spoo.me API Exception [{endpoint}]: {e}")
         return None
+
+
+def is_emoji_string(text: str) -> bool:
+    """Checks if the provided alias consists of non-ASCII emoji characters."""
+    return any(ord(char) > 127 for char in text)
 
 
 # ==========================================
@@ -86,7 +90,7 @@ async def cmd_spoo_shorten(client: Client, message: Message):
         )
 
     long_url = args[1].strip()
-    alias = args[2].strip() if len(args) > 2 else None
+    custom_slug = args[2].strip() if len(args) > 2 else None
     password = args[3].strip() if len(args) > 3 else None
     max_clicks = int(args[4]) if len(args) > 4 and args[4].isdigit() else None
 
@@ -96,33 +100,38 @@ async def cmd_spoo_shorten(client: Client, message: Message):
     msg = await message.reply_text("🚀 Processing link via Spoo.me API...")
 
     payload = {"long_url": long_url}
-    if alias:
-        payload["alias"] = alias
+    if custom_slug:
+        # Spoo.me v1 uses 'emoji' for emoji slugs and 'alias' for alphanumeric slugs
+        if is_emoji_string(custom_slug):
+            payload["emoji"] = custom_slug
+        else:
+            payload["alias"] = custom_slug
     if password:
         payload["password"] = password
     if max_clicks:
         payload["max_clicks"] = max_clicks
 
-    resp = await spoome_request("POST", "links", json=payload, timeout=15.0)
+    # Fixed Endpoint: POST /api/v1/shorten
+    resp = await spoome_request("POST", "shorten", json=payload, timeout=15.0)
     if not resp or resp.status_code not in [200, 201]:
         err_text = resp.text if resp else "Connection error"
         return await msg.edit_text(f"❌ Failed to shorten link: `{err_text}`", parse_mode=ParseMode.MARKDOWN)
 
     data = resp.json()
     short_url = data.get("short_url") or data.get("link")
-    qr_url = data.get("qr_code_url")
+    link_id = data.get("id", "N/A")
 
-    keyboard_buttons = [[InlineKeyboardButton("🌐 Open Short Link", url=short_url)]]
-    if qr_url:
-        keyboard_buttons.append([InlineKeyboardButton("📱 View QR Code", url=qr_url)])
-    keyboard_buttons.append([InlineKeyboardButton("🏠 Main Menu", callback_data="spoo_home")])
-    keyboard = InlineKeyboardMarkup(keyboard_buttons)
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🌐 Open Short Link", url=short_url)],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="spoo_home")]
+    ])
 
     await msg.edit_text(
         f"✅ **Spoo.me Short Link Created!**\n\n"
         f"• **Original:** `{long_url}`\n"
         f"• **Shortened:** `{short_url}`\n"
-        f"• **Custom Alias/Emoji:** `{alias or 'None'}`\n"
+        f"• **Link ID:** `{link_id}`\n"
+        f"• **Custom Slug/Emoji:** `{custom_slug or 'None'}`\n"
         f"• **Password Protected:** `{'Yes' if password else 'No'}`\n"
         f"• **Max Clicks Limit:** `{max_clicks or 'Unlimited'}`",
         reply_markup=keyboard,
@@ -136,17 +145,18 @@ async def cmd_spoo_shorten(client: Client, message: Message):
 
 @app.on_message(filters.command(["spoostats", "spoo_stats"]))
 async def cmd_spoo_stats(client: Client, message: Message):
-    """Command: /spoostats <alias_or_id> - Fetches link traffic metrics and bot tracking stats."""
+    """Command: /spoostats <alias_or_code> - Fetches link traffic metrics."""
     args = message.command
     if len(args) < 2:
         return await message.reply_text("⚠️ **Usage:** `/spoostats <short_alias>`", parse_mode=ParseMode.MARKDOWN)
 
-    identifier = args[1].strip()
+    code = args[1].strip().split("/")[-1]
     msg = await message.reply_text("📊 Fetching link traffic analytics...")
 
-    resp = await spoome_request("GET", f"links/{identifier}/stats", timeout=15.0)
+    # Fixed Endpoint: GET /api/v1/public/stats/{code}
+    resp = await spoome_request("GET", f"public/stats/{code}", timeout=15.0)
     if not resp or resp.status_code != 200:
-        return await msg.edit_text("❌ Failed to fetch statistics. Verify link identifier or API key.")
+        return await msg.edit_text("❌ Failed to fetch statistics. Verify the short code/alias.")
 
     stats = resp.json()
     total_clicks = stats.get("total_clicks", 0)
@@ -155,7 +165,7 @@ async def cmd_spoo_stats(client: Client, message: Message):
     original_url = stats.get("long_url", "N/A")
 
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔄 Refresh Stats", callback_data=f"spoo_refresh_stats_{identifier}")],
+        [InlineKeyboardButton("🔄 Refresh Stats", callback_data=f"spoo_refresh_stats_{code}")],
         [InlineKeyboardButton("🏠 Main Menu", callback_data="spoo_home")]
     ])
 
@@ -164,8 +174,7 @@ async def cmd_spoo_stats(client: Client, message: Message):
         f"• **Target Link:** `{original_url}`\n"
         f"• **Created On:** `{created_at}`\n"
         f"• **Total Clicks:** `{total_clicks}`\n"
-        f"• **Unique Visitors:** `{unique_clicks}`\n"
-        f"• **Bot & Client Tracking:** Active 🤖",
+        f"• **Unique Visitors:** `{unique_clicks}`",
         reply_markup=keyboard,
         parse_mode=ParseMode.MARKDOWN
     )
@@ -179,22 +188,24 @@ async def cmd_spoo_stats(client: Client, message: Message):
 async def cmd_spoo_list(client: Client, message: Message):
     """Command: /spoolist - Lists account links."""
     msg = await message.reply_text("📋 Fetching your link portfolio...")
-    resp = await spoome_request("GET", "links", timeout=15.0)
-
+    
+    # Fixed Endpoint: GET /api/v1/urls
+    resp = await spoome_request("GET", "urls", timeout=15.0)
     if not resp or resp.status_code != 200:
-        return await msg.edit_text("❌ Failed to retrieve link entries.")
+        return await msg.edit_text("❌ Failed to retrieve link entries. Check your `SPOO_API_KEY`.")
 
     result = resp.json()
-    links = result.get("data", []) if isinstance(result, dict) else result
+    links = result.get("items") or result.get("data") or (result if isinstance(result, list) else [])
     if not links:
         return await msg.edit_text("📭 No active links found in your Spoo.me account.")
 
     text = "📋 **Your Spoo.me Links (Recent):**\n\n"
     for item in links[:10]:
+        link_id = item.get("id", "N/A")
         s_url = item.get("short_url") or item.get("alias")
         l_url = item.get("long_url", "")
         clicks = item.get("total_clicks", 0)
-        text += f"• `{s_url}` (Clicks: {clicks})\n  ↳ __{l_url[:40]}__\n\n"
+        text += f"• `{s_url}` (Clicks: `{clicks}` | ID: `{link_id}`)\n  ↳ __{l_url[:40]}__\n\n"
 
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("🔄 Refresh List", callback_data="spoo_menu_list")],
@@ -205,38 +216,43 @@ async def cmd_spoo_list(client: Client, message: Message):
 
 @app.on_message(filters.command(["spooupdate", "spoo_update"]))
 async def cmd_spoo_update(client: Client, message: Message):
-    """Command: /spooupdate <id> <new_long_url>"""
+    """Command: /spooupdate <url_id> <new_long_url>"""
     args = message.command
     if len(args) < 3:
-        return await message.reply_text("⚠️ **Usage:** `/spooupdate <link_id> <new_destination_url>`", parse_mode=ParseMode.MARKDOWN)
+        return await message.reply_text("⚠️ **Usage:** `/spooupdate <url_id> <new_destination_url>`", parse_mode=ParseMode.MARKDOWN)
 
     link_id = args[1].strip()
     new_url = args[2].strip()
+    if not new_url.startswith(("http://", "https://")):
+        new_url = "https://" + new_url
+
     msg = await message.reply_text("🔄 Updating link destination...")
 
+    # Fixed Endpoint: PATCH /api/v1/urls/{id}
     payload = {"long_url": new_url}
-    resp = await spoome_request("PATCH", f"links/{link_id}", json=payload, timeout=15.0)
+    resp = await spoome_request("PATCH", f"urls/{link_id}", json=payload, timeout=15.0)
 
     if not resp or resp.status_code not in [200, 204]:
-        return await msg.edit_text("❌ Failed to update link target.")
+        return await msg.edit_text("❌ Failed to update link target. Make sure you use the Link ID from `/spoolist`.")
 
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Main Menu", callback_data="spoo_home")]])
-    await msg.edit_text(f"✅ Link `{link_id}` successfully updated to target `{new_url}`!", reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+    await msg.edit_text(f"✅ Link `{link_id}` successfully updated to `{new_url}`!", reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
 
 
 @app.on_message(filters.command(["spoodelete", "spoo_delete"]))
 async def cmd_spoo_delete(client: Client, message: Message):
-    """Command: /spoodelete <id>"""
+    """Command: /spoodelete <url_id>"""
     args = message.command
     if len(args) < 2:
-        return await message.reply_text("⚠️ **Usage:** `/spoodelete <link_id>`", parse_mode=ParseMode.MARKDOWN)
+        return await message.reply_text("⚠️ **Usage:** `/spoodelete <url_id>`", parse_mode=ParseMode.MARKDOWN)
 
     link_id = args[1].strip()
     msg = await message.reply_text("🗑️ Deleting short link...")
 
-    resp = await spoome_request("DELETE", f"links/{link_id}", timeout=15.0)
+    # Fixed Endpoint: DELETE /api/v1/urls/{id}
+    resp = await spoome_request("DELETE", f"urls/{link_id}", timeout=15.0)
     if not resp or resp.status_code not in [200, 204]:
-        return await msg.edit_text("❌ Failed to delete short link.")
+        return await msg.edit_text("❌ Failed to delete short link. Make sure you use the Link ID from `/spoolist`.")
 
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Main Menu", callback_data="spoo_home")]])
     await msg.edit_text(f"🗑️ Link `{link_id}` has been deleted successfully.", reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
@@ -271,20 +287,21 @@ async def cb_spoo_menu_shorten(client: Client, query: CallbackQuery):
 @app.on_callback_query(filters.regex(r"^spoo_menu_list$"))
 async def cb_spoo_menu_list(client: Client, query: CallbackQuery):
     await query.answer("Fetching links...")
-    resp = await spoome_request("GET", "links", timeout=15.0)
+    resp = await spoome_request("GET", "urls", timeout=15.0)
     
     if not resp or resp.status_code != 200:
         keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Main Menu", callback_data="spoo_home")]])
         return await query.message.edit_text("❌ Failed to load link list.", reply_markup=keyboard)
 
     result = resp.json()
-    links = result.get("data", []) if isinstance(result, dict) else result
+    links = result.get("items") or result.get("data") or (result if isinstance(result, list) else [])
     
     text = "📋 **Your Spoo.me Links Portfolio:**\n\n"
     for item in links[:10]:
+        link_id = item.get("id", "N/A")
         s_url = item.get("short_url") or item.get("alias")
         clicks = item.get("total_clicks", 0)
-        text += f"• `{s_url}` — Clicks: `{clicks}`\n"
+        text += f"• `{s_url}` — Clicks: `{clicks}` (ID: `{link_id}`)\n"
 
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("🔄 Refresh", callback_data="spoo_menu_list")],
@@ -299,7 +316,31 @@ async def cb_spoo_menu_stats(client: Client, query: CallbackQuery):
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Main Menu", callback_data="spoo_home")]])
     await query.message.edit_text(
         "📊 **How to Check Stats:**\n\n"
-        "Send the command:\n`/spoostats <short_alias_or_id>`",
+        "Send the command:\n`/spoostats <short_alias>`",
+        reply_markup=keyboard,
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+
+@app.on_callback_query(filters.regex(r"^spoo_refresh_stats_(?P<code>.+)$"))
+async def cb_spoo_refresh_stats(client: Client, query: CallbackQuery):
+    code = query.matches[0].group("code")
+    await query.answer("Refreshing stats...")
+    resp = await spoome_request("GET", f"public/stats/{code}", timeout=15.0)
+    if not resp or resp.status_code != 200:
+        return await query.answer("Failed to refresh stats.", show_alert=True)
+
+    stats = resp.json()
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Refresh Stats", callback_data=f"spoo_refresh_stats_{code}")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="spoo_home")]
+    ])
+    await query.message.edit_text(
+        f"📊 **Spoo.me Analytics Dashboard**\n\n"
+        f"• **Target Link:** `{stats.get('long_url', 'N/A')}`\n"
+        f"• **Created On:** `{stats.get('created_at', 'N/A')}`\n"
+        f"• **Total Clicks:** `{stats.get('total_clicks', 0)}`\n"
+        f"• **Unique Visitors:** `{stats.get('unique_clicks', 0)}`",
         reply_markup=keyboard,
         parse_mode=ParseMode.MARKDOWN
     )
