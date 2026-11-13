@@ -10,7 +10,7 @@ BLY_BASE = "https://bly.to"
 
 def get_bly_token() -> str:
     """Retrieves the Bly.to API key from config safely."""
-    return getattr(Config, "BLY_API_KEY", None))
+    return getattr(Config, "BLY_API_KEY", None)
 
 
 # --- BLY.TO API HELPER ---
