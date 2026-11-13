@@ -47,6 +47,9 @@ class Config:
 
     BLY_API_KEY = os.getenv("BLY_API_KEY")
     
+    #https://spoo.me
+    SPOO_API_KEY = os.getenv("SPOO_API_KEY")
+    
     CAT_API_KEY = os.getenv("CAT_API_KEY")
     
     FOOTBALL_API_KEY = os.getenv("FOOTBALL_API_KEY")
