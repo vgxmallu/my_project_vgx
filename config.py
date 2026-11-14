@@ -54,8 +54,8 @@ class Config:
     LINKLY_API_KEY = os.getenv("LINKLY_API_KEY")
     LINKLY_WORKSPACE_ID = 10
 
-    #https://detectlanguage.com/private
-    DETECT_LANGUAGE_API = os.environ.get("DETECT_LANGUAGE_API")
+    #https://nlp.insightera.co.th
+    INSIGHTERA_API_KEY = os.environ.get("INSIGHTERA_API_KEY")
     
     CAT_API_KEY = os.getenv("CAT_API_KEY")
     
