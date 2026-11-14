@@ -54,8 +54,7 @@ class Config:
     LINKLY_API_KEY = os.getenv("LINKLY_API_KEY")
     LINKLY_WORKSPACE_ID = 10
 
-    #https://nlp.insightera.co.th
-    INSIGHTERA_API_KEY = os.environ.get("INSIGHTERA_API_KEY")
+    IG_RAPIDAPI_KEY = os.getenv("IG_RAPIDAPI_KEY")
     
     CAT_API_KEY = os.getenv("CAT_API_KEY")
     
