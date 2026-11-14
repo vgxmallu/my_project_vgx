@@ -758,7 +758,7 @@ async def cb_ani_home(client: Client, query: CallbackQuery):
     await query.message.edit_text(text, reply_markup=get_animal_menu(), parse_mode=ParseMode.MARKDOWN)
 
 
-@app.on_callback_query(filters.regex(r"^ani_(?Pcat>random|dog|cat|bird)$"))
+@app.on_callback_query(filters.regex(r"^ani_(?random|dog|cat|bird)$"))
 async def cb_ani_filter(client: Client, query: CallbackQuery):
     match_val = query.matches[0].group("cat")
     category = None if match_val == "random" else match_val
