@@ -54,6 +54,7 @@ class Config:
     LINKLY_API_KEY = os.getenv("LINKLY_API_KEY")
     LINKLY_WORKSPACE_ID = 10
 
+    #https://detectlanguage.com/private
     DETECT_LANGUAGE_API_KEY = os.getenv("DETECT_LANGUAGE_API_KEY")
     
     CAT_API_KEY = os.getenv("CAT_API_KEY")
