@@ -616,3 +616,738 @@ async def cb_air_generate(client: Client, query: CallbackQuery):
 async def cb_air_close(client: Client, query: CallbackQuery):
     await query.answer("Closed ❌")
     await query.message.delete()
+
+
+# --- MOCK DATA POOLS (Faker.js Animal Standards) ---
+ANIMAL_DATABASE = {
+    "dog": [
+        {"species": "Golden Retriever", "type": "Dog", "sound": "Woof!", "trait": "Friendly & Intelligent"},
+        {"species": "German Shepherd", "type": "Dog", "sound": "Bark!", "trait": "Loyal & Courageous"},
+        {"species": "French Bulldog", "type": "Dog", "sound": "Snort!", "trait": "Playful & Adaptable"},
+        {"species": "Siberian Husky", "type": "Dog", "sound": "Howl!", "trait": "Energetic & Outgoing"}
+    ],
+    "cat": [
+        {"species": "Maine Coon", "type": "Cat", "sound": "Meow!", "trait": "Gentle Giant & Friendly"},
+        {"species": "Siamese", "type": "Cat", "sound": "Purr!", "trait": "Vocal & Social"},
+        {"species": "British Shorthair", "type": "Cat", "sound": "Meow!", "trait": "Calm & Dignified"},
+        {"species": "Ragdoll", "type": "Cat", "sound": "Purr!", "trait": "Affectionate & Docile"}
+    ],
+    "bear": [
+        {"species": "Grizzly Bear", "type": "Bear", "sound": "Roar!", "trait": "Solitary & Powerful"},
+        {"species": "Polar Bear", "type": "Bear", "sound": "Growl!", "trait": "Expert Swimmer & Resilient"},
+        {"species": "Panda Bear", "type": "Bear", "sound": "Huff!", "trait": "Herbivorous & Gentle"}
+    ],
+    "bird": [
+        {"species": "Bald Eagle", "type": "Bird", "sound": "Screech!", "trait": "Majestic & Keen Vision"},
+        {"species": "Peregrine Falcon", "type": "Bird", "sound": "Kek-kek!", "trait": "Incredible Diving Speed"},
+        {"species": "Emperor Penguin", "type": "Bird", "sound": "Honk!", "trait": "Social & Cold-Resistant"}
+    ],
+    "insect": [
+        {"species": "Monarch Butterfly", "type": "Insect", "sound": "Silent", "trait": "Famous Long-Distance Migrator"},
+        {"species": "Honey Bee", "type": "Insect", "sound": "Buzz!", "trait": "Industrious Pollinator"},
+        {"species": "Green Darner Dragonfly", "type": "Insect", "sound": "Whirr!", "trait": "Exceptional Aerial Predator"}
+    ]
+}
+
+PET_NAMES = ["Bella", "Charlie", "Luna", "Milo", "Oliver", "Lucy", "Leo", "Bailey", "Zoe", "Max"]
+
+
+def generate_random_animal(category: str = None) -> dict:
+    """Simulates Faker.js animal generators (type, species, and pet names)."""
+    if category and category in ANIMAL_DATABASE:
+        cat_key = category
+    else:
+        cat_key = random.choice(list(ANIMAL_DATABASE.keys()))
+
+    entity = random.choice(ANIMAL_DATABASE[cat_key])
+    pet_name = random.choice(PET_NAMES)
+    age = random.randint(1, 12)
+
+    return {
+        "category": cat_key.capitalize(),
+        "species": entity["species"],
+        "type": entity["type"],
+        "sound": entity["sound"],
+        "trait": entity["trait"],
+        "pet_name": pet_name,
+        "age": f"{age} {'year' if age == 1 else 'years'} old"
+    }
+
+
+# ==========================================
+# --- INTERACTIVE DASHBOARD MENU ---
+# ==========================================
+
+def get_animal_menu() -> InlineKeyboardMarkup:
+    """Master inline keyboard dashboard for Faker Animal controls."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🐾 Random Animal", callback_data="ani_random"),
+            InlineKeyboardButton("🐶 Dogs", callback_data="ani_dog")
+        ],
+        [
+            InlineKeyboardButton("🐱 Cats", callback_data="ani_cat"),
+            InlineKeyboardButton("🦅 Birds", callback_data="ani_bird")
+        ],
+        [
+            InlineKeyboardButton("📚 Faker.js Docs", url="https://fakerjs.dev/api/animal.html"),
+            InlineKeyboardButton("❌ Close", callback_data="ani_close")
+        ]
+    ])
+
+
+@app.on_message(filters.command(["animal", "fakeranimal", "pets"]))
+async def cmd_animal_dashboard(client: Client, message: Message):
+    """Command: /animal - Opens the interactive Faker Animal generator dashboard."""
+    text = (
+        "🐾 **Faker Animal Intelligence Suite**\n\n"
+        "Generate random animal species, pet names, wildlife classifications, and biological traits "
+        "using the interactive controls below:"
+    )
+    await message.reply_text(text, reply_markup=get_animal_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- COMMAND HANDLERS ---
+# ==========================================
+
+@app.on_message(filters.command(["fakeanimal", "randomanimal"]))
+async def cmd_generate_animal(client: Client, message: Message):
+    """Command: /fakeanimal [category] - Generates a mock animal profile."""
+    args = message.command
+    cat_arg = args[1].lower().strip() if len(args) > 1 else None
+
+    animal = generate_random_animal(cat_arg)
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="ani_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="ani_home")]
+    ])
+
+    response_text = (
+        f"🐾 **FAKER ANIMAL PROFILE**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Category:** `{animal['category']}`\n"
+        f"• **Species:** `{animal['species']}`\n"
+        f"• **Typical Sound:** `{animal['sound']}`\n"
+        f"• **Key Trait:** _{animal['trait']}_\n\n"
+        f"🏷️ **Mock Pet Persona (Bonus):**\n"
+        f"• **Suggested Name:** `{animal['pet_name']}`\n"
+        f"• **Estimated Age:** `{animal['age']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await message.reply_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- INTERACTIVE CALLBACK ROUTERS ---
+# ==========================================
+
+@app.on_callback_query(filters.regex(r"^ani_home$"))
+async def cb_ani_home(client: Client, query: CallbackQuery):
+    await query.answer()
+    text = (
+        "🐾 **Faker Animal Intelligence Suite**\n\n"
+        "Generate random animal species, pet names, wildlife classifications, and biological traits "
+        "using the interactive controls below:"
+    )
+    await query.message.edit_text(text, reply_markup=get_animal_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^ani_(?Pcat>random|dog|cat|bird)$"))
+async def cb_ani_filter(client: Client, query: CallbackQuery):
+    match_val = query.matches[0].group("cat")
+    category = None if match_val == "random" else match_val
+
+    await query.answer(f"Generating {match_val} profile...")
+    animal = generate_random_animal(category)
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data=f"ani_{match_val}")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="ani_home")]
+    ])
+
+    response_text = (
+        f"🐾 **FAKER ANIMAL PROFILE**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Category:** `{animal['category']}`\n"
+        f"• **Species:** `{animal['species']}`\n"
+        f"• **Typical Sound:** `{animal['sound']}`\n"
+        f"• **Key Trait:** _{animal['trait']}_\n\n"
+        f"🏷️ **Mock Pet Persona:**\n"
+        f"• **Suggested Name:** `{animal['pet_name']}`\n"
+        f"• **Estimated Age:** `{animal['age']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^ani_close$"))
+async def cb_ani_close(client: Client, query: CallbackQuery):
+    await query.answer("Closed ❌")
+    await query.message.delete()
+
+
+
+# --- MOCK DATA POOLS (Faker.js Book Module Standards) ---
+BOOK_TITLES = [
+    "The Shadow of the Wind", "Echoes of Eternity", "Silent Echoes", 
+    "Beyond the Horizon", "The Clockwork Empire", "Chronicles of the Valiant", 
+    "Realm of Glass", "Whispers in the Dark", "The Last Alchemist", "Summit of Dreams"
+]
+
+AUTHORS = [
+    "J.R. Vance", "Elena Rostova", "Marcus Sterling", "Aria Montgomery", 
+    "Julian Cross", "Beatrice Thorne", "Liam Vance", "Nora Sterling"
+]
+
+GENRES = [
+    "Science Fiction", "Epic Fantasy", "Mystery & Thriller", 
+    "Historical Fiction", "Cyberpunk", "Dystopian", "Romance", "Biographical"
+]
+
+SERIES = [
+    "The Chronos Chronicles", "Aria of Elements", "The Obsidian Trilogy", 
+    "Legacy of Empires", "Shadow Guild Series", "Starlight Saga"
+]
+
+PUBLISHERS = [
+    "Penguin Random House", "HarperCollins", "Macmillan Publishers", 
+    "Simon & Schuster", "Addison-Wesley", "O'Reilly Media"
+]
+
+FORMATS = ["Hardcover", "Paperback", "E-Book", "Audiobook"]
+
+
+def generate_book_record() -> dict:
+    """Simulates Faker.js book generators (title, author, genre, series, publisher, format)."""
+    return {
+        "title": random.choice(BOOK_TITLES),
+        "author": random.choice(AUTHORS),
+        "genre": random.choice(GENRES),
+        "series": random.choice(SERIES),
+        "publisher": random.choice(PUBLISHERS),
+        "format": random.choice(FORMATS),
+        "isbn": f"978-{random.randint(0, 9)}-{random.randint(100, 999)}-{random.randint(10000, 99999)}-{random.randint(0, 9)}"
+    }
+
+
+# ==========================================
+# --- INTERACTIVE DASHBOARD MENU ---
+# ==========================================
+
+def get_book_menu() -> InlineKeyboardMarkup:
+    """Master inline keyboard dashboard for Faker Book controls."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("📚 Random Book Entry", callback_data="book_random"),
+            InlineKeyboardButton("📖 Epic Fantasy", callback_data="book_fantasy")
+        ],
+        [
+            InlineKeyboardButton("🎧 Audiobook Format", callback_data="book_audio"),
+            InlineKeyboardButton("📚 Book Docs", url="https://fakerjs.dev/api/book.html")
+        ],
+        [InlineKeyboardButton("❌ Close", callback_data="book_close")]
+    ])
+
+
+@app.on_message(filters.command(["book", "fakerbook", "library"]))
+async def cmd_book_dashboard(client: Client, message: Message):
+    """Command: /book - Opens the interactive Faker Book generator dashboard."""
+    text = (
+        "📚 **Faker Book Intelligence Suite**\n\n"
+        "Generate random book titles, authors, publishers, genres, ISBN identifiers, and catalog entries "
+        "using the interactive controls below:"
+    )
+    await message.reply_text(text, reply_markup=get_book_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- COMMAND HANDLERS ---
+# ==========================================
+
+@app.on_message(filters.command(["fakebook", "randombook"]))
+async def cmd_generate_book(client: Client, message: Message):
+    """Command: /fakebook - Generates a complete mock book catalog record."""
+    book = generate_book_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="book_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="book_home")]
+    ])
+
+    response_text = (
+        f"📚 **FAKER BOOK CATALOG RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Title:** `{book['title']}`\n"
+        f"• **Author:** `{book['author']}`\n"
+        f"• **Genre:** `{book['genre']}`\n"
+        f"• **Series:** _{book['series']}_\n"
+        f"• **Publisher:** `{book['publisher']}`\n"
+        f"• **Format:** `{book['format']}`\n"
+        f"• **ISBN:** `{book['isbn']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await message.reply_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- INTERACTIVE CALLBACK ROUTERS ---
+# ==========================================
+
+@app.on_callback_query(filters.regex(r"^book_home$"))
+async def cb_book_home(client: Client, query: CallbackQuery):
+    await query.answer()
+    text = (
+        "📚 **Faker Book Intelligence Suite**\n\n"
+        "Generate random book titles, authors, publishers, genres, ISBN identifiers, and catalog entries "
+        "using the interactive controls below:"
+    )
+    await query.message.edit_text(text, reply_markup=get_book_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^book_random$"))
+async def cb_book_random(client: Client, query: CallbackQuery):
+    await query.answer("Generating book record...")
+    book = generate_book_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="book_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="book_home")]
+    ])
+
+    response_text = (
+        f"📚 **FAKER BOOK CATALOG RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Title:** `{book['title']}`\n"
+        f"• **Author:** `{book['author']}`\n"
+        f"• **Genre:** `{book['genre']}`\n"
+        f"• **Series:** _{book['series']}_\n"
+        f"• **Publisher:** `{book['publisher']}`\n"
+        f"• **Format:** `{book['format']}`\n"
+        f"• **ISBN:** `{book['isbn']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^book_fantasy$"))
+async def cb_book_fantasy(client: Client, query: CallbackQuery):
+    await query.answer("Filtering fantasy genre...")
+    book = generate_book_record()
+    book["genre"] = "Epic Fantasy"
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="book_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="book_home")]
+    ])
+
+    response_text = (
+        f"📚 **FAKER BOOK CATALOG RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Title:** `{book['title']}`\n"
+        f"• **Author:** `{book['author']}`\n"
+        f"• **Genre:** `Epic Fantasy`\n"
+        f"• **Series:** _{book['series']}_\n"
+        f"• **Publisher:** `{book['publisher']}`\n"
+        f"• **Format:** `{book['format']}`\n"
+        f"• **ISBN:** `{book['isbn']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^book_audio$"))
+async def cb_book_audio(client: Client, query: CallbackQuery):
+    await query.answer("Selecting audiobook format...")
+    book = generate_book_record()
+    book["format"] = "Audiobook"
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="book_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="book_home")]
+    ])
+
+    response_text = (
+        f"📚 **FAKER BOOK CATALOG RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Title:** `{book['title']}`\n"
+        f"• **Author:** `{book['author']}`\n"
+        f"• **Genre:** `{book['genre']}`\n"
+        f"• **Series:** _{book['series']}_\n"
+        f"• **Publisher:** `{book['publisher']}`\n"
+        f"• **Format:** `Audiobook`\n"
+        f"• **ISBN:** `{book['isbn']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^book_close$"))
+async def cb_book_close(client: Client, query: CallbackQuery):
+    await query.answer("Closed ❌")
+    await query.message.delete()
+
+
+# --- MOCK DATA POOLS (Faker.js Color Module Standards) ---
+COLOR_DATABASE = [
+    {"name": "Crimson", "hex": "#DC143C", "rgb": "220, 20, 60", "hsl": "348, 83%, 47%"},
+    {"name": "Electric Indigo", "hex": "#6F00FF", "rgb": "111, 0, 255", "hsl": "266, 100%, 50%"},
+    {"name": "Emerald Green", "hex": "#50C878", "rgb": "80, 200, 120", "hsl": "140, 55%, 55%"},
+    {"name": "Neon Cyan", "hex": "#00FFFF", "rgb": "0, 255, 255", "hsl": "180, 100%, 50%"},
+    {"name": "Sunset Orange", "hex": "#FD5E53", "rgb": "253, 94, 83", "hsl": "4, 97%, 66%"},
+    {"name": "Royal Purple", "hex": "#7851A9", "rgb": "120, 81, 169", "hsl": "267, 35%, 49%"},
+    {"name": "Golden Yellow", "hex": "#FFDF00", "rgb": "255, 223, 0", "hsl": "52, 100%, 50%"},
+    {"name": "Deep Sapphire", "hex": "#082567", "rgb": "8, 37, 103", "hsl": "220, 86%, 22%"}
+]
+
+
+def generate_color_record() -> dict:
+    """Simulates Faker.js color generators (human name, hex, rgb, hsl)."""
+    return random.choice(COLOR_DATABASE)
+
+
+# ==========================================
+# --- INTERACTIVE DASHBOARD MENU ---
+# ==========================================
+
+def get_color_menu() -> InlineKeyboardMarkup:
+    """Master inline keyboard dashboard for Faker Color controls."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🎨 Random Color", callback_data="col_random"),
+            InlineKeyboardButton("💎 Emerald Green", callback_data="col_emerald")
+        ],
+        [
+            InlineKeyboardButton("🔥 Sunset Orange", callback_data="col_sunset"),
+            InlineKeyboardButton("📚 Color Docs", url="https://fakerjs.dev/api/color.html")
+        ],
+        [InlineKeyboardButton("❌ Close", callback_data="col_close")]
+    ])
+
+
+@app.on_message(filters.command(["color", "fakercolor", "palette"]))
+async def cmd_color_dashboard(client: Client, message: Message):
+    """Command: /color - Opens the interactive Faker Color generator dashboard."""
+    text = (
+        "🎨 **Faker Color Intelligence Suite**\n\n"
+        "Generate random CSS color names, HEX codes, RGB arrays, and HSL formats "
+        "using the interactive controls below:"
+    )
+    await message.reply_text(text, reply_markup=get_color_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- COMMAND HANDLERS ---
+# ==========================================
+
+@app.on_message(filters.command(["fakecolor", "randomcolor"]))
+async def cmd_generate_color(client: Client, message: Message):
+    """Command: /fakecolor - Generates a complete mock color record."""
+    color = generate_color_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="col_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="col_home")]
+    ])
+
+    response_text = (
+        f"🎨 **FAKER COLOR SPECIFICATION**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Color Name:** `{color['name']}`\n"
+        f"• **HEX Code:** `{color['hex']}`\n"
+        f"• **RGB Value:** `rgb({color['rgb']})`\n"
+        f"• **HSL Value:** `hsl({color['hsl']})`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await message.reply_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- INTERACTIVE CALLBACK ROUTERS ---
+# ==========================================
+
+@app.on_callback_query(filters.regex(r"^col_home$"))
+async def cb_col_home(client: Client, query: CallbackQuery):
+    await query.answer()
+    text = (
+        "🎨 **Faker Color Intelligence Suite**\n\n"
+        "Generate random CSS color names, HEX codes, RGB arrays, and HSL formats "
+        "using the interactive controls below:"
+    )
+    await query.message.edit_text(text, reply_markup=get_color_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^col_random$"))
+async def cb_col_random(client: Client, query: CallbackQuery):
+    await query.answer("Generating color record...")
+    color = generate_color_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="col_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="col_home")]
+    ])
+
+    response_text = (
+        f"🎨 **FAKER COLOR SPECIFICATION**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Color Name:** `{color['name']}`\n"
+        f"• **HEX Code:** `{color['hex']}`\n"
+        f"• **RGB Value:** `rgb({color['rgb']})`\n"
+        f"• **HSL Value:** `hsl({color['hsl']})`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^col_emerald$"))
+async def cb_col_emerald(client: Client, query: CallbackQuery):
+    await query.answer("Selecting emerald color...")
+    color = COLOR_DATABASE[2]
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="col_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="col_home")]
+    ])
+
+    response_text = (
+        f"🎨 **FAKER COLOR SPECIFICATION**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Color Name:** `{color['name']}`\n"
+        f"• **HEX Code:** `{color['hex']}`\n"
+        f"• **RGB Value:** `rgb({color['rgb']})`\n"
+        f"• **HSL Value:** `hsl({color['hsl']})`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^col_sunset$"))
+async def cb_col_sunset(client: Client, query: CallbackQuery):
+    await query.answer("Selecting sunset orange...")
+    color = COLOR_DATABASE[4]
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="col_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="col_home")]
+    ])
+
+    response_text = (
+        f"🎨 **FAKER COLOR SPECIFICATION**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Color Name:** `{color['name']}`\n"
+        f"• **HEX Code:** `{color['hex']}`\n"
+        f"• **RGB Value:** `rgb({color['rgb']})`\n"
+        f"• **HSL Value:** `hsl({color['hsl']})`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^col_close$"))
+async def cb_col_close(client: Client, query: CallbackQuery):
+    await query.answer("Closed ❌")
+    await query.message.delete()
+
+
+
+# --- MOCK DATA POOLS (Faker.js Food Module Standards) ---
+FOOD_DATABASE = [
+    {"dish": "Truffle Mushroom Risotto", "ingredient": "Arborio Rice", "spice": "Black Truffle", "category": "Italian", "diet": "Vegetarian"},
+    {"dish": "Spicy Seafood Paella", "ingredient": "Tiger Prawns", "spice": "Spanish Saffron", "category": "Spanish", "diet": "Gluten-Free"},
+    {"dish": "Miso Glazed Black Cod", "ingredient": "Black Cod Filet", "spice": "White Miso Paste", "category": "Japanese", "diet": "Pescatarian"},
+    {"dish": "Classic Margherita Pizza", "ingredient": "San Marzano Tomatoes", "spice": "Fresh Basil", "category": "Italian", "diet": "Vegetarian"},
+    {"dish": "Avocado & Quinoa Buddha Bowl", "identity": "Quinoa", "ingredient": "Hass Avocado", "spice": "Cumin", "category": "Fusion", "diet": "Vegan"},
+    {"dish": "Wagyu Beef Burger", "ingredient": "Wagyu Beef Patty", "spice": "Smoked Paprika", "category": "American", "diet": "High-Protein"},
+    {"dish": "Thai Green Curry", "ingredient": "Bamboo Shoots", "spice": "Lemongrass & Galangal", "category": "Thai", "diet": "Dairy-Free"}
+]
+
+BEVERAGES = ["Artisan Matcha Latte", "Sparkling Yuzu Lemonade", "Cold Brew Nitro Coffee", "Botanical Gin Tonic", "Fresh Coconut Water"]
+
+
+def generate_food_record() -> dict:
+    """Simulates Faker.js food generators (dish, ingredient, spice, category, dietary)."""
+    item = random.choice(FOOD_DATABASE)
+    bev = random.choice(BEVERAGES)
+    return {
+        "dish": item["dish"],
+        "ingredient": item["ingredient"],
+        "spice": item["spice"],
+        "category": item["category"],
+        "diet": item["diet"],
+        "pairing": bev,
+        "calories": random.randint(350, 850)
+    }
+
+
+# ==========================================
+# --- INTERACTIVE DASHBOARD MENU ---
+# ==========================================
+
+def get_food_menu() -> InlineKeyboardMarkup:
+    """Master inline keyboard dashboard for Faker Food controls."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🍽️ Random Dish", callback_data="food_random"),
+            InlineKeyboardButton("🇮🇹 Italian Special", callback_data="food_italian")
+        ],
+        [
+            InlineKeyboardButton("🌱 Vegan Bowl", callback_data="food_vegan"),
+            InlineKeyboardButton("📚 Food Docs", url="https://fakerjs.dev/api/food.html")
+        ],
+        [InlineKeyboardButton("❌ Close", callback_data="food_close")]
+    ])
+
+
+@app.on_message(filters.command(["food", "fakerfood", "recipe"]))
+async def cmd_food_dashboard(client: Client, message: Message):
+    """Command: /food - Opens the interactive Faker Food generator dashboard."""
+    text = (
+        "🍽️ **Faker Food Intelligence Suite**\n\n"
+        "Generate random dishes, ingredients, spices, dietary classifications, and beverage pairings "
+        "using the interactive controls below:"
+    )
+    await message.reply_text(text, reply_markup=get_food_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- COMMAND HANDLERS ---
+# ==========================================
+
+@app.on_message(filters.command(["fakefood", "randomfood"]))
+async def cmd_generate_food(client: Client, message: Message):
+    """Command: /fakefood - Generates a complete mock culinary recipe record."""
+    food = generate_food_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="food_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="food_home")]
+    ])
+
+    response_text = (
+        f"🍽️ **FAKER CULINARY RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Dish Name:** `{food['dish']}`\n"
+        f"• **Cuisine Category:** `{food['category']}`\n"
+        f"• **Key Ingredient:** `{food['ingredient']}`\n"
+        f"• **Signature Spice:** `{food['spice']}`\n"
+        f"• **Dietary Tag:** `{food['diet']}`\n"
+        f"• **Beverage Pairing:** `{food['pairing']}`\n"
+        f"• **Estimated Energy:** `{food['calories']} kcal`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await message.reply_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- INTERACTIVE CALLBACK ROUTERS ---
+# ==========================================
+
+@app.on_callback_query(filters.regex(r"^food_home$"))
+async def cb_food_home(client: Client, query: CallbackQuery):
+    await query.answer()
+    text = (
+        "🍽️ **Faker Food Intelligence Suite**\n\n"
+        "Generate random dishes, ingredients, spices, dietary classifications, and beverage pairings "
+        "using the interactive controls below:"
+    )
+    await query.message.edit_text(text, reply_markup=get_food_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^food_random$"))
+async def cb_food_random(client: Client, query: CallbackQuery):
+    await query.answer("Generating dish record...")
+    food = generate_food_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="food_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="food_home")]
+    ])
+
+    response_text = (
+        f"🍽️ **FAKER CULINARY RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Dish Name:** `{food['dish']}`\n"
+        f"• **Cuisine Category:** `{food['category']}`\n"
+        f"• **Key Ingredient:** `{food['ingredient']}`\n"
+        f"• **Signature Spice:** `{food['spice']}`\n"
+        f"• **Dietary Tag:** `{food['diet']}`\n"
+        f"• **Beverage Pairing:** `{food['pairing']}`\n"
+        f"• **Estimated Energy:** `{food['calories']} kcal`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^food_italian$"))
+async def cb_food_italian(client: Client, query: CallbackQuery):
+    await query.answer("Selecting Italian dish...")
+    food = FOOD_DATABASE[0]
+    food["pairing"] = "Chianti Classico Wine"
+    food["calories"] = 620
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="food_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="food_home")]
+    ])
+
+    response_text = (
+        f"🍽️ **FAKER CULINARY RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Dish Name:** `{food['dish']}`\n"
+        f"• **Cuisine Category:** `Italian`\n"
+        f"• **Key Ingredient:** `{food['ingredient']}`\n"
+        f"• **Signature Spice:** `{food['spice']}`\n"
+        f"• **Dietary Tag:** `{food['diet']}`\n"
+        f"• **Beverage Pairing:** `Chianti Classico Wine`\n"
+        f"• **Estimated Energy:** `620 kcal`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^food_vegan$"))
+async def cb_food_vegan(client: Client, query: CallbackQuery):
+    await query.answer("Selecting vegan dish...")
+    food = FOOD_DATABASE[4]
+    food["pairing"] = "Sparkling Yuzu Lemonade"
+    food["calories"] = 410
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="food_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="food_home")]
+    ])
+
+    response_text = (
+        f"🍽️ **FAKER CULINARY RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Dish Name:** `{food['dish']}`\n"
+        f"• **Cuisine Category:** `Fusion`\n"
+        f"• **Key Ingredient:** `{food['ingredient']}`\n"
+        f"• **Signature Spice:** `{food['spice']}`\n"
+        f"• **Dietary Tag:** `Vegan`\n"
+        f"• **Beverage Pairing:** `Sparkling Yuzu Lemonade`\n"
+        f"• **Estimated Energy:** `410 kcal`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^food_close$"))
+async def cb_food_close(client: Client, query: CallbackQuery):
+    await query.answer("Closed ❌")
+    await query.message.delete()
