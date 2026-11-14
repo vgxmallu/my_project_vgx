@@ -5,6 +5,9 @@ from pyrogram.enums import ParseMode
 from vgx import app
 import random
 from datetime import datetime, timedelta
+import re
+import io
+
 
 # --- CONFIGURATION & ENDPOINT ---
 # Uses a reliable public mock REST wrapper or placeholder generator for Faker data
@@ -1349,5 +1352,1156 @@ async def cb_food_vegan(client: Client, query: CallbackQuery):
 
 @app.on_callback_query(filters.regex(r"^food_close$"))
 async def cb_food_close(client: Client, query: CallbackQuery):
+    await query.answer("Closed ❌")
+    await query.message.delete()
+
+
+# --- HELPER UTILITY LOGIC (Faker.js Helpers Standards) ---
+
+SAMPLE_WORDS = ["Alpha", "Beta", "Gamma", "Delta", "Echo", "Falcon", "Galaxy", "Horizon", "Ignite", "Nexus"]
+
+
+def slugify_text(text: str) -> str:
+    """Simulates faker.helpers.slugify() - converts text to URL-safe slug."""
+    clean = re.sub(r'[^a-zA-Z0-9\s-]', '', text).strip().lower()
+    return re.sub(r'[-\s]+', '-', clean)
+
+
+def shuffle_array(items: list) -> list:
+    """Simulates faker.helpers.shuffle() - shuffles an array in place/returns copy."""
+    shuffled = list(items)
+    random.shuffle(shuffled)
+    return shuffled
+
+
+def pick_array_element(items: list) -> str:
+    """Simulates faker.helpers.arrayElement() - picks a random element."""
+    return random.choice(items)
+
+
+# ==========================================
+# --- INTERACTIVE DASHBOARD MENU ---
+# ==========================================
+
+def get_helpers_menu() -> InlineKeyboardMarkup:
+    """Master inline keyboard dashboard for Faker Helpers controls."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🔀 Shuffle Array", callback_data="hlp_shuffle"),
+            InlineKeyboardButton("🎯 Pick Random Element", callback_data="hlp_pick")
+        ],
+        [
+            InlineKeyboardButton("🔗 Slugify Test", callback_data="hlp_slug"),
+            InlineKeyboardButton("📚 Helpers Docs", url="https://fakerjs.dev/api/helpers.html")
+        ],
+        [InlineKeyboardButton("❌ Close", callback_data="hlp_close")]
+    ])
+
+
+@app.on_message(filters.command(["helpers", "fakerhelpers", "fakerutils"]))
+async def cmd_helpers_dashboard(client: Client, message: Message):
+    """Command: /helpers - Opens the interactive Faker Helpers utility dashboard."""
+    text = (
+        "🛠️ **Faker Helpers & Utilities Suite**\n\n"
+        "Test array shufflers, random element pickers, text slugifiers, and data transformation tools "
+        "using the interactive controls below:"
+    )
+    await message.reply_text(text, reply_markup=get_helpers_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- COMMAND HANDLERS ---
+# ==========================================
+
+@app.on_message(filters.command(["slugify", "fakeslug"]))
+async def cmd_slugify_handler(client: Client, message: Message):
+    """Command: /slugify <text> - Converts text into a URL-friendly slug."""
+    args = message.command
+    if len(args) < 2:
+        return await message.reply_text(
+            "⚠️ **Usage:** `/slugify <text to convert>`\n\n_Example:_ `/slugify Hello World! Faker.js Helpers`",
+            parse_mode=ParseMode.MARKDOWN
+        )
+
+    input_text = message.text.partition(" ")[2].strip()
+    slug_result = slugify_text(input_text)
+
+    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Main Menu", callback_data="hlp_home")]])
+    await message.reply_text(
+        f"🔗 **Slugify Result**\n\n"
+        f"• **Input:** `{input_text}`\n"
+        f"• **Slug Output:** `{slug_result}`",
+        reply_markup=keyboard,
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+
+@app.on_message(filters.command(["shufflearray"]))
+async def cmd_shuffle_handler(client: Client, message: Message):
+    """Command: /shufflearray - Shuffles a sample dataset."""
+    shuffled = shuffle_array(SAMPLE_WORDS)
+    
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Shuffle Again", callback_data="hlp_shuffle")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="hlp_home")]
+    ])
+
+    await message.reply_text(
+        f"🔀 **Shuffled Array Result**\n\n"
+        f"• **Original:** `{', '.join(SAMPLE_WORDS[:5])}...`\n"
+        f"• **Shuffled:** `{', '.join(shuffled)}`",
+        reply_markup=keyboard,
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+
+# ==========================================
+# --- INTERACTIVE CALLBACK ROUTERS ---
+# ==========================================
+
+@app.on_callback_query(filters.regex(r"^hlp_home$"))
+async def cb_hlp_home(client: Client, query: CallbackQuery):
+    await query.answer()
+    text = (
+        "🛠️ **Faker Helpers & Utilities Suite**\n\n"
+        "Test array shufflers, random element pickers, text slugifiers, and data transformation tools "
+        "using the interactive controls below:"
+    )
+    await query.message.edit_text(text, reply_markup=get_helpers_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^hlp_shuffle$"))
+async def cb_hlp_shuffle(client: Client, query: CallbackQuery):
+    await query.answer("Shuffling array...")
+    shuffled = shuffle_array(SAMPLE_WORDS)
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Shuffle Again", callback_data="hlp_shuffle")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="hlp_home")]
+    ])
+
+    await query.message.edit_text(
+        f"🔀 **Shuffled Array Result**\n\n"
+        f"• **Shuffled:** `{', '.join(shuffled)}`",
+        reply_markup=keyboard,
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+
+@app.on_callback_query(filters.regex(r"^hlp_pick$"))
+async def cb_hlp_pick(client: CallbackQuery, query: CallbackQuery):
+    chosen = pick_array_element(SAMPLE_WORDS)
+    await query.answer(f"Picked Element: {chosen}", show_alert=True)
+
+
+@app.on_callback_query(filters.regex(r"^hlp_slug$"))
+async def cb_hlp_slug(client: Client, query: CallbackQuery):
+    await query.answer()
+    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Main Menu", callback_data="hlp_home")]])
+    await query.message.edit_text(
+        "🔗 **Slugify Utility Guide**\n\n"
+        "Converts messy strings into clean, URL-safe slugs:\n\n"
+        "`/slugify Hello World 2026!` ➔ `hello-world-2026`",
+        reply_markup=keyboard,
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+
+@app.on_callback_query(filters.regex(r"^hlp_close$"))
+async def cb_hlp_close(client: Client, query: CallbackQuery):
+    await query.answer("Closed ❌")
+    await query.message.delete()
+
+# --- MOCK DATA POOLS (Faker.js Image Module Standards) ---
+# Leveraging reliable public placeholder/image sources styled after Faker image categories
+IMAGE_CATEGORIES = {
+    "avatar": "https://i.pravatar.cc/300",
+    "nature": "https://picsum.photos/seed/nature/400/300",
+    "food": "https://picsum.photos/seed/food/400/300",
+    "tech": "https://picsum.photos/seed/tech/400/300",
+    "arch": "https://picsum.photos/seed/architecture/400/300"
+}
+
+
+def generate_image_record(category: str = "nature") -> dict:
+    """Simulates Faker.js image generators (avatars, URLs, and category placeholders)."""
+    base_url = IMAGE_CATEGORIES.get(category, IMAGE_CATEGORIES["nature"])
+    width = random.choice([300, 400, 500])
+    height = random.choice([200, 300, 400])
+    
+    # Custom Picsum / Unsplash Source URL simulation
+    url = f"https://picsum.photos/seed/{random.randint(1000, 9999)}/{width}/{height}"
+
+    return {
+        "category": category.capitalize(),
+        "url": url,
+        "width": width,
+        "height": height
+    }
+
+
+# ==========================================
+# --- INTERACTIVE DASHBOARD MENU ---
+# ==========================================
+
+def get_image_menu() -> InlineKeyboardMarkup:
+    """Master inline keyboard dashboard for Faker Image controls."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🖼️ Random Nature Photo", callback_data="fimg_nature"),
+            InlineKeyboardButton("👤 Random Avatar", callback_data="fimg_avatar")
+        ],
+        [
+            InlineKeyboardButton("🍔 Food Picture", callback_data="fimg_food"),
+            InlineKeyboardButton("💻 Tech Setup", callback_data="fimg_tech")
+        ],
+        [
+            InlineKeyboardButton("📚 Image Docs", url="https://fakerjs.dev/api/image.html"),
+            InlineKeyboardButton("❌ Close", callback_data="fimg_close")
+        ]
+    ])
+
+
+@app.on_message(filters.command(["fakerimage", "fakeimg", "imgsuite"]))
+async def cmd_image_dashboard(client: Client, message: Message):
+    """Command: /fakerimage - Opens the interactive Faker Image generator dashboard."""
+    text = (
+        "🖼️ **Faker Image Intelligence Suite**\n\n"
+        "Generate random mock image URLs, avatars, nature photos, food pictures, and placeholder assets "
+        "using the interactive controls below:"
+    )
+    await message.reply_text(text, reply_markup=get_image_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- COMMAND HANDLERS ---
+# ==========================================
+
+@app.on_message(filters.command(["randomimage", "getfakeimage"]))
+async def cmd_generate_image(client: Client, message: Message):
+    """Command: /randomimage [category] - Generates and sends a mock image."""
+    args = message.command
+    cat = args[1].lower().strip() if len(args) > 1 else "nature"
+    if cat not in IMAGE_CATEGORIES:
+        cat = "nature"
+
+    img_data = generate_image_record(cat)
+    msg = await message.reply_text("🖼️ Downloading mock image asset...")
+
+    async with httpx.AsyncClient(timeout=30.0) as client_http:
+        try:
+            resp = await client_http.get(img_data["url"])
+            if resp.status_code != 200:
+                return await msg.edit_text(f"❌ Failed to fetch image asset (HTTP {resp.status_code}).")
+
+            photo_io = io.BytesIO(resp.content)
+            photo_io.name = f"faker_{cat}.jpg"
+
+            keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔄 Generate Another", callback_data=f"fimg_{cat}")],
+                [InlineKeyboardButton("🏠 Main Menu", callback_data="fimg_home")]
+            ])
+
+            await message.reply_photo(
+                photo=photo_io,
+                caption=(
+                    f"🖼️ **FAKER IMAGE RECORD**\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                    f"• **Category:** `{img_data['category']}`\n"
+                    f"• **Dimensions:** `{img_data['width']}x{img_data['height']}px`\n"
+                    f"• **Direct URL:** `{img_data['url']}`\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━━"
+                ),
+                reply_markup=keyboard,
+                parse_mode=ParseMode.MARKDOWN
+            )
+            await msg.delete()
+        except Exception as e:
+            await msg.edit_text(f"❌ Error generating image: `{e}`", parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- INTERACTIVE CALLBACK ROUTERS ---
+# ==========================================
+
+@app.on_callback_query(filters.regex(r"^fimg_home$"))
+async def cb_fimg_home(client: Client, query: CallbackQuery):
+    await query.answer()
+    text = (
+        "🖼️ **Faker Image Intelligence Suite**\n\n"
+        "Generate random mock image URLs, avatars, nature photos, food pictures, and placeholder assets "
+        "using the interactive controls below:"
+    )
+    await query.message.edit_text(text, reply_markup=get_image_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^fimg_(?P<cat>nature|avatar|food|tech)$"))
+async def cb_fimg_category(client: Client, query: CallbackQuery):
+    cat = query.matches[0].group("cat")
+    await query.answer(f"Fetching {cat} image...")
+
+    img_data = generate_image_record(cat)
+
+    async with httpx.AsyncClient(timeout=30.0) as client_http:
+        try:
+            resp = await client_http.get(img_data["url"])
+            if resp.status_code != 200:
+                return await query.answer("Failed to download image.", show_alert=True)
+
+            photo_io = io.BytesIO(resp.content)
+            photo_io.name = f"faker_{cat}.jpg"
+
+            keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔄 Generate Another", callback_data=f"fimg_{cat}")],
+                [InlineKeyboardButton("🏠 Main Menu", callback_data="fimg_home")]
+            ])
+
+            # Send as photo reply to the callback message
+            await query.message.reply_photo(
+                photo=photo_io,
+                caption=(
+                    f"🖼️ **FAKER IMAGE RECORD**\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                    f"• **Category:** `{img_data['category']}`\n"
+                    f"• **Dimensions:** `{img_data['width']}x{img_data['height']}px`\n"
+                    f"• **Direct URL:** `{img_data['url']}`\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━━"
+                ),
+                reply_markup=keyboard,
+                parse_mode=ParseMode.MARKDOWN
+            )
+            await query.message.delete()
+        except Exception as e:
+            await query.answer(f"Error: {e}", show_alert=True)
+
+
+@app.on_callback_query(filters.regex(r"^fimg_close$"))
+async def cb_fimg_close(client: Client, query: CallbackQuery):
+    await query.answer("Closed ❌")
+    await query.message.delete()
+
+
+
+# --- MOCK DATA POOLS (Faker.js Location Module Standards) ---
+LOCATION_DATABASE = [
+    {
+        "country": "United States", "country_code": "US",
+        "city": "New York", "state": "New York", "street": "742 Evergreen Terrace",
+        "zip": "10001", "lat": 40.7128, "lng": -74.0060, "timezone": "America/New_York"
+    },
+    {
+        "country": "United Kingdom", "country_code": "GB",
+        "city": "London", "state": "Greater London", "street": "221B Baker Street",
+        "zip": "NW1 6XE", "lat": 51.5074, "lng": -0.1278, "timezone": "Europe/London"
+    },
+    {
+        "country": "Japan", "country_code": "JP",
+        "city": "Tokyo", "state": "Tokyo Metropolis", "street": "1-1 Chiyoda",
+        "zip": "100-0001", "lat": 35.6762, "lng": 139.6503, "timezone": "Asia/Tokyo"
+    },
+    {
+        "country": "Australia", "country_code": "AU",
+        "city": "Sydney", "state": "New South Wales", "street": "400 George Street",
+        "zip": "2000", "lat": -33.8688, "lng": 151.2093, "timezone": "Australia/Sydney"
+    },
+    {
+        "country": "Canada", "country_code": "CA",
+        "city": "Toronto", "state": "Ontario", "street": "100 Queen Street West",
+        "zip": "M5H 2N2", "lat": 43.6532, "lng": -79.3832, "timezone": "America/Toronto"
+    },
+    {
+        "country": "Germany", "country_code": "DE",
+        "city": "Berlin", "state": "Berlin", "street": "Unter den Linden 1",
+        "zip": "10117", "lat": 52.5200, "lng": 13.4050, "timezone": "Europe/Berlin"
+    }
+]
+
+
+def generate_location_record() -> dict:
+    """Simulates Faker.js location generators (country, city, street, coordinates, zipcode)."""
+    loc = random.choice(LOCATION_DATABASE)
+    return {
+        "street": loc["street"],
+        "city": loc["city"],
+        "state": loc["state"],
+        "country": loc["country"],
+        "country_code": loc["country_code"],
+        "zipcode": loc["zip"],
+        "latitude": loc["lat"] + random.uniform(-0.05, 0.05),
+        "longitude": loc["lng"] + random.uniform(-0.05, 0.05),
+        "timezone": loc["timezone"]
+    }
+
+
+# ==========================================
+# --- INTERACTIVE DASHBOARD MENU ---
+# ==========================================
+
+def get_location_menu() -> InlineKeyboardMarkup:
+    """Master inline keyboard dashboard for Faker Location controls."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("📍 Random Location", callback_data="loc_random"),
+            InlineKeyboardButton("🇺🇸 New York Hub", callback_data="loc_us")
+        ],
+        [
+            InlineKeyboardButton("🇯🇵 Tokyo Hub", callback_data="loc_jp"),
+            InlineKeyboardButton("📚 Location Docs", url="https://fakerjs.dev/api/location.html")
+        ],
+        [InlineKeyboardButton("❌ Close", callback_data="loc_close")]
+    ])
+
+
+@app.on_message(filters.command(["location", "fakerlocation", "geo"]))
+async def cmd_location_dashboard(client: Client, message: Message):
+    """Command: /location - Opens the interactive Faker Location generator dashboard."""
+    text = (
+        "📍 **Faker Location Intelligence Suite**\n\n"
+        "Generate random countries, street addresses, postal codes, geographic coordinates, and timezones "
+        "using the interactive controls below:"
+    )
+    await message.reply_text(text, reply_markup=get_location_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- COMMAND HANDLERS ---
+# ==========================================
+
+@app.on_message(filters.command(["fakelocation", "randomlocation"]))
+async def cmd_generate_location(client: Client, message: Message):
+    """Command: /fakelocation - Generates a complete mock geographical location record."""
+    loc = generate_location_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="loc_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="loc_home")]
+    ])
+
+    response_text = (
+        f"📍 **FAKER LOCATION RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Street Address:** `{loc['street']}`\n"
+        f"• **City / State:** `{loc['city']}, {loc['state']}`\n"
+        f"• **Country:** `{loc['country']}` (`{loc['country_code']}`)\n"
+        f"• **Postal / ZIP Code:** `{loc['zipcode']}`\n"
+        f"• **Coordinates:** `{loc['latitude']:.4f}, {loc['longitude']:.4f}`\n"
+        f"• **Timezone:** `{loc['timezone']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await message.reply_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- INTERACTIVE CALLBACK ROUTERS ---
+# ==========================================
+
+@app.on_callback_query(filters.regex(r"^loc_home$"))
+async def cb_loc_home(client: Client, query: CallbackQuery):
+    await query.answer()
+    text = (
+        "📍 **Faker Location Intelligence Suite**\n\n"
+        "Generate random countries, street addresses, postal codes, geographic coordinates, and timezones "
+        "using the interactive controls below:"
+    )
+    await query.message.edit_text(text, reply_markup=get_location_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^loc_random$"))
+async def cb_loc_random(client: Client, query: CallbackQuery):
+    await query.answer("Generating location record...")
+    loc = generate_location_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="loc_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="loc_home")]
+    ])
+
+    response_text = (
+        f"📍 **FAKER LOCATION RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Street Address:** `{loc['street']}`\n"
+        f"• **City / State:** `{loc['city']}, {loc['state']}`\n"
+        f"• **Country:** `{loc['country']}` (`{loc['country_code']}`)\n"
+        f"• **Postal / ZIP Code:** `{loc['zipcode']}`\n"
+        f"• **Coordinates:** `{loc['latitude']:.4f}, {loc['longitude']:.4f}`\n"
+        f"• **Timezone:** `{loc['timezone']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^loc_us$"))
+async def cb_loc_us(client: Client, query: CallbackQuery):
+    await query.answer("Selecting New York hub...")
+    loc = LOCATION_DATABASE[0]
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="loc_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="loc_home")]
+    ])
+
+    response_text = (
+        f"📍 **FAKER LOCATION RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Street Address:** `{loc['street']}`\n"
+        f"• **City / State:** `{loc['city']}, {loc['state']}`\n"
+        f"• **Country:** `{loc['country']}` (`{loc['country_code']}`)\n"
+        f"• **Postal / ZIP Code:** `{loc['zip']}`\n"
+        f"• **Coordinates:** `{loc['lat']}, {loc['lng']}`\n"
+        f"• **Timezone:** `{loc['timezone']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^loc_jp$"))
+async def cb_loc_jp(client: Client, query: CallbackQuery):
+    await query.answer("Selecting Tokyo hub...")
+    loc = LOCATION_DATABASE[2]
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="loc_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="loc_home")]
+    ])
+
+    response_text = (
+        f"📍 **FAKER LOCATION RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Street Address:** `{loc['street']}`\n"
+        f"• **City / State:** `{loc['city']}, {loc['state']}`\n"
+        f"• **Country:** `{loc['country']}` (`{loc['country_code']}`)\n"
+        f"• **Postal / ZIP Code:** `{loc['zip']}`\n"
+        f"• **Coordinates:** `{loc['lat']}, {loc['lng']}`\n"
+        f"• **Timezone:** `{loc['timezone']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^loc_close$"))
+async def cb_loc_close(client: Client, query: CallbackQuery):
+    await query.answer("Closed ❌")
+    await query.message.delete()
+
+
+# --- MOCK DATA POOLS (Faker.js Music Module Standards) ---
+SONG_TITLES = [
+    "Midnight Serenade", "Electric Heart", "Echoes of Tomorrow", "Neon Drift", 
+    "Starlight Sonata", "Velvet Shadow", "Cosmic Pulse", "Rhythm & Ghost",
+    "Overdrive", "Luminous Horizon", "Solar Flare", "Infinite Loop"
+]
+
+ARTISTS = [
+    "The Quantum Vibe", "Luna & The Eclipse", "Aura Spectra", "Kaelen Voss", 
+    "Siren & Steel", "Nova Echo", "Velvet Apex", "Cybernetic Soundscape"
+]
+
+ALBUMS = [
+    "Beyond the Spectrum", "Ephemeral", "Chronicles of Sound", "Retrofuturism", 
+    "Silent Horizon", "The Resonance", "Aether & Bass", "Synthetic Dreams"
+]
+
+GENRES = [
+    "Synthwave", "Progressive House", "Indie Rock", "Ambient Chillout", 
+    "Neo-Classical", "Cyberpunk", "Lo-Fi Beats", "Future Bass"
+]
+
+FORMATS = ["Vinyl LP", "CD Album", "FLAC 24-bit", "Digital Stream", "Cassette Tape"]
+
+
+def generate_music_record() -> dict:
+    """Simulates Faker.js music generators (song, artist, album, genre)."""
+    minutes = random.randint(2, 6)
+    seconds = random.randint(10, 55)
+    return {
+        "song": random.choice(SONG_TITLES),
+        "artist": random.choice(ARTISTS),
+        "album": random.choice(ALBUMS),
+        "genre": random.choice(GENRES),
+        "format": random.choice(FORMATS),
+        "duration": f"{minutes}:{seconds:02d}",
+        "year": random.randint(2018, 2026),
+        "isrc": f"US-{random.choice(['S1Z', 'RC1', '9Z9'])}-{random.randint(10, 99)}-{random.randint(10000, 99999)}"
+    }
+
+
+# ==========================================
+# --- INTERACTIVE DASHBOARD MENU ---
+# ==========================================
+
+def get_music_menu() -> InlineKeyboardMarkup:
+    """Master inline keyboard dashboard for Faker Music controls."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🎵 Random Track", callback_data="mus_random"),
+            InlineKeyboardButton("🎹 Synthwave Style", callback_data="mus_synth")
+        ],
+        [
+            InlineKeyboardButton("💿 Vinyl Format", callback_data="mus_vinyl"),
+            InlineKeyboardButton("📚 Music Docs", url="https://fakerjs.dev/api/music.html")
+        ],
+        [InlineKeyboardButton("❌ Close", callback_data="mus_close")]
+    ])
+
+
+@app.on_message(filters.command(["music", "fakemusic", "playlist"]))
+async def cmd_music_dashboard(client: Client, message: Message):
+    """Command: /music - Opens the interactive Faker Music generator dashboard."""
+    text = (
+        "🎵 **Faker Music Intelligence Suite**\n\n"
+        "Generate random song titles, artist personas, album records, genres, ISRC codes, and track formats "
+        "using the interactive controls below:"
+    )
+    await message.reply_text(text, reply_markup=get_music_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- COMMAND HANDLERS ---
+# ==========================================
+
+@app.on_message(filters.command(["fakesong", "randomsong"]))
+async def cmd_generate_music(client: Client, message: Message):
+    """Command: /fakesong - Generates a complete mock music track record."""
+    track = generate_music_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="mus_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="mus_home")]
+    ])
+
+    response_text = (
+        f"🎵 **FAKER MUSIC TRACK RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Song Title:** `{track['song']}`\n"
+        f"• **Artist / Band:** `{track['artist']}`\n"
+        f"• **Album:** _{track['album']}_\n"
+        f"• **Genre:** `{track['genre']}`\n"
+        f"• **Duration:** `{track['duration']}` | **Year:** `{track['year']}`\n"
+        f"• **Format:** `{track['format']}`\n"
+        f"• **ISRC Code:** `{track['isrc']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await message.reply_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- INTERACTIVE CALLBACK ROUTERS ---
+# ==========================================
+
+@app.on_callback_query(filters.regex(r"^mus_home$"))
+async def cb_mus_home(client: Client, query: CallbackQuery):
+    await query.answer()
+    text = (
+        "🎵 **Faker Music Intelligence Suite**\n\n"
+        "Generate random song titles, artist personas, album records, genres, ISRC codes, and track formats "
+        "using the interactive controls below:"
+    )
+    await query.message.edit_text(text, reply_markup=get_music_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^mus_random$"))
+async def cb_mus_random(client: Client, query: CallbackQuery):
+    await query.answer("Generating track record...")
+    track = generate_music_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="mus_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="mus_home")]
+    ])
+
+    response_text = (
+        f"🎵 **FAKER MUSIC TRACK RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Song Title:** `{track['song']}`\n"
+        f"• **Artist / Band:** `{track['artist']}`\n"
+        f"• **Album:** _{track['album']}_\n"
+        f"• **Genre:** `{track['genre']}`\n"
+        f"• **Duration:** `{track['duration']}` | **Year:** `{track['year']}`\n"
+        f"• **Format:** `{track['format']}`\n"
+        f"• **ISRC Code:** `{track['isrc']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^mus_synth$"))
+async def cb_mus_synth(client: Client, query: CallbackQuery):
+    await query.answer("Filtering Synthwave track...")
+    track = generate_music_record()
+    track["genre"] = "Synthwave"
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="mus_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="mus_home")]
+    ])
+
+    response_text = (
+        f"🎵 **FAKER MUSIC TRACK RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Song Title:** `{track['song']}`\n"
+        f"• **Artist / Band:** `{track['artist']}`\n"
+        f"• **Album:** _{track['album']}_\n"
+        f"• **Genre:** `Synthwave`\n"
+        f"• **Duration:** `{track['duration']}` | **Year:** `{track['year']}`\n"
+        f"• **Format:** `{track['format']}`\n"
+        f"• **ISRC Code:** `{track['isrc']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^mus_vinyl$"))
+async def cb_mus_vinyl(client: Client, query: CallbackQuery):
+    await query.answer("Selecting Vinyl format...")
+    track = generate_music_record()
+    track["format"] = "Vinyl LP"
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="mus_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="mus_home")]
+    ])
+
+    response_text = (
+        f"🎵 **FAKER MUSIC TRACK RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Song Title:** `{track['song']}`\n"
+        f"• **Artist / Band:** `{track['artist']}`\n"
+        f"• **Album:** _{track['album']}_\n"
+        f"• **Genre:** `{track['genre']}`\n"
+        f"• **Duration:** `{track['duration']}` | **Year:** `{track['year']}`\n"
+        f"• **Format:** `Vinyl LP`\n"
+        f"• **ISRC Code:** `{track['isrc']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^mus_close$"))
+async def cb_mus_close(client: Client, query: CallbackQuery):
+    await query.answer("Closed ❌")
+    await query.message.delete()
+
+
+# --- MOCK DATA POOLS (Faker.js Person Module Standards) ---
+FIRST_NAMES_MALE = ["Alexander", "Benjamin", "Christopher", "Daniel", "Ethan", "Gabriel", "Harrison", "Julian", "Lucas", "Mateo"]
+FIRST_NAMES_FEMALE = ["Aria", "Chloe", "Elena", "Harper", "Isabella", "Luna", "Mia", "Nora", "Olivia", "Sophia"]
+LAST_NAMES = ["Anderson", "Bennett", "Carter", "Davis", "Evans", "Foster", "Gray", "Hayes", "Jenkins", "Morgan"]
+
+PREFIXES = ["Mr.", "Ms.", "Dr.", "Prof.", "Mx."]
+SUFFIXES = ["Jr.", "III", "Ph.D.", "M.D.", "CPA", "Esq."]
+
+JOB_TITLES = [
+    "Senior Cloud Architect", "Lead AI Researcher", "DevOps Engineer", 
+    "Cybersecurity Specialist", "Product Manager", "Full-Stack Developer",
+    "Data Intelligence Analyst", "Solutions Engineer", "Technical Director"
+]
+
+DEPARTMENTS = ["Engineering", "Research & Development", "Information Security", "Product Operations", "Core Infrastructure"]
+
+BIO_PHRASES = [
+    "Passionate about building scalable distributed systems and clean asynchronous code.",
+    "Advocate for open-source intelligence, robust security automation, and cloud native architectures.",
+    "Specializing in high-throughput APIs, database optimization, and resilient microservices.",
+    "Exploring the intersection of artificial intelligence, automated testing, and developer tooling."
+]
+
+
+def generate_person_record() -> dict:
+    """Simulates Faker.js person generators (first/last names, prefix, suffix, job, bio)."""
+    gender_choice = random.choice(["Male", "Female"])
+    fname = random.choice(FIRST_NAMES_MALE if gender_choice == "Male" else FIRST_NAMES_FEMALE)
+    mname = random.choice(FIRST_NAMES_MALE if gender_choice == "Male" else FIRST_NAMES_FEMALE)
+    lname = random.choice(LAST_NAMES)
+    
+    prefix = random.choice(PREFIXES) if random.random() > 0.4 else ""
+    suffix = random.choice(SUFFIXES) if random.random() > 0.6 else ""
+    
+    full_name = f"{prefix} {fname} {mname[0]}. {lname} {suffix}".strip().replace("  ", " ")
+    email = f"{fname.lower()}.{lname.lower()}{random.randint(10, 99)}@example.com"
+    username = f"{fname.lower()}_{lname.lower()}{random.randint(100, 999)}"
+
+    return {
+        "full_name": full_name,
+        "first_name": fname,
+        "last_name": lname,
+        "gender": gender_choice,
+        "prefix": prefix or "None",
+        "suffix": suffix or "None",
+        "job_title": random.choice(JOB_TITLES),
+        "department": random.choice(DEPARTMENTS),
+        "email": email,
+        "username": username,
+        "bio": random.choice(BIO_PHRASES)
+    }
+
+
+# ==========================================
+# --- INTERACTIVE DASHBOARD MENU ---
+# ==========================================
+
+def get_person_menu() -> InlineKeyboardMarkup:
+    """Master inline keyboard dashboard for Faker Person controls."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("👤 Random Persona", callback_data="per_random"),
+            InlineKeyboardButton("💼 Professional Profile", callback_data="per_prof")
+        ],
+        [
+            InlineKeyboardButton("🔤 Name Details", callback_data="per_name"),
+            InlineKeyboardButton("📚 Person Docs", url="https://fakerjs.dev/api/person.html")
+        ],
+        [InlineKeyboardButton("❌ Close", callback_data="per_close")]
+    ])
+
+
+@app.on_message(filters.command(["person", "fakerperson", "identity"]))
+async def cmd_person_dashboard(client: Client, message: Message):
+    """Command: /person - Opens the interactive Faker Person generator dashboard."""
+    text = (
+        "👤 **Faker Person Intelligence Suite**\n\n"
+        "Generate realistic human identities, names, titles, corporate departments, bios, and contact personas "
+        "using the interactive controls below:"
+    )
+    await message.reply_text(text, reply_markup=get_person_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- COMMAND HANDLERS ---
+# ==========================================
+
+@app.on_message(filters.command(["fakeperson", "randomperson", "userprofile"]))
+async def cmd_generate_person(client: Client, message: Message):
+    """Command: /fakeperson - Generates a complete mock human identity record."""
+    person = generate_person_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="per_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="per_home")]
+    ])
+
+    response_text = (
+        f"👤 **FAKER PERSON IDENTITY RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Full Name:** `{person['full_name']}`\n"
+        f"• **Gender:** `{person['gender']}`\n"
+        f"• **Prefix / Suffix:** `{person['prefix']}` / `{person['suffix']}`\n\n"
+        f"💼 **Professional Data:**\n"
+        f"• **Job Title:** `{person['job_title']}`\n"
+        f"• **Department:** `{person['department']}`\n\n"
+        f"📬 **Contact & Handle:**\n"
+        f"• **Email:** `{person['email']}`\n"
+        f"• **Username:** `@{person['username']}`\n\n"
+        f"📝 **Bio:** _{person['bio']}_\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await message.reply_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- INTERACTIVE CALLBACK ROUTERS ---
+# ==========================================
+
+@app.on_callback_query(filters.regex(r"^per_home$"))
+async def cb_per_home(client: Client, query: CallbackQuery):
+    await query.answer()
+    text = (
+        "👤 **Faker Person Intelligence Suite**\n\n"
+        "Generate realistic human identities, names, titles, corporate departments, bios, and contact personas "
+        "using the interactive controls below:"
+    )
+    await query.message.edit_text(text, reply_markup=get_person_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^per_random$"))
+async def cb_per_random(client: Client, query: CallbackQuery):
+    await query.answer("Generating person record...")
+    person = generate_person_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="per_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="per_home")]
+    ])
+
+    response_text = (
+        f"👤 **FAKER PERSON IDENTITY RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Full Name:** `{person['full_name']}`\n"
+        f"• **Gender:** `{person['gender']}`\n"
+        f"• **Prefix / Suffix:** `{person['prefix']}` / `{person['suffix']}`\n\n"
+        f"💼 **Professional Data:**\n"
+        f"• **Job Title:** `{person['job_title']}`\n"
+        f"• **Department:** `{person['department']}`\n\n"
+        f"📬 **Contact & Handle:**\n"
+        f"• **Email:** `{person['email']}`\n"
+        f"• **Username:** `@{person['username']}`\n\n"
+        f"📝 **Bio:** _{person['bio']}_\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^per_prof$"))
+async def cb_per_prof(client: Client, query: CallbackQuery):
+    await query.answer("Highlighting professional profile...")
+    person = generate_person_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="per_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="per_home")]
+    ])
+
+    response_text = (
+        f"💼 **PROFESSIONAL PERSON RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Name:** `{person['full_name']}`\n"
+        f"• **Role:** `{person['job_title']}`\n"
+        f"• **Division:** `{person['department']}`\n"
+        f"• **Work Email:** `{person['email']}`\n"
+        f"• **Corporate Bio:** _{person['bio']}_\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^per_name$"))
+async def cb_per_name(client: Client, query: CallbackQuery):
+    await query.answer("Isolating naming breakdown...")
+    person = generate_person_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="per_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="per_home")]
+    ])
+
+    response_text = (
+        f"🔤 **NAME COMPONENT BREAKDOWN**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Prefix:** `{person['prefix']}`\n"
+        f"• **First Name:** `{person['first_name']}`\n"
+        f"• **Last Name:** `{person['last_name']}`\n"
+        f"• **Suffix:** `{person['suffix']}`\n"
+        f"• **Combined:** `{person['full_name']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^per_close$"))
+async def cb_per_close(client: Client, query: CallbackQuery):
+    await query.answer("Closed ❌")
+    await query.message.delete()
+
+
+
+# --- MOCK DATA POOLS (Faker.js Vehicle Module Standards) ---
+VEHICLE_DATABASE = [
+    {"manufacturer": "Tesla", "model": "Model S Plaid", "type": "Sedan", "fuel": "Electric"},
+    {"manufacturer": "Ford", "model": "Mustang Mach-E", "type": "SUV", "fuel": "Electric"},
+    {"manufacturer": "Porsche", "model": "911 Carrera GTS", "type": "Coupe", "fuel": "Gasoline"},
+    {"manufacturer": "BMW", "model": "M5 Competition", "type": "Sedan", "fuel": "Hybrid"},
+    {"manufacturer": "Audi", "model": "RS6 Avant", "type": "Wagon", "fuel": "Gasoline"},
+    {"manufacturer": "Rivian", "model": "R1T Adventure", "type": "Truck", "fuel": "Electric"},
+    {"manufacturer": "Mercedes-Benz", "model": "G 63 AMG", "type": "SUV", "fuel": "Gasoline"}
+]
+
+COLORS = ["Alpine White", "Obsidian Black Metallic", "Racing Red", "Midnight Blue", "Silver Metallic", "Nardo Gray"]
+TRANSMISSIONS = ["Automatic 8-Speed", "Dual-Clutch 7-Speed", "Direct-Drive EV", "Manual 6-Speed"]
+
+
+def generate_vehicle_record() -> dict:
+    """Simulates Faker.js vehicle generators (manufacturer, model, fuel, VIN, color)."""
+    veh = random.choice(VEHICLE_DATABASE)
+    
+    # Generate mock 17-character VIN
+    vin_chars = "ABCDEFGHJKLMNPRSTUVWXYZ0123456789"
+    vin = "".join(random.choices(vin_chars, k=17))
+
+    return {
+        "manufacturer": veh["manufacturer"],
+        "model": veh["model"],
+        "type": veh["type"],
+        "fuel": veh["fuel"],
+        "color": random.choice(COLORS),
+        "transmission": random.choice(TRANSMISSIONS),
+        "year": random.randint(2022, 2026),
+        "vin": vin
+    }
+
+
+# ==========================================
+# --- INTERACTIVE DASHBOARD MENU ---
+# ==========================================
+
+def get_vehicle_menu() -> InlineKeyboardMarkup:
+    """Master inline keyboard dashboard for Faker Vehicle controls."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🚗 Random Vehicle", callback_data="veh_random"),
+            InlineKeyboardButton("⚡ Electric Only", callback_data="veh_ev")
+        ],
+        [
+            InlineKeyboardButton("🏎️ Sports Coupe", callback_data="veh_sport"),
+            InlineKeyboardButton("📚 Vehicle Docs", url="https://fakerjs.dev/api/vehicle.html")
+        ],
+        [InlineKeyboardButton("❌ Close", callback_data="veh_close")]
+    ])
+
+
+@app.on_message(filters.command(["vehicle", "fakervehicle", "cars"]))
+async def cmd_vehicle_dashboard(client: Client, message: Message):
+    """Command: /vehicle - Opens the interactive Faker Vehicle generator dashboard."""
+    text = (
+        "🚗 **Faker Vehicle Intelligence Suite**\n\n"
+        "Generate random car manufacturers, models, body types, fuel systems, VIN codes, and paint colors "
+        "using the interactive controls below:"
+    )
+    await message.reply_text(text, reply_markup=get_vehicle_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- COMMAND HANDLERS ---
+# ==========================================
+
+@app.on_message(filters.command(["fakevehicle", "randomcar", "carprofile"]))
+async def cmd_generate_vehicle(client: Client, message: Message):
+    """Command: /fakevehicle - Generates a complete mock vehicle registration record."""
+    veh = generate_vehicle_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="veh_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="veh_home")]
+    ])
+
+    response_text = (
+        f"🚗 **FAKER VEHICLE REGISTRATION RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Make & Model:** `{veh['manufacturer']} {veh['model']}`\n"
+        f"• **Body Style:** `{veh['type']}` | **Year:** `{veh['year']}`\n"
+        f"• **Fuel / Powertrain:** `{veh['fuel']}`\n"
+        f"• **Transmission:** `{veh['transmission']}`\n"
+        f"• **Paint Color:** `{veh['color']}`\n\n"
+        f"🔍 **Identification (VIN):**\n"
+        f"`{veh['vin']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await message.reply_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+# ==========================================
+# --- INTERACTIVE CALLBACK ROUTERS ---
+# ==========================================
+
+@app.on_callback_query(filters.regex(r"^veh_home$"))
+async def cb_veh_home(client: Client, query: CallbackQuery):
+    await query.answer()
+    text = (
+        "🚗 **Faker Vehicle Intelligence Suite**\n\n"
+        "Generate random car manufacturers, models, body types, fuel systems, VIN codes, and paint colors "
+        "using the interactive controls below:"
+    )
+    await query.message.edit_text(text, reply_markup=get_vehicle_menu(), parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^veh_random$"))
+async def cb_veh_random(client: Client, query: CallbackQuery):
+    await query.answer("Generating vehicle record...")
+    veh = generate_vehicle_record()
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="veh_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="veh_home")]
+    ])
+
+    response_text = (
+        f"🚗 **FAKER VEHICLE REGISTRATION RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Make & Model:** `{veh['manufacturer']} {veh['model']}`\n"
+        f"• **Body Style:** `{veh['type']}` | **Year:** `{veh['year']}`\n"
+        f"• **Fuel / Powertrain:** `{veh['fuel']}`\n"
+        f"• **Transmission:** `{veh['transmission']}`\n"
+        f"• **Paint Color:** `{veh['color']}`\n\n"
+        f"🔍 **Identification (VIN):**\n"
+        f"`{veh['vin']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^veh_ev$"))
+async def cb_veh_ev(client: Client, query: CallbackQuery):
+    await query.answer("Filtering electric vehicle...")
+    veh = VEHICLE_DATABASE[0] # Tesla Model S Plaid
+    veh_data = {
+        "manufacturer": veh["manufacturer"], "model": veh["model"], "type": veh["type"], "fuel": veh["fuel"],
+        "color": "Alpine White", "transmission": "Direct-Drive EV", "year": 2026,
+        "vin": "".join(random.choices("ABCDEFGHJKLMNPRSTUVWXYZ0123456789", k=17))
+    }
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="veh_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="veh_home")]
+    ])
+
+    response_text = (
+        f"⚡ **ELECTRIC VEHICLE RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Make & Model:** `{veh_data['manufacturer']} {veh_data['model']}`\n"
+        f"• **Body Style:** `{veh_data['type']}` | **Year:** `{veh_data['year']}`\n"
+        f"• **Fuel / Powertrain:** `Electric`\n"
+        f"• **Paint Color:** `{veh_data['color']}`\n\n"
+        f"🔍 **Identification (VIN):**\n"
+        f"`{veh_data['vin']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^veh_sport$"))
+async def cb_veh_sport(client: Client, query: CallbackQuery):
+    await query.answer("Selecting sports coupe...")
+    veh = VEHICLE_DATABASE[2] # Porsche 911
+    veh_data = {
+        "manufacturer": veh["manufacturer"], "model": veh["model"], "type": veh["type"], "fuel": veh["fuel"],
+        "color": "Racing Red", "transmission": "Dual-Clutch 7-Speed", "year": 2025,
+        "vin": "".join(random.choices("ABCDEFGHJKLMNPRSTUVWXYZ0123456789", k=17))
+    }
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Generate Another", callback_data="veh_random")],
+        [InlineKeyboardButton("🏠 Main Menu", callback_data="veh_home")]
+    ])
+
+    response_text = (
+        f"🏎️ **SPORTS COUPE RECORD**\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"• **Make & Model:** `{veh_data['manufacturer']} {veh_data['model']}`\n"
+        f"• **Body Style:** `Coupe` | **Year:** `{veh_data['year']}`\n"
+        f"• **Fuel / Powertrain:** `Gasoline`\n"
+        f"• **Paint Color:** `Racing Red`\n\n"
+        f"🔍 **Identification (VIN):**\n"
+        f"`{veh_data['vin']}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^veh_close$"))
+async def cb_veh_close(client: Client, query: CallbackQuery):
     await query.answer("Closed ❌")
     await query.message.delete()
