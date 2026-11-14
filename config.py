@@ -54,7 +54,7 @@ class Config:
     LINKLY_API_KEY = os.getenv("LINKLY_API_KEY")
     LINKLY_WORKSPACE_ID = 10
 
-    IG_RAPIDAPI_KEY = os.getenv("IG_RAPIDAPI_KEY")
+    UNPROFANE_API_KEY = os.getenv("UNPROFANE_API_KEY")
     
     CAT_API_KEY = os.getenv("CAT_API_KEY")
     
