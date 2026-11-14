@@ -49,6 +49,9 @@ class Config:
     
     #https://spoo.me
     SPOO_API_KEY = os.getenv("SPOO_API_KEY")
+
+    #https://app.linklyhq.com/api/v1/link
+    LINKLY_API_KEY = os.getenv("LINKLY_API_KEY")
     
     CAT_API_KEY = os.getenv("CAT_API_KEY")
     
