@@ -12,7 +12,7 @@ LANG_CACHE = []  # Caches the 216 languages to keep inline pagination instant
 
 def get_dl_token() -> str:
     """Retrieves the Detect Language API key from config safely."""
-    return getattr(Config, "DETECT_LANGUAGE_API_KEY", None)
+    return getattr(Config, "DETECT_LANGUAGE_API", None)
 
 
 async def dl_request(method: str, endpoint: str, **kwargs) -> httpx.Response:
