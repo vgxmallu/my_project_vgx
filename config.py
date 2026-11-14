@@ -55,6 +55,8 @@ class Config:
     LINKLY_WORKSPACE_ID = 10
 
     UNPROFANE_API_KEY = os.getenv("UNPROFANE_API_KEY")
+
+    ADELI_API_KEY = os.getenv("ADELI_API_KEY")
     
     CAT_API_KEY = os.getenv("CAT_API_KEY")
     
