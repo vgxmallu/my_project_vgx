@@ -53,8 +53,10 @@ class Config:
     #https://app.linklyhq.com/api/v1/link
     LINKLY_API_KEY = os.getenv("LINKLY_API_KEY")
     LINKLY_WORKSPACE_ID = 10
-
+    #https://apitemplate.io/
     APITEMPLATE_API_KEY = os.getenv("APITEMPLATE_API_KEY")
+    #https://cheetaho.com/docs/getting-started/
+    CHEETAHO_API_KEY = os.getenv("CHEETAHO_API_KEY")
 
     UNPROFANE_API_KEY = os.getenv("UNPROFANE_API_KEY")
 
