@@ -4,7 +4,6 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto
 from pyrogram.enums import ParseMode
 from vgx import app
-from config import Config
 
 # --- CONFIGURATION ---
 CONTRIB_BASE_URL = "https://github-contributions.vercel.app"
