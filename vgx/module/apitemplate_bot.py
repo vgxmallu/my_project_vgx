@@ -5,8 +5,18 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, 
 from pyrogram.enums import ParseMode
 from vgx import app
 from config import Config
+
 # --- CONFIGURATION ---
 APITEMPLATE_BASE_URL = "https://api.apitemplate.io/v1"
+
+
+def safe_truncate(text: str, max_length: int = 3800) -> str:
+    """Safely truncates text to stay well within Telegram's 4000 character limit."""
+    if not text:
+        return ""
+    if len(text) <= max_length:
+        return text
+    return text[:max_length] + "\n\n... _(Output truncated due to length limitations)_"
 
 
 async def apitemplate_request(method: str, endpoint: str, json_data: dict = None, params: dict = None) -> dict:
@@ -24,7 +34,8 @@ async def apitemplate_request(method: str, endpoint: str, json_data: dict = None
             if response.status_code in [200, 201]:
                 return {"success": True, "data": response.json()}
             else:
-                return {"success": False, "status": response.status_code, "error": response.text}
+                # Truncate error responses to avoid giant error bodies breaking telegram edits
+                return {"success": False, "status": response.status_code, "error": safe_truncate(response.text, max_length=1500)}
         except Exception as e:
             return {"success": False, "status": 500, "error": str(e)}
 
@@ -56,7 +67,7 @@ async def cmd_apitemplate_dashboard(client: Client, message: Message):
         "Auto-generate high-volume PDF documents, certificates, invoices, and social media banners "
         "from templates, HTML, or URLs using the controls below:"
     )
-    await message.reply_text(text, reply_markup=get_apitemplate_menu(), parse_mode=ParseMode.MARKDOWN)
+    await message.reply_text(safe_truncate(text), reply_markup=get_apitemplate_menu(), parse_mode=ParseMode.MARKDOWN)
 
 
 # ==========================================
@@ -72,8 +83,9 @@ async def cmd_apitemplate_quota(client: Client, message: Message):
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Main Menu", callback_data="api_home")]])
 
     if not res["success"]:
+        error_msg = safe_truncate(res['error'])
         return await msg.edit_text(
-            f"❌ **API Request Failed** (`{res['status']}`):\n`{res['error']}`\n\n"
+            f"❌ **API Request Failed** (`{res['status']}`):\n`{error_msg}`\n\n"
             "_Tip: Ensure your `APITEMPLATE_API_KEY` is configured correctly._",
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN
@@ -89,7 +101,7 @@ async def cmd_apitemplate_quota(client: Client, message: Message):
         f"━━━━━━━━━━━━━━━━━━━━━━"
     )
 
-    await msg.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+    await msg.edit_text(safe_truncate(response_text), reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
 
 
 # ==========================================
@@ -104,7 +116,7 @@ async def cb_api_home(client: Client, query: CallbackQuery):
         "Auto-generate high-volume PDF documents, certificates, invoices, and social media banners "
         "from templates, HTML, or URLs using the controls below:"
     )
-    await query.message.edit_text(text, reply_markup=get_apitemplate_menu(), parse_mode=ParseMode.MARKDOWN)
+    await query.message.edit_text(safe_truncate(text), reply_markup=get_apitemplate_menu(), parse_mode=ParseMode.MARKDOWN)
 
 
 @app.on_callback_query(filters.regex(r"^api_quota$"))
@@ -114,7 +126,7 @@ async def cb_api_quota(client: Client, query: CallbackQuery):
     
     keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Main Menu", callback_data="api_home")]])
     if not res["success"]:
-        return await query.message.edit_text(f"❌ Error: `{res['error']}`", reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+        return await query.message.edit_text(f"❌ Error: `{safe_truncate(res['error'])}`", reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
 
     data = res["data"]
     response_text = (
@@ -125,7 +137,7 @@ async def cb_api_quota(client: Client, query: CallbackQuery):
         f"• **Plan Type:** `{data.get('plan', 'Developer / Pro')}`\n"
         f"━━━━━━━━━━━━━━━━━━━━━━"
     )
-    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+    await query.message.edit_text(safe_truncate(response_text), reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
 
 
 @app.on_callback_query(filters.regex(r"^api_gen_pdf$"))
@@ -146,7 +158,7 @@ async def cb_api_pdf(client: Client, query: CallbackQuery):
         f"• **Sample URL:** `https://api.apitemplate.io/v1/download?id=sample_pdf_9821`\n"
         f"━━━━━━━━━━━━━━━━━━━━━━"
     )
-    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+    await query.message.edit_text(safe_truncate(response_text), reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
 
 
 @app.on_callback_query(filters.regex(r"^api_gen_img$"))
@@ -167,7 +179,7 @@ async def cb_api_img(client: Client, query: CallbackQuery):
         f"• **Sample URL:** `https://api.apitemplate.io/v1/download?id=sample_banner_4432.png`\n"
         f"━━━━━━━━━━━━━━━━━━━━━━"
     )
-    await query.message.edit_text(response_text, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
+    await query.message.edit_text(safe_truncate(response_text), reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
 
 
 @app.on_callback_query(filters.regex(r"^api_close$"))
