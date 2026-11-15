@@ -11,6 +11,9 @@ TADDY_USER_ID = os.getenv("TADDY_USER_ID", "5749")
 TADDY_API_KEY = os.getenv("TADDY_API_KEY", "19c8afb17499d8c3007057e43ab0ef1e44d0daa219c8ab8a3794f71c7f06a812a19d871c64a127b50ba177085604145200")
 
 
+
+
+
 async def taddy_graphql_query(query: str) -> dict:
     """Helper utility for executing asynchronous GraphQL queries against Taddy API."""
     headers = {
@@ -81,9 +84,11 @@ async def cmd_taddy_search(client: Client, message: Message):
     term = message.text.partition(" ")[2].strip()
     msg = await message.reply_text(f"🔍 Searching Taddy registry for `{term}`...")
 
+    # Added searchId property required by Taddy SearchResults type
     query = f"""
     {{
       search(term: "{term}", limitPerPage: 5) {{
+        searchId
         podcastSeries {{
           uuid
           name
@@ -225,4 +230,3 @@ async def cb_taddy_search_prompt(client: Client, query: CallbackQuery):
 async def cb_taddy_close(client: Client, query: CallbackQuery):
     await query.answer("Closed ❌")
     await query.message.delete()
-
