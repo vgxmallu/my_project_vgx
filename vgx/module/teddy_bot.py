@@ -81,7 +81,7 @@ async def cmd_taddy_search(client: Client, message: Message):
     term = message.text.partition(" ")[2].strip()
     msg = await message.reply_text(f"🔍 Searching Taddy registry for `{term}`...")
 
-    query = f""
+    query = f"""
     {{
       search(term: "{term}", limitPerPage: 5) {{
         podcastSeries {{
@@ -93,7 +93,7 @@ async def cmd_taddy_search(client: Client, message: Message):
         }}
       }}
     }}
-    ""
+    """
 
     res = await taddy_graphql_query(query)
     if not res["success"]:
