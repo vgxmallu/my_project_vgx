@@ -50,6 +50,8 @@ class Config:
     #https://spoo.me
     SPOO_API_KEY = os.getenv("SPOO_API_KEY")
 
+    BRAWLSTARS_API_KEY = os.getenv("BRAWLSTARS_API_KEY")
+    
     #https://app.linklyhq.com/api/v1/link
     LINKLY_API_KEY = os.getenv("LINKLY_API_KEY")
     LINKLY_WORKSPACE_ID = 10
