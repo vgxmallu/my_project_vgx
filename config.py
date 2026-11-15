@@ -54,6 +54,8 @@ class Config:
     LINKLY_API_KEY = os.getenv("LINKLY_API_KEY")
     LINKLY_WORKSPACE_ID = 10
 
+    APITEMPLATE_API_KEY = os.getenv("APITEMPLATE_API_KEY")
+
     UNPROFANE_API_KEY = os.getenv("UNPROFANE_API_KEY")
 
     ADELI_API_KEY = os.getenv("ADELI_API_KEY")
