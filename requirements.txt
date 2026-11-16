@@ -31,3 +31,6 @@ tgcrypto>=1.2.5
 motor>=3.3.0
 requests>=2.31.0
 httpx[http2]
+
+#ai
+openai>=1.0.0
