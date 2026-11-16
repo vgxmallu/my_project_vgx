@@ -5,7 +5,7 @@ from openai import AsyncOpenAI
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from config import Config
-
+from vgx import app
 
 DB_NAME = "deepseek_commands_bot"
 
