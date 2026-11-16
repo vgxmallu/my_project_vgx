@@ -41,6 +41,10 @@ class Config:
     APY_HUB_TOKEN = os.getenv("APY_HUB_TOKEN")
     #https://api.t.ly
     TLY_TOKEN = os.getenv("TLY_TOKEN")
+
+    # Official DeepSeek Configuration
+    DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+    DEEPSEEK_BASE_URL = "https://api.deepseek.com"
     
     BITLY_CLIENT_ID = os.getenv("BITLY_CLIENT_ID")
     BITLY_CLIENT_SECRET = os.getenv("BITLY_CLIENT_SECRET")
