@@ -27,30 +27,41 @@ MONGO_DB_NAME = "captcha_botvgx"
 
 ALLOWED_TIME_MINUTES = [5, 10, 20, 30, 40, 50, 60]
 ALLOWED_PENALTIES = ["mute", "kick", "ban"]
+ALLOWED_WARN_PENALTIES = ["mute", "kick", "ban"]
 ALLOWED_MODES = ["button", "math", "emoji", "word"]
 ALLOWED_ATTEMPTS = [3, 5]
 WARN_LIMIT = 3
 
-EMOJI_POOL = [
-    # Animals (28)
+EMOJI_POOL = list(dict.fromkeys([
+    # Animals
     "🦊", "🐼", "🦁", "🐸", "🐙", "🦉", "🐺",
     "🐢", "🐬", "🦋", "🐝", "🦔", "🦖", "🦩",
     "🦈", "🐨", "🐪", "🦚", "🐧", "🦄", "🦀",
     "🦘", "🦥", "🦦", "🐊", "🦢", "🐞", "🐳",
+
+    # Food & Drink
     "🍎", "🍕", "🍔", "🌮", "🍣", "🍩", "🍓",
     "🥑", "🍉", "🥐", "🍿", "🧁", "🍍", "🥨",
     "🍒", "🥞", "🥥", "🍋", "🥟", "🧇", "🍇",
+    "🍪", "🥕", "🍵",
+
+    # Nature, Space & Weather
     "🔥", "⚡", "🌙", "🍀", "🌊", "🌈", "❄️",
     "🌋", "🌵", "🌻", "🍄", "🪐", "☀️", "🌪️",
     "🍁", "🌴", "⛄", "🌟", "🌸", "🪵", "🪨",
+    "☔", "🌾", "🏔️",
+
+    # Tech, Gaming, Music & Tools
     "🚀", "💎", "🎮", "🎧", "🧩", "🛡️", "🔑",
     "🧭", "🎯", "🎸", "🏮", "⏳", "🔭", "🪄",
     "🪁", "🚲", "⚓", "💻", "📷", "🔦", "🪫",
-    "⚽", "🏀", "🏆", "🎲", "👑", "🔔", "🎈",
-    "🎁", "💣", "🧪", "🧭", "🏝️", "🗽", "🎡",
-    "🚂", "🚁", "🛸", "🧸", "🪩", "🪄", "🕯️",
-]
+    "🧲",
 
+    # Sports, Symbols & Travel
+    "⚽", "🏀", "🏆", "🎲", "👑", "🔔", "🎈",
+    "🎁", "💣", "🧪", "🏝️", "🗽", "🎡",
+    "🚂", "🚁", "🛸", "🧸", "🪩", "🕯️", "🧱",
+]))
 
 WORD_POOL = [
     "ember", "orbit", "cobalt", "harbor", "zenith", "velvet",
@@ -62,10 +73,9 @@ DEFAULT_GROUP_CONFIG = {
     "enabled": True,
     "time_minutes": 5,
     "penalty": "mute",
+    "warn_penalty": "mute",
     "mode": "button",
     "max_attempts": 3,
-    "delete_service_msg": False,
-    "clean_service": False,
     "lockdown": False,
 }
 
@@ -170,6 +180,8 @@ def _normalize_group_doc(
         base["time_minutes"] = DEFAULT_GROUP_CONFIG["time_minutes"]
     if base["penalty"] not in ALLOWED_PENALTIES:
         base["penalty"] = DEFAULT_GROUP_CONFIG["penalty"]
+    if base["warn_penalty"] not in ALLOWED_WARN_PENALTIES:
+        base["warn_penalty"] = DEFAULT_GROUP_CONFIG["warn_penalty"]
     if base["mode"] not in ALLOWED_MODES:
         base["mode"] = DEFAULT_GROUP_CONFIG["mode"]
     if base["max_attempts"] not in ALLOWED_ATTEMPTS:
@@ -182,10 +194,9 @@ def _normalize_group_doc(
         "enabled": bool(base["enabled"]),
         "time_minutes": int(base["time_minutes"]),
         "penalty": str(base["penalty"]),
+        "warn_penalty": str(base["warn_penalty"]),
         "mode": str(base["mode"]),
         "max_attempts": int(base["max_attempts"]),
-        "delete_service_msg": bool(base["delete_service_msg"]),
-        "clean_service": bool(base["clean_service"]),
         "lockdown": bool(base["lockdown"]),
         "updated_by": (
             updated_by if updated_by is not None else (doc.get("updated_by") if doc else None)
@@ -200,10 +211,9 @@ async def upsert_group_config(
     enabled: bool | None = None,
     time_minutes: int | None = None,
     penalty: str | None = None,
+    warn_penalty: str | None = None,
     mode: str | None = None,
     max_attempts: int | None = None,
-    delete_service_msg: bool | None = None,
-    clean_service: bool | None = None,
     lockdown: bool | None = None,
     updated_by: int | None = None,
 ) -> dict:
@@ -218,14 +228,12 @@ async def upsert_group_config(
         merged["time_minutes"] = int(time_minutes)
     if penalty is not None and penalty.lower() in ALLOWED_PENALTIES:
         merged["penalty"] = penalty.lower()
+    if warn_penalty is not None and warn_penalty.lower() in ALLOWED_WARN_PENALTIES:
+        merged["warn_penalty"] = warn_penalty.lower()
     if mode is not None and mode.lower() in ALLOWED_MODES:
         merged["mode"] = mode.lower()
     if max_attempts is not None and int(max_attempts) in ALLOWED_ATTEMPTS:
         merged["max_attempts"] = int(max_attempts)
-    if delete_service_msg is not None:
-        merged["delete_service_msg"] = bool(delete_service_msg)
-    if clean_service is not None:
-        merged["clean_service"] = bool(clean_service)
     if lockdown is not None:
         merged["lockdown"] = bool(lockdown)
 
@@ -291,6 +299,20 @@ async def clear_user_warnings(chat_id: int, user_id: int) -> int:
     return res.deleted_count
 
 
+async def execute_member_punishment(client: Client, chat_id: int, user_id: int, punishment: str) -> str:
+    """Applies mute, kick, or ban to a group member and returns the normalized punishment."""
+    p = (punishment or "mute").lower()
+    if p == "ban":
+        await client.ban_chat_member(chat_id, user_id)
+        return "ban"
+    if p == "kick":
+        await client.ban_chat_member(chat_id, user_id)
+        await client.unban_chat_member(chat_id, user_id)
+        return "kick"
+    await client.restrict_chat_member(chat_id, user_id, RESTRICTED_PERMISSIONS)
+    return "mute"
+
+
 async def upsert_pending_captcha(
     chat_id: int,
     user_id: int,
@@ -301,9 +323,7 @@ async def upsert_pending_captcha(
     expires_at: float,
     max_attempts: int = 3,
     attempts_used: int = 0,
-    service_msg_id: int | None = None,
     penalty: str = "mute",
-    delete_service_msg: bool = False,
 ) -> None:
     col = await get_captchas_collection()
     await col.update_one(
@@ -313,14 +333,12 @@ async def upsert_pending_captcha(
                 "chat_id": chat_id,
                 "user_id": user_id,
                 "msg_id": msg_id,
-                "service_msg_id": service_msg_id,
                 "mode": mode,
                 "expected_value": str(expected_value),
                 "choices": [str(c) for c in choices],
                 "max_attempts": int(max_attempts),
                 "attempts_used": int(attempts_used),
                 "penalty": penalty,
-                "delete_service_msg": bool(delete_service_msg),
                 "expires_at": expires_at,
             }
         },
@@ -381,7 +399,6 @@ async def approve_user_captcha(
     chat_id: int,
     user_id: int,
     msg_id: int | None = None,
-    service_msg_id: int | None = None,
 ) -> None:
     """Unrestricts a user, deletes their MongoDB record, and cancels their timeout task."""
     await delete_pending_captcha(chat_id, user_id)
@@ -393,16 +410,12 @@ async def approve_user_captcha(
         pass
 
     await _delete_message_safe(client, chat_id, msg_id)
-    await _delete_message_safe(client, chat_id, service_msg_id)
 
 
 async def enforce_permanent_mute_and_cleanup(
     client: Client,
     chat_id: int,
     user_id: int,
-    msg_id: int | None = None,
-    service_msg_id: int | None = None,
-    delete_service_msg: bool = False,
 ) -> None:
     """Permanently mutes a user who exhausted all captcha attempts and cleans up state."""
     await delete_pending_captcha(chat_id, user_id)
@@ -413,38 +426,24 @@ async def enforce_permanent_mute_and_cleanup(
     except Exception:
         pass
 
-    if delete_service_msg:
-        await _delete_message_safe(client, chat_id, service_msg_id)
-
 
 async def apply_punishment_and_cleanup(
     client: Client,
     chat_id: int,
     user_id: int,
     msg_id: int | None = None,
-    service_msg_id: int | None = None,
     penalty: str = "mute",
-    delete_service_msg: bool = False,
 ) -> None:
     """Applies configured failure punishment (mute, kick, or ban) and cleans up state."""
     await delete_pending_captcha(chat_id, user_id)
     _cancel_timer(chat_id, user_id)
 
-    normalized_penalty = (penalty or "mute").lower()
     try:
-        if normalized_penalty == "ban":
-            await client.ban_chat_member(chat_id, user_id)
-        elif normalized_penalty == "kick":
-            await client.ban_chat_member(chat_id, user_id)
-            await client.unban_chat_member(chat_id, user_id)
-        else:
-            await client.restrict_chat_member(chat_id, user_id, RESTRICTED_PERMISSIONS)
+        await execute_member_punishment(client, chat_id, user_id, penalty)
     except Exception:
         pass
 
     await _delete_message_safe(client, chat_id, msg_id)
-    if delete_service_msg:
-        await _delete_message_safe(client, chat_id, service_msg_id)
 
 
 async def _wait_until_expiry(
@@ -458,15 +457,12 @@ async def _wait_until_expiry(
     if record and record.get("msg_id") == msg_id:
         grp_cfg = await get_group_config(chat_id)
         penalty = record.get("penalty") or grp_cfg["penalty"]
-        del_svc = bool(record.get("delete_service_msg", grp_cfg["delete_service_msg"]))
         await apply_punishment_and_cleanup(
             client,
             chat_id,
             user_id,
             msg_id=msg_id,
-            service_msg_id=record.get("service_msg_id"),
             penalty=penalty,
-            delete_service_msg=del_svc,
         )
 
 
@@ -497,15 +493,12 @@ async def recover_pending_captchas(client: Client) -> None:
         if expires_at <= now:
             grp_cfg = await get_group_config(chat_id)
             penalty = rec.get("penalty") or grp_cfg["penalty"]
-            del_svc = bool(rec.get("delete_service_msg", grp_cfg["delete_service_msg"]))
             await apply_punishment_and_cleanup(
                 client,
                 chat_id,
                 user_id,
                 msg_id=msg_id,
-                service_msg_id=rec.get("service_msg_id"),
                 penalty=penalty,
-                delete_service_msg=del_svc,
             )
         else:
             schedule_captcha_timer(client, chat_id, user_id, msg_id, expires_at)
@@ -623,9 +616,8 @@ def format_group_settings_message(cfg: dict) -> str:
     mins = cfg["time_minutes"]
     min_word = "Minute" if mins == 1 else "Minutes"
     penalty_label = cfg["penalty"].capitalize()
+    warn_penalty_label = cfg["warn_penalty"].capitalize()
     attempts_label = f"{cfg['max_attempts']} (Permanent Mute on fail)"
-    del_svc_label = "On" if cfg["delete_service_msg"] else "Off"
-    clean_svc_label = "On" if cfg["clean_service"] else "Off"
     lockdown_label = "Locked 🔒" if cfg["lockdown"] else "Open 🔓"
 
     mode = cfg["mode"]
@@ -656,14 +648,13 @@ def format_group_settings_message(cfg: dict) -> str:
         "By activating the captcha, when a user enters the group he will not be able to send messages "
         "until he has confirmed that he is not a robot.\n\n"
         "🕑 You can also decide to set a PUNISHMENT down below for those who will not resolve the captcha "
-        "within the desired time and whether or not to clear the service message in case of failure.\n\n"
+        "within the desired time.\n\n"
         f"**Status:** {status_label}\n"
         f"🕒 **Time:** {mins} {min_word}\n"
-        f"⛔️ **Penalty:** {penalty_label}\n"
+        f"⛔️ **Captcha Penalty:** {penalty_label}\n"
+        f"⚠️ **Warn Limit Action ({WARN_LIMIT}x):** {warn_penalty_label}\n"
         f"🎯 **Max Attempts:** {attempts_label}\n"
         f"{mode_line}\n"
-        f"🗑 **Delete service message:** {del_svc_label}\n"
-        f"🧹 **Clean join/leave service:** {clean_svc_label}\n"
         f"🔐 **Group Lockdown:** {lockdown_label}"
     )
 
@@ -677,7 +668,7 @@ def build_group_settings_keyboard(cfg: dict) -> InlineKeyboardMarkup:
 
     time_buttons = [
         InlineKeyboardButton(
-            f"{'• ' if m == cfg['time_minutes'] else ''}{m}m",
+            f"{'☑️ ' if m == cfg['time_minutes'] else ''}{m}m",
             callback_data=f"cap_cfg_time_{gid}_{m}",
         )
         for m in ALLOWED_TIME_MINUTES
@@ -685,15 +676,23 @@ def build_group_settings_keyboard(cfg: dict) -> InlineKeyboardMarkup:
 
     penalty_buttons = [
         InlineKeyboardButton(
-            f"{'• ' if p == cfg['penalty'] else ''}{p.capitalize()}",
+            f"{'☑️ ' if p == cfg['penalty'] else ''}Cap {p.capitalize()}",
             callback_data=f"cap_cfg_pen_{gid}_{p}",
         )
         for p in ALLOWED_PENALTIES
     ]
 
+    warn_penalty_buttons = [
+        InlineKeyboardButton(
+            f"{'☑️ ' if wp == cfg['warn_penalty'] else ''}Warn {wp.capitalize()}",
+            callback_data=f"cap_cfg_wpen_{gid}_{wp}",
+        )
+        for wp in ALLOWED_WARN_PENALTIES
+    ]
+
     attempt_buttons = [
         InlineKeyboardButton(
-            f"{'• ' if a == cfg['max_attempts'] else ''}{a} Attempts",
+            f"{'☑️ ' if a == cfg['max_attempts'] else ''}{a} Attempts",
             callback_data=f"cap_cfg_att_{gid}_{a}",
         )
         for a in ALLOWED_ATTEMPTS
@@ -701,21 +700,11 @@ def build_group_settings_keyboard(cfg: dict) -> InlineKeyboardMarkup:
 
     mode_buttons = [
         InlineKeyboardButton(
-            f"{'• ' if m == cfg['mode'] else ''}{m.capitalize()}",
+            f"{'☑️ ' if m == cfg['mode'] else ''}{m.capitalize()}",
             callback_data=f"cap_cfg_mode_{gid}_{m}",
         )
         for m in ALLOWED_MODES
     ]
-
-    del_svc_btn = InlineKeyboardButton(
-        f"🗑 Delete Service Msg: {'On' if cfg['delete_service_msg'] else 'Off'}",
-        callback_data=f"cap_cfg_delsvc_{gid}_{0 if cfg['delete_service_msg'] else 1}",
-    )
-
-    clean_svc_btn = InlineKeyboardButton(
-        f"🧹 Clean Service: {'On' if cfg['clean_service'] else 'Off'}",
-        callback_data=f"cap_cfg_cleansvc_{gid}_{0 if cfg['clean_service'] else 1}",
-    )
 
     lockdown_btn = InlineKeyboardButton(
         "🔓 Unlock Chat" if cfg["lockdown"] else "🔒 Lock Chat",
@@ -727,10 +716,10 @@ def build_group_settings_keyboard(cfg: dict) -> InlineKeyboardMarkup:
         time_buttons[:4],
         time_buttons[4:],
         penalty_buttons,
+        warn_penalty_buttons,
         attempt_buttons,
         mode_buttons[:2],
         mode_buttons[2:],
-        [del_svc_btn, clean_svc_btn],
         [lockdown_btn, InlineKeyboardButton("📜 Mod Logs", callback_data=f"cap_mod_logs_{gid}")],
         [
             InlineKeyboardButton("📋 Groups List", callback_data="cap_priv_list"),
@@ -774,7 +763,7 @@ async def build_private_groups_panel() -> tuple[str, InlineKeyboardMarkup]:
         status_badge = "Active ✅" if grp.get("enabled", True) else "Inactive ❌"
         lock_badge = "🔒" if grp.get("lockdown") else "🔓"
         lines.append(
-            f"• **{title}** (`{gid}`) — {status_badge} | `{grp['mode']}` | `{grp['max_attempts']} att` | `{grp['time_minutes']}m` | {lock_badge}"
+            f"• **{title}** (`{gid}`) — {status_badge} | `{grp['mode']}` | Warn:`{grp['warn_penalty']}` | {lock_badge}"
         )
         rows.append([
             InlineKeyboardButton(
@@ -807,9 +796,7 @@ async def build_admin_panel(client: Client, chat_id: int) -> tuple[str, InlineKe
                 chat_id,
                 rec["user_id"],
                 msg_id=rec.get("msg_id"),
-                service_msg_id=rec.get("service_msg_id"),
                 penalty=rec.get("penalty") or cfg["penalty"],
-                delete_service_msg=bool(rec.get("delete_service_msg", cfg["delete_service_msg"])),
             )
         else:
             active_records.append(rec)
@@ -821,7 +808,7 @@ async def build_admin_panel(client: Client, chat_id: int) -> tuple[str, InlineKe
         text = (
             "🛡️ **Pending Captcha & Mod Status**\n"
             "━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"**Status:** {status_label} | **Mode:** `{cfg['mode']}` | **Attempts:** `{cfg['max_attempts']}` | **Time:** `{cfg['time_minutes']}m` | {lock_label}\n"
+            f"**Status:** {status_label} | **Mode:** `{cfg['mode']}` | **Warn Action:** `{cfg['warn_penalty']}` | {lock_label}\n"
             "No pending verifications in this chat."
         )
         kb = InlineKeyboardMarkup([
@@ -836,7 +823,7 @@ async def build_admin_panel(client: Client, chat_id: int) -> tuple[str, InlineKe
     lines = [
         "🛡️ **Pending Captcha & Mod Status**\n"
         "━━━━━━━━━━━━━━━━━━━━━━",
-        f"**Status:** {status_label} | **Mode:** `{cfg['mode']}` | **Attempts:** `{cfg['max_attempts']}` | **Time:** `{cfg['time_minutes']}m` | {lock_label}",
+        f"**Status:** {status_label} | **Mode:** `{cfg['mode']}` | **Warn Action:** `{cfg['warn_penalty']}` | {lock_label}",
         f"Active pending users: **{len(active_records)}**\n",
     ]
     rows: list[list[InlineKeyboardButton]] = []
@@ -892,24 +879,32 @@ async def cmd_mod_warn(client: Client, message: Message):
     if not uid:
         return await message.reply_text("⚠️ Reply to a user or use `/warn <user_id_or_@username> [reason]`", parse_mode=ParseMode.MARKDOWN)
 
+    cfg = await get_group_config(chat_id, title=message.chat.title)
+    warn_punishment = cfg.get("warn_penalty", "mute")
+
     await log_mod_action(chat_id, actor_id, "warn", target_user_id=uid, reason=reason)
     warns = await get_user_warnings(chat_id, uid)
     count = len(warns)
 
     if count >= WARN_LIMIT:
         try:
-            await client.restrict_chat_member(chat_id, uid, RESTRICTED_PERMISSIONS)
-        except Exception:
-            pass
+            applied = await execute_member_punishment(client, chat_id, uid, warn_punishment)
+        except Exception as exc:
+            return await message.reply_text(
+                f"❌ Reached `{WARN_LIMIT}/{WARN_LIMIT}` warnings, but failed to apply `{warn_punishment}`: `{exc}`",
+                parse_mode=ParseMode.MARKDOWN,
+            )
         await clear_user_warnings(chat_id, uid)
+        await log_mod_action(chat_id, actor_id, f"warn_{applied}", target_user_id=uid, reason=reason or f"{WARN_LIMIT} warnings")
+        badge = {"ban": "🔨 Banned", "kick": "👢 Kicked"}.get(applied, "🔇 Muted")
         await message.reply_text(
-            f"🔇 **{label}** (`{uid}`) reached `{WARN_LIMIT}/{WARN_LIMIT}` warnings and was muted.",
+            f"{badge} **{label}** (`{uid}`) after reaching `{WARN_LIMIT}/{WARN_LIMIT}` warnings.",
             parse_mode=ParseMode.MARKDOWN,
         )
     else:
         r_text = f" — _{reason}_" if reason else ""
         await message.reply_text(
-            f"⚠️ **{label}** (`{uid}`) warned (`{count}/{WARN_LIMIT}`){r_text}.",
+            f"⚠️ **{label}** (`{uid}`) warned (`{count}/{WARN_LIMIT}` -> `{warn_punishment}`){r_text}.",
             parse_mode=ParseMode.MARKDOWN,
         )
 
@@ -982,8 +977,7 @@ async def cmd_mod_kick(client: Client, message: Message):
         return await message.reply_text("⚠️ Reply to a user or use `/kick <user_id_or_@username> [reason]`", parse_mode=ParseMode.MARKDOWN)
 
     try:
-        await client.ban_chat_member(chat_id, uid)
-        await client.unban_chat_member(chat_id, uid)
+        await execute_member_punishment(client, chat_id, uid, "kick")
     except Exception as exc:
         return await message.reply_text(f"❌ Failed to kick: `{exc}`", parse_mode=ParseMode.MARKDOWN)
 
@@ -1003,7 +997,7 @@ async def cmd_mod_ban(client: Client, message: Message):
         return await message.reply_text("⚠️ Reply to a user or use `/ban <user_id_or_@username> [reason]`", parse_mode=ParseMode.MARKDOWN)
 
     try:
-        await client.ban_chat_member(chat_id, uid)
+        await execute_member_punishment(client, chat_id, uid, "ban")
     except Exception as exc:
         return await message.reply_text(f"❌ Failed to ban: `{exc}`", parse_mode=ParseMode.MARKDOWN)
 
@@ -1203,7 +1197,23 @@ async def cb_set_group_penalty(client: Client, query: CallbackQuery):
         return await query.answer("⛔ Admins only.", show_alert=True)
 
     cfg = await upsert_group_config(chat_id=chat_id, penalty=penalty, updated_by=query.from_user.id)
-    await query.answer(f"Penalty set to {penalty.capitalize()}", show_alert=True)
+    await query.answer(f"Captcha penalty set to {penalty.capitalize()}", show_alert=True)
+    await query.message.edit_text(
+        safe_truncate(format_group_settings_message(cfg)),
+        reply_markup=build_group_settings_keyboard(cfg),
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
+@app.on_callback_query(filters.regex(r"^cap_cfg_wpen_(?P<chatid>-?\d+)_(?P<wpenalty>mute|kick|ban)$"))
+async def cb_set_group_warn_penalty(client: Client, query: CallbackQuery):
+    chat_id = int(query.matches[0].group("chatid"))
+    wpenalty = query.matches[0].group("wpenalty")
+    if not await is_chat_admin(client, chat_id, query.from_user.id):
+        return await query.answer("⛔ Admins only.", show_alert=True)
+
+    cfg = await upsert_group_config(chat_id=chat_id, warn_penalty=wpenalty, updated_by=query.from_user.id)
+    await query.answer(f"Warn action set to {wpenalty.capitalize()}", show_alert=True)
     await query.message.edit_text(
         safe_truncate(format_group_settings_message(cfg)),
         reply_markup=build_group_settings_keyboard(cfg),
@@ -1238,38 +1248,6 @@ async def cb_set_group_mode(client: Client, query: CallbackQuery):
 
     cfg = await upsert_group_config(chat_id=chat_id, mode=mode, updated_by=query.from_user.id)
     await query.answer(f"Mode set to {mode.capitalize()}", show_alert=True)
-    await query.message.edit_text(
-        safe_truncate(format_group_settings_message(cfg)),
-        reply_markup=build_group_settings_keyboard(cfg),
-        parse_mode=ParseMode.MARKDOWN,
-    )
-
-
-@app.on_callback_query(filters.regex(r"^cap_cfg_delsvc_(?P<chatid>-?\d+)_(?P<state>[01])$"))
-async def cb_set_group_del_svc(client: Client, query: CallbackQuery):
-    chat_id = int(query.matches[0].group("chatid"))
-    del_svc = query.matches[0].group("state") == "1"
-    if not await is_chat_admin(client, chat_id, query.from_user.id):
-        return await query.answer("⛔ Admins only.", show_alert=True)
-
-    cfg = await upsert_group_config(chat_id=chat_id, delete_service_msg=del_svc, updated_by=query.from_user.id)
-    await query.answer(f"Delete service message: {'On' if del_svc else 'Off'}", show_alert=True)
-    await query.message.edit_text(
-        safe_truncate(format_group_settings_message(cfg)),
-        reply_markup=build_group_settings_keyboard(cfg),
-        parse_mode=ParseMode.MARKDOWN,
-    )
-
-
-@app.on_callback_query(filters.regex(r"^cap_cfg_cleansvc_(?P<chatid>-?\d+)_(?P<state>[01])$"))
-async def cb_set_group_clean_svc(client: Client, query: CallbackQuery):
-    chat_id = int(query.matches[0].group("chatid"))
-    clean_svc = query.matches[0].group("state") == "1"
-    if not await is_chat_admin(client, chat_id, query.from_user.id):
-        return await query.answer("⛔ Admins only.", show_alert=True)
-
-    cfg = await upsert_group_config(chat_id=chat_id, clean_service=clean_svc, updated_by=query.from_user.id)
-    await query.answer(f"Clean join/leave service: {'On' if clean_svc else 'Off'}", show_alert=True)
     await query.message.edit_text(
         safe_truncate(format_group_settings_message(cfg)),
         reply_markup=build_group_settings_keyboard(cfg),
@@ -1350,26 +1328,18 @@ async def cb_admin_captcha_action(client: Client, query: CallbackQuery):
 
     record = await get_pending_captcha(chat_id, target_user_id)
     prompt_msg_id = record.get("msg_id") if record else None
-    service_msg_id = record.get("service_msg_id") if record else None
 
     if action == "approve":
-        await approve_user_captcha(client, chat_id, target_user_id, prompt_msg_id, service_msg_id)
+        await approve_user_captcha(client, chat_id, target_user_id, prompt_msg_id)
         await log_mod_action(chat_id, query.from_user.id, "captcha_approve", target_user_id=target_user_id)
         await query.answer(f"✅ Approved user {target_user_id}.", show_alert=True)
     else:
-        grp_cfg = await get_group_config(chat_id)
         await apply_punishment_and_cleanup(
             client,
             chat_id,
             target_user_id,
             msg_id=prompt_msg_id,
-            service_msg_id=service_msg_id,
             penalty="kick",
-            delete_service_msg=(
-                bool(record.get("delete_service_msg", grp_cfg["delete_service_msg"]))
-                if record
-                else grp_cfg["delete_service_msg"]
-            ),
         )
         await log_mod_action(chat_id, query.from_user.id, "captcha_kick", target_user_id=target_user_id)
         await query.answer(f"👢 Kicked user {target_user_id}.", show_alert=True)
@@ -1389,25 +1359,14 @@ async def cb_admin_captcha_close(client: Client, query: CallbackQuery):
 
 
 # ==========================================
-# --- JOIN / LEAVE & CAPTCHA SOLVE ---
+# --- JOIN & CAPTCHA SOLVE ---
 # ==========================================
-
-@app.on_message(filters.left_chat_member)
-async def handle_left_member(client: Client, message: Message):
-    """Optionally deletes member-left service messages when clean_service is enabled."""
-    cfg = await get_group_config(message.chat.id, title=message.chat.title)
-    if cfg.get("clean_service"):
-        await _delete_message_safe(client, message.chat.id, message.id)
-
 
 @app.on_message(filters.new_chat_members)
 async def handle_new_member(client: Client, message: Message):
     """Restricts joining members when enabled for the group, saves state, and starts timer."""
     chat_id = message.chat.id
     cfg = await get_group_config(chat_id, title=message.chat.title)
-
-    if cfg.get("clean_service") and not cfg.get("delete_service_msg"):
-        await _delete_message_safe(client, chat_id, message.id)
 
     if not cfg["enabled"]:
         return
@@ -1417,7 +1376,6 @@ async def handle_new_member(client: Client, message: Message):
     penalty = cfg["penalty"]
     mode = cfg["mode"]
     max_attempts = int(cfg.get("max_attempts", 3))
-    delete_service_msg = bool(cfg["delete_service_msg"])
 
     for member in message.new_chat_members:
         if member.id == me.id:
@@ -1455,9 +1413,7 @@ async def handle_new_member(client: Client, message: Message):
             expires_at=expires_at,
             max_attempts=max_attempts,
             attempts_used=0,
-            service_msg_id=message.id,
             penalty=penalty,
-            delete_service_msg=delete_service_msg,
         )
         schedule_captcha_timer(client, chat_id, user_id, sent_msg.id, expires_at)
 
@@ -1483,16 +1439,13 @@ async def cb_solve_captcha(client: Client, query: CallbackQuery):
     if time.time() > record["expires_at"]:
         grp_cfg = await get_group_config(chat_id)
         penalty = record.get("penalty") or grp_cfg["penalty"]
-        del_svc = bool(record.get("delete_service_msg", grp_cfg["delete_service_msg"]))
         await query.answer(f"⏱️ Time expired! Applying {penalty}.", show_alert=True)
         await apply_punishment_and_cleanup(
             client,
             chat_id,
             target_user_id,
             msg_id=record["msg_id"],
-            service_msg_id=record.get("service_msg_id"),
             penalty=penalty,
-            delete_service_msg=del_svc,
         )
         return
 
@@ -1522,15 +1475,7 @@ async def cb_solve_captcha(client: Client, query: CallbackQuery):
     attempts_used = int((updated or record).get("attempts_used", 1))
 
     if attempts_used >= max_attempts:
-        del_svc = bool(record.get("delete_service_msg", False))
-        await enforce_permanent_mute_and_cleanup(
-            client,
-            chat_id,
-            target_user_id,
-            msg_id=record.get("msg_id"),
-            service_msg_id=record.get("service_msg_id"),
-            delete_service_msg=del_svc,
-        )
+        await enforce_permanent_mute_and_cleanup(client, chat_id, target_user_id)
         await log_mod_action(
             chat_id,
             actor_id=None,
