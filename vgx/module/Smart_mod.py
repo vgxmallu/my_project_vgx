@@ -24,10 +24,14 @@ MONGO_URI = (
     or os.getenv("MONGO_URL")
     or "mongodb://localhost:27017"
 )
-MONGO_DB_NAME = "smartmod"
+MONGO_DB_NAME = (
+    getattr(Config, "DB_NAME", None)
+)
 
-RAID_WINDOW_SECONDS = 60
-RAID_JOIN_THRESHOLD = 8
+ALLOWED_SPIKE_JOINS = [3, 5, 6, 8]
+ALLOWED_SPIKE_SECONDS = [5, 10, 15, 30, 60]
+ALLOWED_SPIKE_ACTIONS = ["warn", "kick", "ban"]
+
 PROBATION_MAX_MESSAGES = 3
 PROBATION_DURATION_SECONDS = 24 * 3600
 STICKER_BURST_LIMIT = 3
@@ -40,6 +44,9 @@ LINK_PATTERN = re.compile(r"(https?://|t\.me/|telegram\.me/|www\.)", re.IGNORECA
 DEFAULT_SMART_CFG = {
     "raid_shield": True,
     "raid_active": False,
+    "spike_joins": 5,
+    "spike_seconds": 10,
+    "spike_action": "kick",
     "probation_enabled": True,
     "decay_days": 7,
 }
@@ -70,7 +77,8 @@ MUTE_PERMS = ChatPermissions(
 
 _mongo_client: AsyncMongoClient | None = None
 _indexes_ready = False
-_join_timestamps: dict[int, deque[float]] = defaultdict(deque)
+_join_events: dict[int, deque[tuple[float, int]]] = defaultdict(deque)
+_spike_processed: dict[int, dict[int, float]] = defaultdict(dict)
 _sticker_timestamps: dict[tuple[int, int], deque[float]] = defaultdict(deque)
 
 
@@ -103,8 +111,20 @@ async def get_db():
         ])
         await db["smart_snapshots"].create_indexes([IndexModel([("chat_id", 1), ("created_at", -1)])])
         await db["smart_warns"].create_indexes([IndexModel([("chat_id", 1), ("user_id", 1)], unique=True)])
+        await db["smart_mod_logs"].create_indexes([IndexModel([("chat_id", 1), ("created_at", -1)])])
         _indexes_ready = True
     return db
+
+
+async def log_smart_action(chat_id: int, action: str, target_user_id: int | None = None, detail: str = "") -> None:
+    db = await get_db()
+    await db["smart_mod_logs"].insert_one({
+        "chat_id": chat_id,
+        "action": action,
+        "target_user_id": target_user_id,
+        "detail": detail,
+        "created_at": time.time(),
+    })
 
 
 def _perms_to_dict(perms: ChatPermissions | None) -> dict:
@@ -145,6 +165,12 @@ async def get_smart_cfg(chat_id: int, title: str | None = None) -> dict:
         for k in DEFAULT_SMART_CFG:
             if k in doc and doc[k] is not None:
                 out[k] = doc[k]
+    if out["spike_joins"] not in ALLOWED_SPIKE_JOINS:
+        out["spike_joins"] = 5
+    if out["spike_seconds"] not in ALLOWED_SPIKE_SECONDS:
+        out["spike_seconds"] = 10
+    if out["spike_action"] not in ALLOWED_SPIKE_ACTIONS:
+        out["spike_action"] = "kick"
     if out["decay_days"] not in ALLOWED_DECAY_DAYS:
         out["decay_days"] = 7
     out["chat_id"] = chat_id
@@ -328,6 +354,48 @@ async def reset_user_warns(chat_id: int, user_id: int) -> None:
     )
 
 
+async def apply_spike_member_action(client: Client, chat_id: int, user_id: int, cfg: dict) -> str:
+    """Applies warn, kick, or ban to a user joining during a join spike."""
+    action = (cfg.get("spike_action") or "kick").lower()
+    if await is_admin(client, chat_id, user_id):
+        return "skipped_admin"
+
+    if action == "ban":
+        try:
+            await client.ban_chat_member(chat_id, user_id)
+            await log_smart_action(chat_id, "spike_ban", target_user_id=user_id, detail="join spike")
+            return "banned"
+        except Exception:
+            return "failed_ban"
+
+    if action == "kick":
+        try:
+            await client.ban_chat_member(chat_id, user_id)
+            await client.unban_chat_member(chat_id, user_id)
+            await log_smart_action(chat_id, "spike_kick", target_user_id=user_id, detail="join spike")
+            return "kicked"
+        except Exception:
+            return "failed_kick"
+
+    # Default: "warn"
+    state = await add_decay_warn_point(
+        chat_id=chat_id,
+        user_id=user_id,
+        decay_days=int(cfg.get("decay_days", 7)),
+        reason="rapid join spike",
+        add_pts=1,
+    )
+    await log_smart_action(chat_id, "spike_warn", target_user_id=user_id, detail=f"pts={state['points']}")
+    if state["points"] >= WARN_THRESHOLD:
+        try:
+            await client.restrict_chat_member(chat_id, user_id, MUTE_PERMS)
+            await reset_user_warns(chat_id, user_id)
+            return "warned_and_muted"
+        except Exception:
+            return "warned"
+    return f"warned ({state['points']}/{WARN_THRESHOLD})"
+
+
 # ==========================================
 # --- PROBATION HELPERS ---
 # ==========================================
@@ -397,7 +465,7 @@ async def check_and_advance_probation(client: Client, message: Message) -> bool:
             await client.delete_messages(chat_id, message.id)
         except Exception:
             pass
-        notice = await message.reply_text(
+        await message.reply_text(
             f"🛡️ {message.from_user.mention} is on **First-Message Probation** (first `{PROBATION_MAX_MESSAGES}` msgs / `24h`): removed **{violation}**.",
             parse_mode=ParseMode.MARKDOWN,
         )
@@ -424,6 +492,9 @@ async def build_smart_dashboard(client: Client, chat_id: int, title: str | None 
     raid_badge = "🚨 ACTIVE (Tightened)" if cfg["raid_active"] else "🟢 Standby"
     shield_badge = "On ✅" if cfg["raid_shield"] else "Off ❌"
     prob_badge = "On ✅" if cfg["probation_enabled"] else "Off ❌"
+    spike_joins = int(cfg["spike_joins"])
+    spike_secs = int(cfg["spike_seconds"])
+    spike_act = str(cfg["spike_action"]).upper()
 
     snap_lines = []
     for s in snaps:
@@ -432,10 +503,10 @@ async def build_smart_dashboard(client: Client, chat_id: int, title: str | None 
     snap_block = "\n".join(snap_lines) if snap_lines else "_No recent snapshots._"
 
     text = (
-        f"🛡️ **Smart Mod & Anti-Raid — {cfg['title']}** (`{chat_id}`)\n"
+        f"🛡️ **Customised Smart Mod — {cfg['title']}** (`{chat_id}`)\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
         f"🚨 **Raid Mode:** {raid_badge}\n"
-        f"⚡ **Join-Spike Shield (`{RAID_JOIN_THRESHOLD}+` joins / `{RAID_WINDOW_SECONDS}s`):** {shield_badge}\n"
+        f"⚡ **Join-Spike Guard:** `{spike_joins}+` joins in `{spike_secs}s` -> **`{spike_act}`** ({shield_badge})\n"
         f"🌱 **First-Msg Probation (`{PROBATION_MAX_MESSAGES}` msgs / `24h`):** {prob_badge} (`{prob_count}` active)\n"
         f"⏳ **Warn Decay:** `1` pt every **`{cfg['decay_days']}` days** (Punish at `{WARN_THRESHOLD}` pts)\n\n"
         f"**Recent Snapshots:**\n{snap_block}"
@@ -454,6 +525,27 @@ async def build_smart_dashboard(client: Client, chat_id: int, title: str | None 
         ],
         [
             InlineKeyboardButton(
+                f"{'☑️ ' if a == cfg['spike_action'] else ''}Spike {a.capitalize()}",
+                callback_data=f"smod_spact_{chat_id}_{a}",
+            )
+            for a in ALLOWED_SPIKE_ACTIONS
+        ],
+        [
+            InlineKeyboardButton(
+                f"{'☑️ ' if j == cfg['spike_joins'] else ''}{j} Joins",
+                callback_data=f"smod_spjoin_{chat_id}_{j}",
+            )
+            for j in ALLOWED_SPIKE_JOINS
+        ],
+        [
+            InlineKeyboardButton(
+                f"{'☑️ ' if s == cfg['spike_seconds'] else ''}{s}s",
+                callback_data=f"smod_spsec_{chat_id}_{s}",
+            )
+            for s in ALLOWED_SPIKE_SECONDS
+        ],
+        [
+            InlineKeyboardButton(
                 f"🌱 Probation: {'On' if cfg['probation_enabled'] else 'Off'}",
                 callback_data=f"smod_prob_{chat_id}",
             ),
@@ -461,7 +553,7 @@ async def build_smart_dashboard(client: Client, chat_id: int, title: str | None 
         ],
         [
             InlineKeyboardButton(
-                f"{'• ' if d == cfg['decay_days'] else ''}Decay {d}d",
+                f"{'☑️ ' if d == cfg['decay_days'] else ''}Decay {d}d",
                 callback_data=f"smod_decay_{chat_id}_{d}",
             )
             for d in ALLOWED_DECAY_DAYS
@@ -625,13 +717,12 @@ async def cmd_purge_with_snapshot(client: Client, message: Message):
     kb = InlineKeyboardMarkup([
         [InlineKeyboardButton("↩️ Undo Purge", callback_data=f"smod_undo_id_{chat_id}_{snap_id}")]
     ])
-    info = await client.send_message(
+    await client.send_message(
         chat_id,
         f"🧹 Purged `{len(ids)}` messages. Snapshot `{snap_id}` saved.",
         reply_markup=kb,
         parse_mode=ParseMode.MARKDOWN,
     )
-    _ = info
 
 
 # ==========================================
@@ -645,46 +736,75 @@ async def guard_on_member_join(client: Client, message: Message):
     me = await client.get_me()
     now = time.time()
 
-    dq = _join_timestamps[chat_id]
+    spike_joins = int(cfg.get("spike_joins", 5))
+    spike_seconds = int(cfg.get("spike_seconds", 10))
+    spike_action = str(cfg.get("spike_action", "kick")).lower()
+
+    dq = _join_events[chat_id]
+    processed_map = _spike_processed[chat_id]
+
+    # Expire old processed markers outside the current window
+    expired_uids = [uid for uid, ts in processed_map.items() if (now - ts) > spike_seconds]
+    for uid in expired_uids:
+        processed_map.pop(uid, None)
+
     for m in message.new_chat_members:
         if m.id == me.id:
             continue
-        dq.append(now)
+        dq.append((now, m.id))
         if cfg.get("probation_enabled", True):
             await start_probation(chat_id, m.id)
 
-    while dq and (now - dq[0]) > RAID_WINDOW_SECONDS:
+    while dq and (now - dq[0][0]) > spike_seconds:
         dq.popleft()
 
-    if cfg.get("raid_shield", True) and len(dq) >= RAID_JOIN_THRESHOLD and not cfg.get("raid_active"):
-        snap_id = await save_snapshot(
-            chat_id=chat_id,
-            actor_id=None,
-            snap_type="permissions",
-            summary=f"Auto-Raid Shield ({len(dq)} joins/{RAID_WINDOW_SECONDS}s)",
-            payload={
-                "permissions": _perms_to_dict(getattr(message.chat, "permissions", None)),
-                "raid_active": False,
-            },
-        )
-        try:
-            await client.set_chat_permissions(chat_id, RAID_LOCK_PERMS)
-        except Exception:
-            pass
-        await update_smart_cfg(chat_id, raid_active=True)
+    if cfg.get("raid_shield", True) and len(dq) >= spike_joins:
+        snap_id = ""
+        if not cfg.get("raid_active"):
+            snap_id = await save_snapshot(
+                chat_id=chat_id,
+                actor_id=None,
+                snap_type="permissions",
+                summary=f"Auto-Raid Shield ({len(dq)} joins/{spike_seconds}s -> {spike_action})",
+                payload={
+                    "permissions": _perms_to_dict(getattr(message.chat, "permissions", None)),
+                    "raid_active": False,
+                },
+            )
+            try:
+                await client.set_chat_permissions(chat_id, RAID_LOCK_PERMS)
+            except Exception:
+                pass
+            await update_smart_cfg(chat_id, raid_active=True)
 
-        kb = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("🟢 Turn Raid Mode OFF", callback_data=f"smod_raid_toggle_{chat_id}"),
-                InlineKeyboardButton("↩️ Undo", callback_data=f"smod_undo_id_{chat_id}_{snap_id}"),
-            ]
-        ])
-        await message.reply_text(
-            f"🚨 **Join-Spike Detected!** `{len(dq)}` joins in `{RAID_WINDOW_SECONDS}s`.\n"
-            f"**Raid Mode** has been enabled automatically. Admins, tap below to toggle or undo (`{snap_id}`).",
-            reply_markup=kb,
-            parse_mode=ParseMode.MARKDOWN,
-        )
+        # Retroactively enforce warn, kick, or ban on ALL unprocessed members in the active spike window
+        window_uids = list(dict.fromkeys(uid for _, uid in dq))
+        results: list[str] = []
+        for uid in window_uids:
+            if uid in processed_map:
+                continue
+            processed_map[uid] = now
+            outcome = await apply_spike_member_action(client, chat_id, uid, cfg)
+            results.append(f"`{uid}`: {outcome}")
+
+        if results:
+            undo_btn = [InlineKeyboardButton("↩️ Undo", callback_data=f"smod_undo_id_{chat_id}_{snap_id}")] if snap_id else []
+            kb = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("🟢 Turn Raid Mode OFF", callback_data=f"smod_raid_toggle_{chat_id}"),
+                    *undo_btn,
+                ]
+            ])
+            res_line = "\n".join(results[:12])
+            if len(results) > 12:
+                res_line += f"\n_...and {len(results) - 12} more_"
+            await message.reply_text(
+                f"🚨 **Join-Spike Detected!** `{len(dq)}` joins within `{spike_seconds}s` (threshold: `{spike_joins}`).\n"
+                f"**Action:** `{spike_action.upper()}` | **Raid Mode:** `ACTIVE`\n"
+                f"{res_line}",
+                reply_markup=kb,
+                parse_mode=ParseMode.MARKDOWN,
+            )
 
 
 @app.on_message(filters.group & ~filters.service, group=2)
@@ -746,6 +866,46 @@ async def cb_smod_shield_toggle(client: Client, query: CallbackQuery):
     val = not bool(cfg.get("raid_shield", True))
     await update_smart_cfg(chat_id, raid_shield=val)
     await query.answer(f"Join-Spike Shield: {'On' if val else 'Off'}", show_alert=True)
+    text, kb = await build_smart_dashboard(client, chat_id)
+    await query.message.edit_text(_truncate(text), reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^smod_spact_(?P<chatid>-?\d+)_(?P<act>warn|kick|ban)$"))
+async def cb_smod_spike_action(client: Client, query: CallbackQuery):
+    chat_id = int(query.matches[0].group("chatid"))
+    act = query.matches[0].group("act")
+    if not await is_admin(client, chat_id, query.from_user.id):
+        return await query.answer("⛔ Admins only.", show_alert=True)
+    await update_smart_cfg(chat_id, spike_action=act)
+    await query.answer(f"Spike action set to {act.upper()}", show_alert=True)
+    text, kb = await build_smart_dashboard(client, chat_id)
+    await query.message.edit_text(_truncate(text), reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^smod_spjoin_(?P<chatid>-?\d+)_(?P<joins>\d+)$"))
+async def cb_smod_spike_joins(client: Client, query: CallbackQuery):
+    chat_id = int(query.matches[0].group("chatid"))
+    joins = int(query.matches[0].group("joins"))
+    if joins not in ALLOWED_SPIKE_JOINS:
+        return await query.answer("Invalid join count.", show_alert=True)
+    if not await is_admin(client, chat_id, query.from_user.id):
+        return await query.answer("⛔ Admins only.", show_alert=True)
+    await update_smart_cfg(chat_id, spike_joins=joins)
+    await query.answer(f"Spike threshold set to {joins} joins", show_alert=True)
+    text, kb = await build_smart_dashboard(client, chat_id)
+    await query.message.edit_text(_truncate(text), reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^smod_spsec_(?P<chatid>-?\d+)_(?P<secs>\d+)$"))
+async def cb_smod_spike_seconds(client: Client, query: CallbackQuery):
+    chat_id = int(query.matches[0].group("chatid"))
+    secs = int(query.matches[0].group("secs"))
+    if secs not in ALLOWED_SPIKE_SECONDS:
+        return await query.answer("Invalid seconds window.", show_alert=True)
+    if not await is_admin(client, chat_id, query.from_user.id):
+        return await query.answer("⛔ Admins only.", show_alert=True)
+    await update_smart_cfg(chat_id, spike_seconds=secs)
+    await query.answer(f"Spike window set to {secs}s", show_alert=True)
     text, kb = await build_smart_dashboard(client, chat_id)
     await query.message.edit_text(_truncate(text), reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
 
