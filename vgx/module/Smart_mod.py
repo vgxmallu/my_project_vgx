@@ -45,22 +45,27 @@ STICKER_BURST_WINDOW = 15
 
 LINK_PATTERN = re.compile(r"(https?://|t\.me/|telegram\.me/|www\.)", re.IGNORECASE)
 
-DEFAULT_SMART_CFG = {
-    "raid_shield": True,
-    "raid_active": False,
-    "spike_joins": 5,
-    "spike_seconds": 10,
-    "spike_action": "kick",
-    "probation_enabled": True,
-    "decay_days": 7,
-    "warn_limit": 3,
-    "warn_action": "mute",
-    "punish_scope": "perm",
-}
+PERMISSION_KEYS = (
+    "can_send_messages",
+    "can_send_audios",
+    "can_send_documents",
+    "can_send_photos",
+    "can_send_videos",
+    "can_send_video_notes",
+    "can_send_voice_notes",
+    "can_send_polls",
+    "can_send_other_messages",
+    "can_add_web_page_previews",
+)
 
 RAID_LOCK_PERMS = ChatPermissions(
     can_send_messages=False,
-    can_send_media_messages=False,
+    can_send_audios=False,
+    can_send_documents=False,
+    can_send_photos=False,
+    can_send_videos=False,
+    can_send_video_notes=False,
+    can_send_voice_notes=False,
     can_send_polls=False,
     can_send_other_messages=False,
     can_add_web_page_previews=False,
@@ -68,7 +73,12 @@ RAID_LOCK_PERMS = ChatPermissions(
 
 NORMAL_CHAT_PERMS = ChatPermissions(
     can_send_messages=True,
-    can_send_media_messages=True,
+    can_send_audios=True,
+    can_send_documents=True,
+    can_send_photos=True,
+    can_send_videos=True,
+    can_send_video_notes=True,
+    can_send_voice_notes=True,
     can_send_polls=True,
     can_send_other_messages=True,
     can_add_web_page_previews=True,
@@ -76,7 +86,12 @@ NORMAL_CHAT_PERMS = ChatPermissions(
 
 MUTE_PERMS = ChatPermissions(
     can_send_messages=False,
-    can_send_media_messages=False,
+    can_send_audios=False,
+    can_send_documents=False,
+    can_send_photos=False,
+    can_send_videos=False,
+    can_send_video_notes=False,
+    can_send_voice_notes=False,
     can_send_polls=False,
     can_send_other_messages=False,
     can_add_web_page_previews=False,
@@ -153,31 +168,34 @@ async def get_recent_mod_logs(chat_id: int, limit: int = 8) -> list[dict]:
 
 def _perms_to_dict(perms: ChatPermissions | None) -> dict:
     if not perms:
-        return {
-            "can_send_messages": True,
-            "can_send_media_messages": True,
-            "can_send_polls": True,
-            "can_send_other_messages": True,
-            "can_add_web_page_previews": True,
-        }
+        return {k: True for k in PERMISSION_KEYS}
     return {
-        "can_send_messages": bool(getattr(perms, "can_send_messages", True)),
-        "can_send_media_messages": bool(getattr(perms, "can_send_media_messages", True)),
-        "can_send_polls": bool(getattr(perms, "can_send_polls", True)),
-        "can_send_other_messages": bool(getattr(perms, "can_send_other_messages", True)),
-        "can_add_web_page_previews": bool(getattr(perms, "can_add_web_page_previews", True)),
+        k: bool(getattr(perms, k, True))
+        for k in PERMISSION_KEYS
     }
 
 
 def _dict_to_perms(data: dict | None) -> ChatPermissions:
     d = data or {}
-    return ChatPermissions(
-        can_send_messages=bool(d.get("can_send_messages", True)),
-        can_send_media_messages=bool(d.get("can_send_media_messages", True)),
-        can_send_polls=bool(d.get("can_send_polls", True)),
-        can_send_other_messages=bool(d.get("can_send_other_messages", True)),
-        can_add_web_page_previews=bool(d.get("can_add_web_page_previews", True)),
-    )
+    # Backward compatibility if an older snapshot in MongoDB has `can_send_media_messages`
+    legacy_media = d.get("can_send_media_messages")
+    media_keys = {
+        "can_send_audios",
+        "can_send_documents",
+        "can_send_photos",
+        "can_send_videos",
+        "can_send_video_notes",
+        "can_send_voice_notes",
+    }
+    kwargs = {}
+    for k in PERMISSION_KEYS:
+        if k in d and d[k] is not None:
+            kwargs[k] = bool(d[k])
+        elif k in media_keys and legacy_media is not None:
+            kwargs[k] = bool(legacy_media)
+        else:
+            kwargs[k] = True
+    return ChatPermissions(**kwargs)
 
 
 async def get_smart_cfg(chat_id: int, title: str | None = None) -> dict:
