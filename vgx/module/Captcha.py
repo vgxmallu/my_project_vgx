@@ -22,6 +22,7 @@ except ImportError:
 MONGO_URI = (
     getattr(Config, "MONGO_URL", None)
     or os.getenv("MONGO_URL")
+    or "mongodb://localhost:27017"
 )
 MONGO_DB_NAME = "captcha_botvgx"
 
@@ -542,51 +543,12 @@ def _build_captcha_challenge(
 ) -> tuple[str, str, list[str], InlineKeyboardMarkup]:
     """Builds prompt text, expected answer, choice list, and inline buttons for the active mode."""
     max_att = int(cfg.get("max_attempts", 3))
-    meta_line = (
-        f"🕒 **Time:** `{cfg['time_minutes']}m` | ⛔️ **Penalty:** `{cfg['penalty'].capitalize()}` | "
-        f"🎯 **Attempts:** `{max_att}` (forever mute if exceeded)"
-    )
 
-    if mode == "math":
-        num1 = random.randint(1, 10)
-        num2 = random.randint(1, 10)
-        expected = str(num1 + num2)
-        decoys = {str(num1 + num2 + d) for d in (-3, -2, -1, 1, 2, 3) if (num1 + num2 + d) > 0}
-        choices = random.sample(sorted(decoys), k=min(3, len(decoys))) + [expected]
-        random.shuffle(choices)
-        prompt = (
-            f"🧠 **Captcha**\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"Welcome {user_mention}!\n"
-            f"Solve **What is `{num1} + {num2}`?** to confirm you are not a robot.\n\n"
-            f"{meta_line}"
+    if mode == "button":
+        meta_line = (
+            f"🕒 **Time:** `{cfg['time_minutes']}m` | ⛔️ **Penalty:** `{cfg['penalty'].capitalize()}` | "
+            f"🎯 **Attempts:** `Unlimited`"
         )
-    elif mode == "emoji":
-        pool = random.sample(EMOJI_POOL, k=6)
-        expected = random.choice(pool)
-        choices = list(pool)
-        random.shuffle(choices)
-        prompt = (
-            f"🧠 **Captcha — Emoji Match**\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"Welcome {user_mention}!\n"
-            f"Tap the matching emoji button below: **{expected}**\n\n"
-            f"{meta_line}"
-        )
-    elif mode == "word":
-        pool = random.sample(WORD_POOL, k=6)
-        expected = random.choice(pool)
-        choices = list(pool)
-        random.shuffle(choices)
-        prompt = (
-            f"🧠 **Captcha — Word Pick**\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"Welcome {user_mention}!\n"
-            f"Tap the matching word button below: **`{expected}`**\n\n"
-            f"{meta_line}"
-        )
-    else:
-        mode = "button"
         expected = "ok"
         choices = ["✅ I am not a robot"]
         prompt = (
@@ -596,6 +558,62 @@ def _build_captcha_challenge(
             f"Press the button below to confirm you are not a robot and unlock chat permissions.\n\n"
             f"{meta_line}"
         )
+    else:
+        meta_line = (
+            f"🕒 **Time:** `{cfg['time_minutes']}m` | ⛔️ **Penalty:** `{cfg['penalty'].capitalize()}` | "
+            f"🎯 **Attempts:** `{max_att}` (forever mute if exceeded)"
+        )
+
+        if mode == "math":
+            num1 = random.randint(1, 10)
+            num2 = random.randint(1, 10)
+            expected = str(num1 + num2)
+            decoys = {str(num1 + num2 + d) for d in (-3, -2, -1, 1, 2, 3) if (num1 + num2 + d) > 0}
+            choices = random.sample(sorted(decoys), k=min(3, len(decoys))) + [expected]
+            random.shuffle(choices)
+            prompt = (
+                f"🧠 **Captcha**\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"Welcome {user_mention}!\n"
+                f"Solve **What is `{num1} + {num2}`?** to confirm you are not a robot.\n\n"
+                f"{meta_line}"
+            )
+        elif mode == "emoji":
+            pool = random.sample(EMOJI_POOL, k=6)
+            expected = random.choice(pool)
+            choices = list(pool)
+            random.shuffle(choices)
+            prompt = (
+                f"🧠 **Captcha — Emoji Match**\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"Welcome {user_mention}!\n"
+                f"Tap the matching emoji button below: **{expected}**\n\n"
+                f"{meta_line}"
+            )
+        elif mode == "word":
+            pool = random.sample(WORD_POOL, k=6)
+            expected = random.choice(pool)
+            choices = list(pool)
+            random.shuffle(choices)
+            prompt = (
+                f"🧠 **Captcha — Word Pick**\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"Welcome {user_mention}!\n"
+                f"Tap the matching word button below: **`{expected}`**\n\n"
+                f"{meta_line}"
+            )
+        else:
+            mode = "button"
+            expected = "ok"
+            choices = ["✅ I am not a robot"]
+            prompt = (
+                f"🧠 **Captcha**\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"Welcome {user_mention}!\n"
+                f"Press the button below to confirm you are not a robot and unlock chat permissions.\n\n"
+                f"🕒 **Time:** `{cfg['time_minutes']}m` | ⛔️ **Penalty:** `{cfg['penalty'].capitalize()}` | "
+                f"🎯 **Attempts:** `Unlimited`"
+            )
 
     cols = 1 if mode == "button" else 3
     buttons: list[list[InlineKeyboardButton]] = []
@@ -640,7 +658,7 @@ def format_group_settings_message(cfg: dict) -> str:
         mode_line = (
             "🗂 **Mode:** Button\n"
             " └ _The user will have to press a simple button to be unmuted._\n"
-            "_It's a simple but less secure captcha._"
+            "_It's a simple but less secure captcha (no attempt limit)._"
         )
 
     return (
@@ -1446,6 +1464,24 @@ async def cb_solve_captcha(client: Client, query: CallbackQuery):
             target_user_id,
             msg_id=record["msg_id"],
             penalty=penalty,
+        )
+        return
+
+    mode = record.get("mode", "button")
+    if mode == "button":
+        await delete_pending_captcha(chat_id, target_user_id)
+        _cancel_timer(chat_id, target_user_id)
+
+        try:
+            await client.restrict_chat_member(chat_id, target_user_id, UNRESTRICTED_PERMISSIONS)
+        except Exception:
+            pass
+
+        await query.answer("✅ Verification successful! Welcome to the chat.", show_alert=True)
+        await query.message.edit_text(
+            f"✅ **Verification Passed!**\n"
+            f"Welcome {query.from_user.mention}, you are now verified and can send messages.",
+            parse_mode=ParseMode.MARKDOWN,
         )
         return
 
