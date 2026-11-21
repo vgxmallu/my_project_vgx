@@ -45,6 +45,19 @@ STICKER_BURST_WINDOW = 15
 
 LINK_PATTERN = re.compile(r"(https?://|t\.me/|telegram\.me/|www\.)", re.IGNORECASE)
 
+DEFAULT_SMART_CFG = {
+    "raid_shield": True,
+    "raid_active": False,
+    "spike_joins": 5,
+    "spike_seconds": 10,
+    "spike_action": "kick",
+    "probation_enabled": True,
+    "decay_days": 7,
+    "warn_limit": 3,
+    "warn_action": "mute",
+    "punish_scope": "perm",
+}
+
 PERMISSION_KEYS = (
     "can_send_messages",
     "can_send_audios",
