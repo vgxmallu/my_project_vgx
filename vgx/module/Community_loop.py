@@ -1,7 +1,10 @@
+import asyncio
 import os
 import re
 import time
 from datetime import datetime, timezone
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 from pymongo import AsyncMongoClient, IndexModel
 from pyrogram import Client, filters
 from pyrogram.enums import ChatMemberStatus, ParseMode
@@ -25,7 +28,12 @@ MONGO_URI = (
 )
 MONGO_DB_NAME = (
     getattr(Config, "DB_NAME", None)
+    or os.getenv("DB_NAME")
 )
+
+WEEKLY_DIGEST_DAY = os.getenv("WEEKLY_DIGEST_DAY", "sun")
+WEEKLY_DIGEST_HOUR = int(os.getenv("WEEKLY_DIGEST_HOUR", "18"))
+WEEKLY_DIGEST_MINUTE = int(os.getenv("WEEKLY_DIGEST_MINUTE", "0"))
 
 DEFAULT_LOOP_CFG = {
     "rep_enabled": True,
@@ -34,6 +42,7 @@ DEFAULT_LOOP_CFG = {
     "pair_cooldown_hours": 12,
     "streaks_enabled": True,
     "faq_enabled": True,
+    "weekly_digest_enabled": True,
 }
 
 ALLOWED_DAILY_LIMITS = [3, 5, 8, 12]
@@ -42,10 +51,12 @@ REP_MILESTONES = [5, 20, 50, 100]
 STREAK_MILESTONES = [7, 14, 30]
 
 PLUS_REP_RE = re.compile(r"^\s*(?:\+{1,2}\s*rep|kudos)\b(?:\s+(.+))?$", re.IGNORECASE | re.DOTALL)
-THANKS_REP_RE = re.compile(r"^\s*(?:thanks|thx|ty)\b(?:\s+(.+))?$", re.IGNORECASE | re.DOTALL)
+THANKS_REP_RE = re.compile(r"^\s*(?:thanks|thx|ty|thank)\b(?:\s+(.+))?$", re.IGNORECASE | re.DOTALL)
 
 _mongo_client: AsyncMongoClient | None = None
 _indexes_ready = False
+_scheduler: AsyncIOScheduler | None = None
+_scheduler_lock = asyncio.Lock()
 
 
 def _today_key(ts: float | None = None) -> str:
@@ -311,7 +322,6 @@ async def award_kudos(
     now = time.time()
     db = await get_db()
 
-    # Keep giver's streak updated too
     await record_daily_activity(chat_id, giver_id, giver_name, now_ts=now)
     prev_doc = await record_daily_activity(chat_id, receiver_id, receiver_name, now_ts=now)
 
@@ -432,6 +442,124 @@ async def delete_faq_topic(chat_id: int, topic: str) -> bool:
     db = await get_db()
     res = await db["loop_faqs"].delete_one({"chat_id": chat_id, "topic": topic})
     return bool(res.deleted_count)
+
+
+# ==========================================
+# --- WEEKLY DIGEST & APSCHEDULER JOB ---
+# ==========================================
+
+async def send_weekly_digest(
+    client: Client, chat_id: int, title: str | None = None, reset_weekly: bool = True
+) -> bool:
+    """Builds and sends the weekly leaderboard + streak digest for a group."""
+    db = await get_db()
+    cfg = await get_loop_cfg(chat_id, title=title)
+    group_title = cfg.get("title") or str(chat_id)
+
+    top_weekly_cursor = (
+        db["loop_members"]
+        .find({"chat_id": chat_id, "weekly_rep": {"$gt": 0}})
+        .sort([("weekly_rep", -1), ("rep", -1)])
+        .limit(5)
+    )
+    top_weekly = [doc async for doc in top_weekly_cursor]
+
+    top_streak_cursor = (
+        db["loop_members"]
+        .find({"chat_id": chat_id, "streak_days": {"$gt": 0}})
+        .sort([("streak_days", -1), ("best_streak", -1)])
+        .limit(5)
+    )
+    top_streaks = [doc async for doc in top_streak_cursor]
+
+    lines = [
+        f"📣 **Weekly Community Digest — {group_title}**",
+        "━━━━━━━━━━━━━━━━━━━━━━",
+        "**🏆 Top Weekly Kudos:**",
+    ]
+    if not top_weekly:
+        lines.append("_No `+rep` kudos given this week._")
+    else:
+        medals = {0: "🥇", 1: "🥈", 2: "🥉"}
+        for idx, u in enumerate(top_weekly):
+            prefix = medals.get(idx, f"`{idx + 1}.`")
+            wk = int(u.get("weekly_rep", 0))
+            tot = int(u.get("rep", 0))
+            badge, _ = _rank_for_rep(tot)
+            b_str = f" {badge}" if u.get("badge_opt_in", True) else ""
+            lines.append(f"{prefix}{b_str} **{u.get('name', u.get('user_id'))}** — **`{wk}`** wk rep (`{tot}` total)")
+
+    lines.append("")
+    lines.append("**🔥 Top Active Streaks:**")
+    if not top_streaks:
+        lines.append("_No active streaks tracked yet._")
+    else:
+        for idx, s in enumerate(top_streaks, start=1):
+            st = int(s.get("streak_days", 0))
+            best = int(s.get("best_streak", st))
+            lines.append(f"`{idx}.` 🔥 **{s.get('name', s.get('user_id'))}** — **`{st}d`** (best: `{best}d`)")
+
+    kb = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🏆 Leaderboard", callback_data=f"loop_lb_{chat_id}_rep_0"),
+            InlineKeyboardButton("📌 FAQ Pins", callback_data=f"loop_faq_list_{chat_id}_0"),
+        ],
+        [InlineKeyboardButton("❌ Close", callback_data="loop_close")],
+    ])
+
+    try:
+        await client.send_message(chat_id, "\n".join(lines), reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
+    except Exception:
+        return False
+
+    if reset_weekly:
+        now = time.time()
+        await db["loop_members"].update_many(
+            {"chat_id": chat_id},
+            {"$set": {"weekly_rep": 0, "weekly_reset_at": now + 7 * 86400}},
+        )
+    return True
+
+
+async def run_weekly_digest_job(client: Client) -> None:
+    """Scheduled weekly job across all enabled groups."""
+    db = await get_db()
+    cursor = db["loop_groups"].find({"weekly_digest_enabled": {"$ne": False}})
+    groups = [doc async for doc in cursor]
+    for grp in groups:
+        gid = grp.get("chat_id")
+        if gid is None:
+            continue
+        await send_weekly_digest(client, int(gid), title=grp.get("title"), reset_weekly=True)
+
+
+async def ensure_scheduler_started(client: Client) -> AsyncIOScheduler:
+    """Starts AsyncIOScheduler once and registers the weekly digest job."""
+    global _scheduler
+    if _scheduler is not None and _scheduler.running:
+        return _scheduler
+
+    async with _scheduler_lock:
+        if _scheduler is not None and _scheduler.running:
+            return _scheduler
+        sched = AsyncIOScheduler(timezone="UTC")
+        sched.add_job(
+            run_weekly_digest_job,
+            trigger=CronTrigger(
+                day_of_week=WEEKLY_DIGEST_DAY,
+                hour=WEEKLY_DIGEST_HOUR,
+                minute=WEEKLY_DIGEST_MINUTE,
+                timezone="UTC",
+            ),
+            args=[client],
+            id="community_weekly_digest",
+            replace_existing=True,
+            coalesce=True,
+            misfire_grace_time=3600,
+        )
+        sched.start()
+        _scheduler = sched
+        return _scheduler
 
 
 # ==========================================
@@ -609,6 +737,7 @@ async def build_loop_config_card(chat_id: int, title: str) -> tuple[str, InlineK
         f"• **Daily Giver Quota:** `{cfg.get('daily_giver_limit', 5)}/24h`\n"
         f"• **Same-User Cooldown:** `{cfg.get('pair_cooldown_hours', 12)}h`\n"
         f"• **Activity Streaks:** {'On ✅' if cfg.get('streaks_enabled', True) else 'Off ❌'}\n"
+        f"• **Weekly Digest:** {'On ✅' if cfg.get('weekly_digest_enabled', True) else 'Off ❌'} (`{WEEKLY_DIGEST_DAY.upper()} {WEEKLY_DIGEST_HOUR:02d}:{WEEKLY_DIGEST_MINUTE:02d} UTC`)\n"
         f"• **FAQ Pins:** {'On ✅' if cfg.get('faq_enabled', True) else 'Off ❌'}"
     )
     kb = InlineKeyboardMarkup([
@@ -624,6 +753,16 @@ async def build_loop_config_card(chat_id: int, title: str) -> tuple[str, InlineK
             InlineKeyboardButton(
                 f"{'✅' if cfg.get('streaks_enabled', True) else '❌'} Streaks",
                 callback_data=f"loop_cfg_tog_{chat_id}_streak",
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                f"{'✅' if cfg.get('weekly_digest_enabled', True) else '❌'} Weekly Digest",
+                callback_data=f"loop_cfg_tog_{chat_id}_digest",
+            ),
+            InlineKeyboardButton(
+                "📣 Post Digest Now",
+                callback_data=f"loop_digest_now_{chat_id}",
             ),
         ],
         [
@@ -654,6 +793,7 @@ async def build_loop_config_card(chat_id: int, title: str) -> tuple[str, InlineK
 
 @app.on_message(filters.group & ~filters.service, group=3)
 async def on_group_activity_and_kudos(client: Client, message: Message):
+    await ensure_scheduler_started(client)
     if not message.from_user or message.from_user.is_bot:
         return
 
@@ -661,10 +801,8 @@ async def on_group_activity_and_kudos(client: Client, message: Message):
     giver = message.from_user
     giver_name = giver.first_name or str(giver.id)
 
-    # Track daily activity streak for any non-bot group message
     await record_daily_activity(chat_id, giver.id, giver_name)
 
-    # Check reply-based +rep / kudos (and optional thanks trigger)
     if not message.reply_to_message or not message.text:
         return
 
@@ -724,6 +862,7 @@ async def on_group_activity_and_kudos(client: Client, message: Message):
 
 @app.on_message(filters.command(["leaderboard", "top"]) & filters.group)
 async def cmd_leaderboard(client: Client, message: Message):
+    await ensure_scheduler_started(client)
     if message.from_user and not message.from_user.is_bot:
         await record_daily_activity(
             message.chat.id, message.from_user.id, message.from_user.first_name or str(message.from_user.id)
@@ -735,6 +874,7 @@ async def cmd_leaderboard(client: Client, message: Message):
 
 @app.on_message(filters.command(["badge", "mystats"]) & filters.group)
 async def cmd_badge_status(client: Client, message: Message):
+    await ensure_scheduler_started(client)
     if not message.from_user or message.from_user.is_bot:
         return
     uid = message.from_user.id
@@ -771,6 +911,7 @@ async def cmd_badge_status(client: Client, message: Message):
 
 @app.on_message(filters.command(["faq"]) & filters.group)
 async def cmd_faq(client: Client, message: Message):
+    await ensure_scheduler_started(client)
     chat_id = message.chat.id
     title = message.chat.title or str(chat_id)
     cfg = await get_loop_cfg(chat_id, title=title)
@@ -780,9 +921,6 @@ async def cmd_faq(client: Client, message: Message):
     args_raw = message.text.split(None, 1)[1].strip() if message.text and len(message.text.split(None, 1)) > 1 else ""
     actor_id = message.from_user.id if message.from_user else None
 
-    # Admin adding/updating a FAQ:
-    # Case 1: /faq Question | Answer
-    # Case 2: Reply to a message + /faq Question
     if args_raw and ("|" in args_raw or message.reply_to_message):
         if not await is_admin(client, chat_id, actor_id):
             return await message.reply_text("⛔ Only admins can add or update FAQ pins.", parse_mode=ParseMode.MARKDOWN)
@@ -821,7 +959,7 @@ async def cmd_faq(client: Client, message: Message):
 
 @app.on_message(filters.command(["whoknows"]) & filters.group)
 async def cmd_whoknows(client: Client, message: Message):
-    """Finds top helpers for a topic and matching FAQ entries."""
+    await ensure_scheduler_started(client)
     chat_id = message.chat.id
     query_str = message.text.split(None, 1)[1].strip() if message.text and len(message.text.split(None, 1)) > 1 else ""
     if not query_str:
@@ -865,6 +1003,7 @@ async def cmd_whoknows(client: Client, message: Message):
 
 @app.on_message(filters.command(["loopcfg"]) & filters.group)
 async def cmd_loopcfg(client: Client, message: Message):
+    await ensure_scheduler_started(client)
     uid = message.from_user.id if message.from_user else None
     if not await is_admin(client, message.chat.id, uid):
         return await message.reply_text("⛔ Admins only.", parse_mode=ParseMode.MARKDOWN)
@@ -943,7 +1082,7 @@ async def cb_loop_cfg_open(client: Client, query: CallbackQuery):
     await query.message.edit_text(text, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
 
 
-@app.on_callback_query(filters.regex(r"^loop_cfg_tog_(?P<chatid>-?\d+)_(?P<key>rep|thanks|streak)$"))
+@app.on_callback_query(filters.regex(r"^loop_cfg_tog_(?P<chatid>-?\d+)_(?P<key>rep|thanks|streak|digest)$"))
 async def cb_loop_cfg_toggle(client: Client, query: CallbackQuery):
     chat_id = int(query.matches[0].group("chatid"))
     key = query.matches[0].group("key")
@@ -955,6 +1094,7 @@ async def cb_loop_cfg_toggle(client: Client, query: CallbackQuery):
         "rep": "rep_enabled",
         "thanks": "allow_thanks_trigger",
         "streak": "streaks_enabled",
+        "digest": "weekly_digest_enabled",
     }
     field = field_map[key]
     nxt = not bool(cfg.get(field, False))
@@ -964,6 +1104,16 @@ async def cb_loop_cfg_toggle(client: Client, query: CallbackQuery):
     title = query.message.chat.title if query.message and query.message.chat else str(chat_id)
     text, kb = await build_loop_config_card(chat_id, title=title)
     await query.message.edit_text(text, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
+
+
+@app.on_callback_query(filters.regex(r"^loop_digest_now_(?P<chatid>-?\d+)$"))
+async def cb_loop_digest_now(client: Client, query: CallbackQuery):
+    chat_id = int(query.matches[0].group("chatid"))
+    if not await is_admin(client, chat_id, query.from_user.id):
+        return await query.answer("⛔ Admins only.", show_alert=True)
+    title = query.message.chat.title if query.message and query.message.chat else str(chat_id)
+    sent = await send_weekly_digest(client, chat_id, title=title, reset_weekly=False)
+    await query.answer("Weekly digest posted! 📣" if sent else "Failed to post digest", show_alert=True)
 
 
 @app.on_callback_query(filters.regex(r"^loop_cfg_lim_(?P<chatid>-?\d+)_(?P<lim>\d+)$"))
