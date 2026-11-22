@@ -996,14 +996,12 @@ async def cb_qol_incident_action(client: Client, query: CallbackQuery):
     except Exception:
         pass
 
-
 @app.on_callback_query(filters.regex(r"^qol_who_(?P<chatid>-?\d+)_(?P<userid>\d+)$"))
 async def cb_qol_whois(client: Client, query: CallbackQuery):
     chat_id = int(query.matches[0].group("chatid"))
     target_id = int(query.matches[0].group("userid"))
-    viewer_admin = await is_admin(client, chat_id, query.from_user.id)
     cfg = await get_hub_cfg(chat_id)
-    text, kb = await build_whois_card(client, chat_id, cfg["title"], target_id, viewer_admin)
+    text, kb = await build_whois_card(client, chat_id, cfg["title"], target_id)
     await query.answer()
     try:
         await query.message.edit_text(_truncate(text), reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
