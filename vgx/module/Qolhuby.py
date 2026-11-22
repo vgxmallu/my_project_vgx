@@ -815,7 +815,6 @@ async def cmd_incident_report(client: Client, message: Message):
     except Exception:
         pass
 
-
 @app.on_message(filters.command(["info", "whois"]) & filters.group)
 async def cmd_member_whois(client: Client, message: Message):
     chat_id = message.chat.id
@@ -838,9 +837,7 @@ async def cmd_member_whois(client: Client, message: Message):
     if not target_user:
         return await message.reply_text("⚠️ Could not resolve that user.", parse_mode=ParseMode.MARKDOWN)
 
-    viewer_id = message.from_user.id if message.from_user else None
-    viewer_admin = await is_admin(client, chat_id, viewer_id)
-    text, kb = await build_whois_card(client, chat_id, group_title, target_user.id, viewer_admin)
+    text, kb = await build_whois_card(client, chat_id, group_title, target_user.id)
     await message.reply_text(_truncate(text), reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
 
 
