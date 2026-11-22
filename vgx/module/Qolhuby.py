@@ -207,28 +207,37 @@ async def touch_member_message(chat_id: int, user_id: int, name: str, username: 
     db = await get_db()
     col = db["qol_members"]
     now = time.time()
-    patch: dict = {
-        "name": (name or str(user_id))[:64],
-        "last_seen_at": now,
-    }
-    if username:
-        patch["username"] = username
-    await col.update_one(
-        {"chat_id": chat_id, "user_id": user_id},
-        {
-            "$set": patch,
-            "$inc": {"msg_count": 1},
-            "$setOnInsert": {
-                "chat_id": chat_id,
-                "user_id": user_id,
-                "joined_at": now,
-                "warns": 0,
-                "verified": False,
-                "verified_at": None,
-            },
+    clean_name = (name or str(user_id))[:64]
+
+    existing = await col.find_one({"chat_id": chat_id, "user_id": user_id})
+    update_ops: dict = {
+        "$set": {
+            "name": clean_name,
+            "username": username,
+            "last_seen_at": now,
         },
-        upsert=True,
-    )
+        "$inc": {"msg_count": 1},
+        "$setOnInsert": {
+            "chat_id": chat_id,
+            "user_id": user_id,
+            "joined_at": now,
+            "warns": 0,
+            "verified": False,
+        },
+    }
+    if existing:
+        push_ops: dict = {}
+        old_name = existing.get("name")
+        if old_name and old_name != clean_name:
+            push_ops["past_names"] = {"$each": [old_name], "$slice": -5}
+        old_user = existing.get("username")
+        if old_user and username and old_user.lower() != username.lower():
+            push_ops["past_usernames"] = {"$each": [old_user], "$slice": -5}
+        if push_ops:
+            update_ops["$push"] = push_ops
+
+    await col.update_one({"chat_id": chat_id, "user_id": user_id}, update_ops, upsert=True)
+
 
 
 async def get_member_context(chat_id: int, user_id: int, name: str = "", username: str | None = None) -> dict:
@@ -316,51 +325,83 @@ async def add_member_warn(chat_id: int, user_id: int, delta: int = 1) -> int:
 # ==========================================
 
 async def build_whois_card(
-    client: Client, chat_id: int, group_title: str, target_id: int, viewer_is_admin: bool
+    client: Client, chat_id: int, group_title: str, target_id: int
 ) -> tuple[str, InlineKeyboardMarkup]:
     cfg = await get_hub_cfg(chat_id, title=group_title)
+    db = await get_db()
+
+    display_name = str(target_id)
+    uname = None
+    flags: list[str] = []
+    dc_str = "Unknown"
+
     try:
         u = await client.get_users(target_id)
         display_name = u.first_name or str(target_id)
         uname = u.username
+        if getattr(u, "is_premium", False):
+            flags.append("⭐ Premium")
+        if getattr(u, "is_scam", False):
+            flags.append("🚨 Scam Flag")
+        if getattr(u, "is_fake", False):
+            flags.append("⚠️ Fake Flag")
+        if getattr(u, "dc_id", None):
+            dc_str = f"DC{u.dc_id}"
     except Exception:
-        display_name = str(target_id)
-        uname = None
+        pass
+
+    role_label = "Member"
+    tg_joined_ts = None
+    try:
+        cm = await client.get_chat_member(chat_id, target_id)
+        status_map = {
+            ChatMemberStatus.OWNER: "👑 Owner",
+            ChatMemberStatus.ADMINISTRATOR: "🛡️ Admin",
+            ChatMemberStatus.MEMBER: "👤 Member",
+            ChatMemberStatus.RESTRICTED: "🔇 Restricted",
+            ChatMemberStatus.BANNED: "🚫 Banned",
+            ChatMemberStatus.LEFT: "🚪 Left",
+        }
+        role_label = status_map.get(cm.status, "Member")
+        if getattr(cm, "custom_title", None):
+            role_label += f" ({cm.custom_title})"
+        if getattr(cm, "joined_date", None):
+            tg_joined_ts = cm.joined_date.timestamp()
+    except Exception:
+        pass
 
     ctx = await get_member_context(chat_id, target_id, name=display_name, username=uname)
+    raw_doc = await db["qol_members"].find_one({"chat_id": chat_id, "user_id": target_id}) or {}
+    loop_doc = await db["loop_members"].find_one({"chat_id": chat_id, "user_id": target_id}) or {}
+    reports_against = await db["qol_incidents"].count_documents({"chat_id": chat_id, "target_id": target_id})
+
+    joined_ts = tg_joined_ts or ctx["joined_at"]
     ver_badge = "🟢 Verified ✅" if ctx["verified"] else "🟡 Unverified / New"
     handle_str = f"@{ctx['username']}" if ctx.get("username") else "None"
     warn_lim = int(cfg.get("warn_limit", 3))
+    rep_pts = int(loop_doc.get("rep", 0))
+    streak_days = int(loop_doc.get("streak_days", 0))
 
-    text = (
-        f"🪪 **Member Context — {ctx['name']}**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"• **User ID:** `{target_id}` ({handle_str})\n"
-        f"• **Group:** {group_title}\n"
-        f"• **Joined:** `{_fmt_ts(ctx['joined_at'])}`\n"
-        f"• **Last Active:** `{_fmt_ts(ctx['last_seen_at'])}`\n"
-        f"• **Messages Logged:** `{ctx['msg_count']}`\n"
-        f"• **Warnings:** `{ctx['warns']}/{warn_lim}`\n"
-        f"• **Verification:** {ver_badge}"
-    )
+    lines = [
+        f"🪪 **Member Context — {ctx['name']}**",
+        "━━━━━━━━━━━━━━━━━━━━━━",
+        f"• **User ID:** `{target_id}` ({handle_str}) • `{dc_str}`",
+        f"• **Role:** {role_label}",
+        f"• **Joined:** `{_fmt_ts(joined_ts)}`",
+        f"• **Last Active:** `{_fmt_ts(ctx['last_seen_at'])}`",
+        f"• **Messages:** `{ctx['msg_count']}` • **Rep:** `{rep_pts}` (🔥 `{streak_days}d`)",
+        f"• **Warnings:** `{ctx['warns']}/{warn_lim}` • **Reports:** `{reports_against}`",
+        f"• **Verification:** {ver_badge}",
+    ]
+    if flags:
+        lines.append(f"• **Account Flags:** {' • '.join(flags)}")
 
-    rows: list[list[InlineKeyboardButton]] = []
-    if viewer_is_admin:
-        rows.append([
-            InlineKeyboardButton("⚠️ Warn", callback_data=f"qol_act_warn_{chat_id}_{target_id}_0"),
-            InlineKeyboardButton("🔇 Mute 1h", callback_data=f"qol_act_mute_{chat_id}_{target_id}_0"),
-            InlineKeyboardButton("🔴 Ban", callback_data=f"qol_act_ban_{chat_id}_{target_id}_0"),
-        ])
-        rows.append([
-            InlineKeyboardButton(
-                "🟢 Mark Verified" if not ctx["verified"] else "🟡 Unverify",
-                callback_data=f"qol_ver_{chat_id}_{target_id}_{0 if ctx['verified'] else 1}",
-            ),
-            InlineKeyboardButton("🔄 Refresh", callback_data=f"qol_who_{chat_id}_{target_id}"),
-        ])
-    rows.append([InlineKeyboardButton("✖️ Close", callback_data="qol_close")])
-    return text, InlineKeyboardMarkup(rows)
+    past_names = raw_doc.get("past_names") or []
+    if past_names:
+        lines.append(f"• **Past Names:** `{', '.join(past_names[-3:])}`")
 
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("✖️ Close", callback_data="qol_close")]])
+    return "\n".join(lines), kb
 
 async def build_dm_group_picker(client: Client, admin_id: int) -> tuple[str, InlineKeyboardMarkup]:
     groups = await list_managed_groups()
