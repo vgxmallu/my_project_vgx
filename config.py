@@ -53,7 +53,9 @@ class Config:
     
     #https://spoo.me
     SPOO_API_KEY = os.getenv("SPOO_API_KEY")
-
+    #https://www.freecustom.email/api/dashboard?tab=keys
+    FCE_API_KEY = os.getenv("FCE_API_KEY")
+    
     BRAWLSTARS_API_KEY = os.getenv("BRAWLSTARS_API_KEY")
     
     #https://app.linklyhq.com/api/v1/link
