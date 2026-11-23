@@ -12,9 +12,9 @@ from vgx import app
 # ==========================================
 # ⚙️ CONFIG & MONGODB SETUP
 # ==========================================
-SPOTIFY_CLIENT_ID = getattr(Config, "SPOTIFY_CLIENT_ID", None)
-SPOTIFY_CLIENT_SECRET = getattr(Config, "SPOTIFY_CLIENT_SECRET", None)
-SPOTIFY_REDIRECT_URI = getattr(Config, "SPOTIFY_REDIRECT_URI", None)
+SPOTIFY_CLIENT_ID = getattr(Config, "SPOTIPY_CLIENT_ID")
+SPOTIFY_CLIENT_SECRET = getattr(Config, "SPOTIPY_CLIENT_SECRET")
+SPOTIFY_REDIRECT_URI = getattr(Config, "SPOTIFY_REDIRECT_URI")
 
 SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
