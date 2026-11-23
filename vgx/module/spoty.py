@@ -68,6 +68,7 @@ async def spoti_ui_router(client, query):
 
 import asyncio
 import random
+from pyrogram.enums import ButtonStyle
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from datetime import datetime, timedelta
@@ -78,7 +79,7 @@ sp = spotipy.Spotify(auth_manager=auth_manager)
 
 def get_full_spotify_track():
     """Fetches rich metadata for a truly random track."""
-    wildcards = ['%a%', '%e%', '%i%', '%o%', '%u%']
+    wildcards = ['%funk%', '%edm%', '%malayalam%', '%tamil%', '%montagem%']
     query = random.choice(wildcards)
     offset = random.randint(0, 900)
     
@@ -125,25 +126,29 @@ async def drop_sender_loop(app):
                 if track:
                     # Building the "Full Information" layout
                     preview_txt = f"\n🔊 [Play 30s Audio Preview]({track['preview_url']})" if track['preview_url'] else ""
-                    
+                    add_button = InlineKeyboardMarkup(
+                        [[
+                           InlineKeyboardButton("⛓️‍💥 Track Link", url=track['url'], style=ButtonStyle.SUCCESS)
+                        ]] 
+                    )
                     caption = (
-                        "🎧 **Spotify Discovery Drop** 🎧\n"
-                        "━━━━━━━━━━━━━━━━━━━━\n"
-                        f"🎵 **Track:** {track['name']}\n"
-                        f"🎤 **Artist:** {track['artist']}\n"
-                        f"💿 **Album:** {track['album']}\n"
-                        f"📅 **Released:** {track['release_date']}\n"
-                        f"📈 **Popularity Score:** {track['popularity']}/100\n"
-                        "━━━━━━━━━━━━━━━━━━━━\n"
+                        "💚 **Spotify Discovery Drop** 💚\n"
+                        "━━━━━━━━━━━━━\n"
+                        f"🎵 **Track:** __{track['name']}__\n"
+                        f"🎤 **Artist:** __{track['artist']}__\n"
+                        f"💿 **Album:** __{track['album']}__\n"
+                        f"📅 **Released:** __{track['release_date']}__\n"
+                        f"📈 **Popularity Score:** __{track['popularity']}/100__\n"
+                        "━━━━━━━━━━━━━\n\n"
                         f"🔗 [Open in Spotify]({track['url']}){preview_txt}"
                     )
                     
                     try:
                         # 1. Send the message
                         if track["image"]:
-                            msg = await app.send_photo(chat_id, photo=track["image"], caption=caption)
+                            msg = await app.send_photo(chat_id, photo=track["image"], caption=caption, reply_markup=add_button)
                         else:
-                            msg = await app.send_message(chat_id, caption, disable_web_page_preview=False)
+                            msg = await app.send_message(chat_id, caption, disable_web_page_preview=False, reply_markup=add_button)
                             
                         # 2. Auto-Pin Logic
                         if group.get("pin"):
