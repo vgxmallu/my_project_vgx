@@ -257,15 +257,14 @@ async def cmd_spauth(client: Client, message: Message):
         [InlineKeyboardButton("🔗 Authorize Spotify", url=auth_url)],
     ])
         await message.reply_text(
-        "🔐 **Link Your Spotify Account**\n"
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "1. Tap **Authorize Spotify** and approve playback permissions.\n"
-        "2. Copy the `code` query parameter from your redirect URL.\n"
-        "3. Send `/spauth <your_code>` here.",
-        reply_markup=kb,
-        link_preview_options=LinkPreviewOptions(is_disabled=True),
-    )
-
+            "🔐 **Link Your Spotify Account**\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            "1. Tap **Authorize Spotify** and approve playback permissions.\n"
+            "2. Copy the `code` query parameter from your redirect URL.\n"
+            "3. Send `/spauth <your_code>` here.",
+            reply_markup=kb,
+            link_preview_options=LinkPreviewOptions(is_disabled=True),
+     )
 
 
 @app.on_message(filters.command(["spplayer", "nowplaying"]))
