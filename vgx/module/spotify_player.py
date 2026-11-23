@@ -231,6 +231,11 @@ async def build_player_view(user_id: int, notice: str = ""):
 # ==========================================
 @app.on_message(filters.command("spauth"))
 async def cmd_spauth(client: Client, message: Message):
+    if not message.from_user:
+        return await message.reply_text("❌ Unable to identify your user account.")
+
+    user_id = message.from_user.id
+
     if len(message.command) > 1 and message.command[1] != "link":
         auth_code = message.command[1].strip()
         status, token_data = await exchange_code_for_tokens(auth_code)
@@ -239,32 +244,34 @@ async def cmd_spauth(client: Client, message: Message):
             return await message.reply_text(f"❌ Token exchange failed: `{err}`")
 
         expires_in = int(token_data.get("expires_in", 3600))
+        update_fields = {
+            "access_token": token_data["access_token"],
+            "expires_at": time.time() + expires_in,
+        }
+        if token_data.get("refresh_token"):
+            update_fields["refresh_token"] = token_data["refresh_token"]
+
         await spotify_tokens_col.update_one(
-            {"_id": message.from_user.id},
-            {
-                "$set": {
-                    "access_token": token_data["access_token"],
-                    "refresh_token": token_data.get("refresh_token"),
-                    "expires_at": time.time() + expires_in,
-                }
-            },
+            {"_id": user_id},
+            {"$set": update_fields},
             upsert=True,
         )
         return await message.reply_text("✅ **Spotify Connected!** Use `/spplayer` or `/spqueue` now.")
 
-    auth_url = build_spotify_auth_url(message.from_user.id)
+    auth_url = build_spotify_auth_url(user_id)
     kb = InlineKeyboardMarkup([
         [InlineKeyboardButton("🔗 Authorize Spotify", url=auth_url)],
     ])
-        await message.reply_text(
-            "🔐 **Link Your Spotify Account**\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "1. Tap **Authorize Spotify** and approve playback permissions.\n"
-            "2. Copy the `code` query parameter from your redirect URL.\n"
-            "3. Send `/spauth <your_code>` here.",
-            reply_markup=kb,
-            link_preview_options=LinkPreviewOptions(is_disabled=True),
-     )
+    await message.reply_text(
+        "🔐 **Link Your Spotify Account**\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "1. Tap **Authorize Spotify** and approve playback permissions.\n"
+        "2. Copy the `code` query parameter from your redirect URL.\n"
+        "3. Send `/spauth <your_code>` here.",
+        reply_markup=kb,
+        link_preview_options=LinkPreviewOptions(is_disabled=True),
+    )
+
 
 
 @app.on_message(filters.command(["spplayer", "nowplaying"]))
