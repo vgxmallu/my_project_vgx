@@ -18,6 +18,7 @@ class Config:
 
     SPOTIPY_CLIENT_ID = os.environ.get("SPOTIPY_CLIENT_ID", "your_client_id_here")
     SPOTIPY_CLIENT_SECRET = os.environ.get("SPOTIPY_CLIENT_SECRET", "your_client_secret_here")
+    SPOTIFY_REDIRECT_URI = os.environ.get("SPOTIFY_REDIRECT_URI")
 
     # Bot Owner / Admin User IDs (Comma-separated)
     SUDO_USERS = [int(x) for x in os.getenv("SUDO_USERS", "784589736").split(",") if x.strip()]
