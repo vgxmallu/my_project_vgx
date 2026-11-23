@@ -21,9 +21,9 @@ SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
 SPOTIFY_API_BASE = "https://api.spotify.com/v1"
 SPOTIFY_SCOPES = "user-read-playback-state user-modify-playback-state"
 
-MONGO_URL = getattr(Config, "MONGO_URL", None) or os.getenv("MONGO_URI", "mongodb://localhost:27017")
+MONGO_URL = getattr(Config, "MONGO_URL")
 mongo_client = AsyncIOMotorClient(MONGO_URL)
-db = mongo_client[getattr(Config, "DB_NAME", "GojoBotDB")]
+db = mongo_client[getattr(Config, "DB_NAME")]
 spotify_tokens_col = db["spotify_tokens"]
 
 
