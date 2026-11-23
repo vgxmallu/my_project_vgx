@@ -1,3 +1,10 @@
+
+import logging
+
+logging.getLogger("apscheduler.executors.default").setLevel(logging.WARNING)
+
+
+
 import asyncio
 import os
 import re
