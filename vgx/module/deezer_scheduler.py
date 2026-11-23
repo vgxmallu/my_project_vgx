@@ -124,7 +124,7 @@ async def music_scheduler_loop(app):
                         ]] 
                     )
                     caption = (
-                        "💜 **Music Discovery Drop** 💜\n"
+                        "💜 **Deezer Discovery Drop** 💜\n"
                         "━━━━━━━━━━━━━\n"
                         f"🎵 **Track:** {track['name']}\n"
                         f"🎤 **Artist:** {track['artist']}\n"
