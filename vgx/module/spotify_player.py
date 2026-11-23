@@ -3,7 +3,14 @@ import time
 from urllib.parse import urlencode
 import aiohttp
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
+from pyrogram.types import (
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    CallbackQuery,
+    Message,
+    LinkPreviewOptions,
+)
+
 from pyrogram.errors import MessageNotModified
 from motor.motor_asyncio import AsyncIOMotorClient
 from config import Config
@@ -249,15 +256,16 @@ async def cmd_spauth(client: Client, message: Message):
     kb = InlineKeyboardMarkup([
         [InlineKeyboardButton("🔗 Authorize Spotify", url=auth_url)],
     ])
-    await message.reply_text(
+        await message.reply_text(
         "🔐 **Link Your Spotify Account**\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
         "1. Tap **Authorize Spotify** and approve playback permissions.\n"
         "2. Copy the `code` query parameter from your redirect URL.\n"
         "3. Send `/spauth <your_code>` here.",
         reply_markup=kb,
-        disable_web_page_preview=True,
+        link_preview_options=LinkPreviewOptions(is_disabled=True),
     )
+
 
 
 @app.on_message(filters.command(["spplayer", "nowplaying"]))
