@@ -224,9 +224,6 @@ async def build_player_view(user_id: int, notice: str = ""):
 # ==========================================
 @app.on_message(filters.command("spauth"))
 async def cmd_spauth(client: Client, message: Message):
-    if not SPOTIFY_CLIENT_ID or not SPOTIFY_CLIENT_SECRET:
-        return await message.reply_text("❌ `SPOTIFY_CLIENT_ID` or `SPOTIFY_CLIENT_SECRET` is missing.")
-
     if len(message.command) > 1 and message.command[1] != "link":
         auth_code = message.command[1].strip()
         status, token_data = await exchange_code_for_tokens(auth_code)
